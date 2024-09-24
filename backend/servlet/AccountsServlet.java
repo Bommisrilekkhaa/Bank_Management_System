@@ -19,7 +19,7 @@ import utility.DbConnection;
 import utility.JsonHandler;
 
 @SuppressWarnings("serial")
-public class AccountServlet extends HttpServlet 
+public class AccountsServlet extends HttpServlet 
 {
     AccountQueryMap accountQueryMap = new AccountQueryMap();
 
@@ -70,13 +70,9 @@ public class AccountServlet extends HttpServlet
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException 
     {
-        String action = request.getParameter("action");
 
         try (Connection conn = DbConnection.connect()) 
         {
-            switch (action) 
-            {
-                case "insert":
                     JsonObject jsonRequest = JsonHandler.parseJsonRequest(request);
                     
                     Account newAccount = accountQueryMap.extractAccountDetails(jsonRequest);
@@ -89,30 +85,32 @@ public class AccountServlet extends HttpServlet
                     {
                         response.getWriter().write("Error inserting account");
                     }
-                    break;
-
-                case "delete":
-                	
-                    String accNo = request.getParameter("acc_no");
-
-                    if (accountQueryMap.deleteAccount(conn, accNo)) 
-                    {
-                        response.getWriter().write("Account deleted successfully");
-                    } 
-                    else 
-                    {
-                        response.getWriter().write("Error deleting account");
-                    }
-                    break;
-
-                default:
-                    response.getWriter().write("Invalid action");
-                    break;
-            }
+              
+            
         } 
         catch (SQLException e) 
         {
             response.getWriter().write("Error processing request: " + e.getMessage());
         }
+    }
+    
+    
+    protected void delete(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException, SQLException 
+    {
+    	try (Connection conn = DbConnection.connect()) 
+        {
+
+	        String accNo = request.getParameter("acc_no");
+	
+	        if (accountQueryMap.deleteAccount(conn, accNo)) 
+	        {
+	            response.getWriter().write("Account deleted successfully");
+	        } 
+	        else 
+	        {
+	            response.getWriter().write("Error deleting account");
+	        }
+        }
+    	
     }
 }

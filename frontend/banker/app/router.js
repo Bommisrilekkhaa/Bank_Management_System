@@ -11,6 +11,7 @@ Router.map(function() {
   this.route('login',{path:"/banker/login"});
   this.route('register',{path:"/banker/register"});
   this.route('dashboard',{path:"/banker/dashboard"});
+  this.route('accounts');
 });
 
 export default Router;

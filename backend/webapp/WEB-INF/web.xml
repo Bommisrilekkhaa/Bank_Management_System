@@ -54,6 +54,15 @@
         <servlet-name>AccountServlet</servlet-name>
         <url-pattern>/account/*</url-pattern>
     </servlet-mapping>
+    
+    <servlet>
+        <servlet-name>ControllerServlet</servlet-name>
+        <servlet-class>servlet.ControllerServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>ControllerServlet</servlet-name>
+        <url-pattern>/api/v1/*</url-pattern>
+    </servlet-mapping>
    
 	<error-page>
 	

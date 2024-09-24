@@ -15,7 +15,7 @@ import utility.DbConnection;
 import utility.JsonHandler;
 
 @SuppressWarnings("serial")
-public class BankServlet extends HttpServlet 
+public class BanksServlet extends HttpServlet 
 {
     BankQueryMap bankQueryMap = new BankQueryMap();
 

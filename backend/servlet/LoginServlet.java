@@ -26,6 +26,7 @@ public class LoginServlet extends HttpServlet {
     private UserQueryMap userQueryMap = new UserQueryMap();
 	private User user = new User();
 
+	@Override
 	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException 
 	{
 		doOptions(request,response);
@@ -41,7 +42,7 @@ public class LoginServlet extends HttpServlet {
 	
 	}
 	
-	
+	@Override
 	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		
 		doOptions(request,response);
