@@ -1,0 +1,64 @@
+<body>
+  <div class="main-content">
+    <div class="auth-form">
+      <h2>{{if isSignup "Register" "Login"}}</h2>
+      <form {{action "submitForm" on="submit"}}>
+          <div class="form-group">
+            <label for="role">Role</label>
+            <select id="role" onchange={{action (mut selectedRole) value="target.value"}}>
+              <option value="" disabled selected>Select a role</option>
+              <option value="manager">Manager</option>
+              <option value="customer">Customer</option>
+            </select>
+          </div>
+        {{#if isSignup}}
+          <div class="form-group">
+            <label for="name">Name</label>
+            <input id="name" type="text" value={{name}} class="form-control" placeholder="Enter your full name" oninput={{action (mut name) value="target.value"}}/>
+          </div>
+          <div class="form-group">
+            <label for="dob">Date of Birth</label>
+            <input id="dob" type="date" value={{dob}} class="form-control" oninput={{action (mut dob) value="target.value"}}/>
+          </div>
+          <div class="form-group">
+            <label for="pno">Phone Number</label>
+            <input id="pno" type="number" value={{pno}} class="form-control" placeholder="Enter your phone number" oninput={{action (mut pno) value="target.value"}}/>
+          </div>
+          <div class="form-group">
+            <label for="addr">Address</label>
+            <textarea id="addr" value={{addr}} class="form-control" placeholder="Enter your address" oninput={{action (mut addr) value="target.value"}}></textarea>
+          </div>
+        {{/if}}
+
+        <div class="form-group">
+          <label for="username">Username</label>
+          <input id="username" type="text" value={{username}} class="form-control" placeholder="Enter your username" oninput={{action (mut username) value="target.value"}}/>
+        </div>
+
+        <div class="form-group">
+          <label for="password">Password</label>
+          <input id="password" type="password" value={{password}} class="form-control" placeholder="Enter your password" oninput={{action (mut password) value="target.value"}}/>
+        </div>
+
+        {{#if isSignup}}
+          <div class="form-group">
+            <label for="confirmPassword">Confirm Password</label>
+            <input id="confirmPassword" type="password" value={{confirmPassword}} class="form-control" placeholder="Confirm your password" oninput={{action (mut confirmPassword) value="target.value"}}/>
+          </div>
+        {{/if}}
+
+         <div class="form-group">
+        <button type="submit" class="btn-primary">{{if isSignup "Register" "Login"}}</button>
+        </div>
+        
+      </form>
+      <div class="form-group">
+        <button class="switch" {{action "toggleMode"}} >{{if isSignup "Switch to Login" "Switch to Register"}}</button>
+      </div>
+
+      {{#if errorMessage}}
+        <div class="error-message">* {{errorMessage}}</div>
+      {{/if}}
+    </div>
+  </div>
+</body>
