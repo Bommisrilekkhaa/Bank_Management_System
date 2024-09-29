@@ -1,2 +1,32 @@
-{{!-- {{outlet}} --}}
-<h1>Accounts</h1>
+<div class="accounts-list">
+  <button {{action "addNewAccount"}} class="new-account-btn">New Account</button>
+  
+  <table class="accounts-table">
+    <thead>
+      <tr>
+        <th>Account No</th>
+        <th>Type</th>
+        <th>Balance</th>
+        <th>Status</th>
+        <th>Fullname</th>
+        <th>BranchName</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {{#each accounts as |account|}}
+        <tr>
+          <td>{{account.acc_no}}</td>
+          <td>{{account.acc_type}}</td>
+          <td>{{account.acc_balance}}</td>
+          <td>{{account.acc_status}}</td>
+          <td>{{account.user_fullname}}</td>
+          <td>{{account.branch_name}}</td>
+          <td>
+            <button {{action "editAccount" account}}>Edit</button>
+          </td>
+        </tr>
+      {{/each}}
+    </tbody>
+  </table>
+</div>

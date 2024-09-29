@@ -6,6 +6,7 @@ public class Bank {
 	  private String bank_name;
 	  private String bank_code;
 	  private int admin_id;
+	  private int main_branch_id;
 	  
 	  
 	public int getBank_id() {
@@ -31,6 +32,12 @@ public class Bank {
 	}
 	public void setAdmin_id(int admin_id) {
 		this.admin_id = admin_id;
+	}
+	public int getMain_branch_id() {
+		return main_branch_id;
+	}
+	public void setMain_branch_id(int main_branch_id) {
+		this.main_branch_id = main_branch_id;
 	}
 	  
 	  

@@ -10,7 +10,7 @@ export default Ember.Service.extend({
       // console.log(credentials);
 
       return $.ajax({
-        url: `http://localhost:8080/banker/Login?action=login`,
+        url: `http://localhost:8080/banker/api/v1/login?action=login`,
         type: 'POST',
         credentials:'include',
         contentType: 'application/json',
@@ -32,7 +32,7 @@ export default Ember.Service.extend({
       // console.log(credentials+'signup');
      
       return $.ajax({
-        url: `http://localhost:8080/banker/Login?action=register`,
+        url: `http://localhost:8080/banker/api/v1/login?action=register`,
         type: 'POST',
         contentType: 'application/json',
         data: JSON.stringify({ 
@@ -57,7 +57,7 @@ export default Ember.Service.extend({
   logout() {
      
       return $.ajax({
-        url: `http://localhost:8080/banker/Login?action=logout`,
+        url: `http://localhost:8080/banker/api/v1/login?action=logout`,
         type: 'GET',
         credentials:'include',
         xhrFields:{

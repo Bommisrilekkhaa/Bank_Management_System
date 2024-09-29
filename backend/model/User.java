@@ -9,7 +9,7 @@ public class User {
 	private Date date_of_birth;
 	private String user_phonenumber;
 	private String user_address;
-	private String user_role;
+	private int  user_role;
 	private String username;
 	private String password;
 	private int user_status;
@@ -46,10 +46,10 @@ public class User {
 	public void setUser_address(String user_address) {
 		this.user_address = user_address;
 	}
-	public String getUser_role() {
+	public int getUser_role() {
 		return user_role;
 	}
-	public void setUser_role(String user_role) {
+	public void setUser_role(int user_role) {
 		this.user_role = user_role;
 	}
 	public String getUsername() {

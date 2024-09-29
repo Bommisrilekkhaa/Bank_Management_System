@@ -1,16 +1,8 @@
 <body>
-  <div class="main-content">
+  {{!-- <div class="main-content"> --}}
     <div class="auth-form">
       <h2>{{if isSignup "Register" "Login"}}</h2>
       <form {{action "submitForm" on="submit"}}>
-          <div class="form-group">
-            <label for="role">Role</label>
-            <select id="role" onchange={{action (mut selectedRole) value="target.value"}}>
-              <option value="" disabled selected>Select a role</option>
-              <option value="manager">Manager</option>
-              <option value="customer">Customer</option>
-            </select>
-          </div>
         {{#if isSignup}}
           <div class="form-group">
             <label for="name">Name</label>
@@ -47,6 +39,28 @@
           </div>
         {{/if}}
 
+          <div class="form-group">
+            <label for="role">Role</label>
+            <select id="role" onchange={{action (mut selectedRole) value="target.value"}} class="form-control">
+              <option value="" disabled selected>Select a role</option>
+              <option value="manager">Manager</option>
+              <option value="customer">Customer</option>
+              {{#unless isSignup}}
+               <option value="admin">Admin</option>
+              {{/unless}}
+            </select>
+          </div>
+      {{#unless (eq selectedRole "admin")}}
+      <div class="form-group">
+        <label for="bank_name">Bank Name</label>
+        <select id="bank_name" class="form-control" onchange={{action (mut bank_name) value="target.value"}}>
+          <option value="">Select bank</option>
+          {{#each bankNames as |bank|}}
+            <option value={{bank.bank_name}} >{{bank.bank_name}}</option>
+          {{/each}}
+        </select>
+      </div>
+      {{/unless}}
          <div class="form-group">
         <button type="submit" class="btn-primary">{{if isSignup "Register" "Login"}}</button>
         </div>
@@ -60,5 +74,5 @@
         <div class="error-message">* {{errorMessage}}</div>
       {{/if}}
     </div>
-  </div>
+  {{!-- </div> --}}
 </body>

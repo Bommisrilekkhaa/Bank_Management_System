@@ -14,47 +14,10 @@
     </filter>
     <filter-mapping>
         <filter-name>Auth</filter-name>
-        <url-pattern>/Login/*</url-pattern>
+        <url-pattern>/api/v1/*</url-pattern>
     </filter-mapping> 
     
    
-
-      <servlet>
-        <servlet-name>LoginServlet</servlet-name>
-        <servlet-class>servlet.LoginServlet</servlet-class>
-    </servlet>
-    <servlet-mapping>
-        <servlet-name>LoginServlet</servlet-name>
-        <url-pattern>/Login/*</url-pattern>
-    </servlet-mapping>
-    
-     <servlet>
-        <servlet-name>BankServlet</servlet-name>
-        <servlet-class>servlet.BankServlet</servlet-class>
-    </servlet>
-    <servlet-mapping>
-        <servlet-name>BankServlet</servlet-name>
-        <url-pattern>/bank/*</url-pattern>
-    </servlet-mapping>
-    
-     <servlet>
-        <servlet-name>BranchServlet</servlet-name>
-        <servlet-class>servlet.BranchServlet</servlet-class>
-    </servlet>
-    <servlet-mapping>
-        <servlet-name>BranchServlet</servlet-name>
-        <url-pattern>/branch/*</url-pattern>
-    </servlet-mapping>
-     
-    <servlet>
-        <servlet-name>AccountServlet</servlet-name>
-        <servlet-class>servlet.AccountServlet</servlet-class>
-    </servlet>
-    <servlet-mapping>
-        <servlet-name>AccountServlet</servlet-name>
-        <url-pattern>/account/*</url-pattern>
-    </servlet-mapping>
-    
     <servlet>
         <servlet-name>ControllerServlet</servlet-name>
         <servlet-class>servlet.ControllerServlet</servlet-class>

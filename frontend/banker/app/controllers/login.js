@@ -13,16 +13,15 @@ export default Ember.Controller.extend({
 
   actions: {
     login(credentials) {
-
+      var thisvar = this;
       // console.log('Login action triggered'); 
       // console.log(credentials);
-     
       this.get('session').login(credentials)
         .then(() => {
-          this.transitionToRoute('dashboard'); 
+          thisvar.transitionToRoute('dashboard'); 
         })
         .catch((error) => {
-          this.set('errorMessage', error.message || 'Login failed');
+          thisvar.set('errorMessage', error.message || 'Login failed');
         });
     },
 

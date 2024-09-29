@@ -15,6 +15,7 @@ import com.google.gson.JsonObject;
 
 import DAO.UserQueryMap;
 import model.User;
+import model.UserRole;
 import utility.DbConnection;
 import utility.JsonHandler;
 import utility.SessionHandler;
@@ -29,7 +30,7 @@ public class LoginServlet extends HttpServlet {
 	@Override
 	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException 
 	{
-		doOptions(request,response);
+		SessionHandler.doOptions(request,response);
 		
 		String action = request.getParameter("action");
 		
@@ -45,7 +46,7 @@ public class LoginServlet extends HttpServlet {
 	@Override
 	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		
-		doOptions(request,response);
+		SessionHandler.doOptions(request,response);
 		
 		String action = request.getParameter("action");
 		try (Connection conn = DbConnection.connect())
@@ -72,12 +73,12 @@ public class LoginServlet extends HttpServlet {
 		
 	}
 	
-	private void handleLogin(HttpServletRequest request, HttpServletResponse response, Connection conn) throws IOException
+	private void handleLogin(HttpServletRequest request, HttpServletResponse response, Connection conn) throws IOException, ServletException
 	{
 	    JsonObject jsonRequest = JsonHandler.parseJsonRequest(request);
 	    user.setUsername(jsonRequest.get("username").getAsString());
 	    user.setPassword(jsonRequest.get("password").getAsString());
-	    user.setUser_role(jsonRequest.get("user_role").getAsString());
+	    user.setUser_role(UserRole.valueOf(jsonRequest.get("user_role").getAsString()).getValue());
 
 	    try {
 	    	
@@ -120,16 +121,6 @@ public class LoginServlet extends HttpServlet {
 	
 	
 	
-	protected void doOptions(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException 
-	{
-		  
-		  response.setHeader("Access-Control-Allow-Origin", "*");
-		  response.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
-		  response.setHeader("Access-Control-Allow-Headers", "*");
-		  response.setHeader("Access-Control-Allow-Credentials", "true");
-		  response.setHeader("Access-Control-Max-Age", "3600");
-
-	      response.setStatus(HttpServletResponse.SC_OK);
-	}
+	
 
 }

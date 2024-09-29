@@ -15,9 +15,19 @@ define('banker/tests/app.lint-test', [], function () {
     assert.ok(true, 'components/auth-form.js should pass ESLint\n\n');
   });
 
+  QUnit.test('controllers/accounts.js', function (assert) {
+    assert.expect(1);
+    assert.ok(true, 'controllers/accounts.js should pass ESLint\n\n');
+  });
+
   QUnit.test('controllers/dashboard.js', function (assert) {
     assert.expect(1);
     assert.ok(true, 'controllers/dashboard.js should pass ESLint\n\n');
+  });
+
+  QUnit.test('controllers/inputform.js', function (assert) {
+    assert.expect(1);
+    assert.ok(true, 'controllers/inputform.js should pass ESLint\n\n');
   });
 
   QUnit.test('controllers/login.js', function (assert) {
@@ -30,6 +40,11 @@ define('banker/tests/app.lint-test', [], function () {
     assert.ok(true, 'controllers/register.js should pass ESLint\n\n');
   });
 
+  QUnit.test('helpers/eq.js', function (assert) {
+    assert.expect(1);
+    assert.ok(true, 'helpers/eq.js should pass ESLint\n\n');
+  });
+
   QUnit.test('resolver.js', function (assert) {
     assert.expect(1);
     assert.ok(true, 'resolver.js should pass ESLint\n\n');
@@ -40,9 +55,19 @@ define('banker/tests/app.lint-test', [], function () {
     assert.ok(true, 'router.js should pass ESLint\n\n');
   });
 
+  QUnit.test('routes/accounts.js', function (assert) {
+    assert.expect(1);
+    assert.ok(true, 'routes/accounts.js should pass ESLint\n\n');
+  });
+
   QUnit.test('routes/dashboard.js', function (assert) {
     assert.expect(1);
     assert.ok(true, 'routes/dashboard.js should pass ESLint\n\n');
+  });
+
+  QUnit.test('routes/inputform.js', function (assert) {
+    assert.expect(1);
+    assert.ok(true, 'routes/inputform.js should pass ESLint\n\n');
   });
 
   QUnit.test('routes/login.js', function (assert) {
@@ -53,6 +78,11 @@ define('banker/tests/app.lint-test', [], function () {
   QUnit.test('routes/register.js', function (assert) {
     assert.expect(1);
     assert.ok(true, 'routes/register.js should pass ESLint\n\n');
+  });
+
+  QUnit.test('services/accounts.js', function (assert) {
+    assert.expect(1);
+    assert.ok(true, 'services/accounts.js should pass ESLint\n\n');
   });
 
   QUnit.test('services/session.js', function (assert) {
@@ -168,6 +198,26 @@ define('banker/tests/integration/components/auth-form-test', ['ember-qunit'], fu
     assert.equal(this.$().text().trim(), 'template block text');
   });
 });
+define('banker/tests/integration/helpers/eq-test', ['ember-qunit'], function (_emberQunit) {
+  'use strict';
+
+  (0, _emberQunit.moduleForComponent)('eq', 'helper:eq', {
+    integration: true
+  });
+
+  // Replace this with your real tests.
+  (0, _emberQunit.test)('it renders', function (assert) {
+    this.set('inputValue', '1234');
+
+    this.render(Ember.HTMLBars.template({
+      "id": "1SYOrDlN",
+      "block": "{\"statements\":[[1,[33,[\"eq\"],[[28,[\"inputValue\"]]],null],false]],\"locals\":[],\"named\":[],\"yields\":[],\"hasPartials\":false}",
+      "meta": {}
+    }));
+
+    assert.equal(this.$().text().trim(), '1234');
+  });
+});
 define('banker/tests/test-helper', ['banker/tests/helpers/resolver', 'ember-qunit', 'ember-cli-qunit'], function (_resolver, _emberQunit, _emberCliQunit) {
   'use strict';
 
@@ -204,14 +254,29 @@ define('banker/tests/tests.lint-test', [], function () {
     assert.ok(true, 'integration/components/auth-form-test.js should pass ESLint\n\n');
   });
 
+  QUnit.test('integration/helpers/eq-test.js', function (assert) {
+    assert.expect(1);
+    assert.ok(true, 'integration/helpers/eq-test.js should pass ESLint\n\n');
+  });
+
   QUnit.test('test-helper.js', function (assert) {
     assert.expect(1);
     assert.ok(true, 'test-helper.js should pass ESLint\n\n');
   });
 
+  QUnit.test('unit/controllers/accounts-test.js', function (assert) {
+    assert.expect(1);
+    assert.ok(true, 'unit/controllers/accounts-test.js should pass ESLint\n\n');
+  });
+
   QUnit.test('unit/controllers/dashboard-test.js', function (assert) {
     assert.expect(1);
     assert.ok(true, 'unit/controllers/dashboard-test.js should pass ESLint\n\n');
+  });
+
+  QUnit.test('unit/controllers/inputform-test.js', function (assert) {
+    assert.expect(1);
+    assert.ok(true, 'unit/controllers/inputform-test.js should pass ESLint\n\n');
   });
 
   QUnit.test('unit/controllers/login-test.js', function (assert) {
@@ -224,9 +289,29 @@ define('banker/tests/tests.lint-test', [], function () {
     assert.ok(true, 'unit/controllers/register-test.js should pass ESLint\n\n');
   });
 
+  QUnit.test('unit/routes/accounts-test.js', function (assert) {
+    assert.expect(1);
+    assert.ok(true, 'unit/routes/accounts-test.js should pass ESLint\n\n');
+  });
+
   QUnit.test('unit/routes/dashboard-test.js', function (assert) {
     assert.expect(1);
     assert.ok(true, 'unit/routes/dashboard-test.js should pass ESLint\n\n');
+  });
+
+  QUnit.test('unit/routes/form-page-test.js', function (assert) {
+    assert.expect(1);
+    assert.ok(true, 'unit/routes/form-page-test.js should pass ESLint\n\n');
+  });
+
+  QUnit.test('unit/routes/forms-page-test.js', function (assert) {
+    assert.expect(1);
+    assert.ok(true, 'unit/routes/forms-page-test.js should pass ESLint\n\n');
+  });
+
+  QUnit.test('unit/routes/inputform-test.js', function (assert) {
+    assert.expect(1);
+    assert.ok(true, 'unit/routes/inputform-test.js should pass ESLint\n\n');
   });
 
   QUnit.test('unit/routes/login-test.js', function (assert) {
@@ -239,15 +324,48 @@ define('banker/tests/tests.lint-test', [], function () {
     assert.ok(true, 'unit/routes/register-test.js should pass ESLint\n\n');
   });
 
+  QUnit.test('unit/services/accounts-test.js', function (assert) {
+    assert.expect(1);
+    assert.ok(true, 'unit/services/accounts-test.js should pass ESLint\n\n');
+  });
+
   QUnit.test('unit/services/session-test.js', function (assert) {
     assert.expect(1);
     assert.ok(true, 'unit/services/session-test.js should pass ESLint\n\n');
+  });
+});
+define('banker/tests/unit/controllers/accounts-test', ['ember-qunit'], function (_emberQunit) {
+  'use strict';
+
+  (0, _emberQunit.moduleFor)('controller:accounts', 'Unit | Controller | accounts', {
+    // Specify the other units that are required for this test.
+    // needs: ['controller:foo']
+  });
+
+  // Replace this with your real tests.
+  (0, _emberQunit.test)('it exists', function (assert) {
+    var controller = this.subject();
+    assert.ok(controller);
   });
 });
 define('banker/tests/unit/controllers/dashboard-test', ['ember-qunit'], function (_emberQunit) {
   'use strict';
 
   (0, _emberQunit.moduleFor)('controller:dashboard', 'Unit | Controller | dashboard', {
+    // Specify the other units that are required for this test.
+    // needs: ['controller:foo']
+  });
+
+  // Replace this with your real tests.
+  (0, _emberQunit.test)('it exists', function (assert) {
+    var controller = this.subject();
+    assert.ok(controller);
+  });
+});
+define('banker/tests/unit/controllers/inputform-test', ['ember-qunit'], function (_emberQunit) {
+  'use strict';
+
+  (0, _emberQunit.moduleFor)('controller:inputform', 'Unit | Controller | inputform', {
     // Specify the other units that are required for this test.
     // needs: ['controller:foo']
   });
@@ -286,10 +404,62 @@ define('banker/tests/unit/controllers/register-test', ['ember-qunit'], function 
     assert.ok(controller);
   });
 });
+define('banker/tests/unit/routes/accounts-test', ['ember-qunit'], function (_emberQunit) {
+  'use strict';
+
+  (0, _emberQunit.moduleFor)('route:accounts', 'Unit | Route | accounts', {
+    // Specify the other units that are required for this test.
+    // needs: ['controller:foo']
+  });
+
+  (0, _emberQunit.test)('it exists', function (assert) {
+    var route = this.subject();
+    assert.ok(route);
+  });
+});
 define('banker/tests/unit/routes/dashboard-test', ['ember-qunit'], function (_emberQunit) {
   'use strict';
 
   (0, _emberQunit.moduleFor)('route:dashboard', 'Unit | Route | dashboard', {
+    // Specify the other units that are required for this test.
+    // needs: ['controller:foo']
+  });
+
+  (0, _emberQunit.test)('it exists', function (assert) {
+    var route = this.subject();
+    assert.ok(route);
+  });
+});
+define('banker/tests/unit/routes/form-page-test', ['ember-qunit'], function (_emberQunit) {
+  'use strict';
+
+  (0, _emberQunit.moduleFor)('route:form-page', 'Unit | Route | form page', {
+    // Specify the other units that are required for this test.
+    // needs: ['controller:foo']
+  });
+
+  (0, _emberQunit.test)('it exists', function (assert) {
+    var route = this.subject();
+    assert.ok(route);
+  });
+});
+define('banker/tests/unit/routes/forms-page-test', ['ember-qunit'], function (_emberQunit) {
+  'use strict';
+
+  (0, _emberQunit.moduleFor)('route:forms-page', 'Unit | Route | forms page', {
+    // Specify the other units that are required for this test.
+    // needs: ['controller:foo']
+  });
+
+  (0, _emberQunit.test)('it exists', function (assert) {
+    var route = this.subject();
+    assert.ok(route);
+  });
+});
+define('banker/tests/unit/routes/inputform-test', ['ember-qunit'], function (_emberQunit) {
+  'use strict';
+
+  (0, _emberQunit.moduleFor)('route:inputform', 'Unit | Route | inputform', {
     // Specify the other units that are required for this test.
     // needs: ['controller:foo']
   });
@@ -323,6 +493,20 @@ define('banker/tests/unit/routes/register-test', ['ember-qunit'], function (_emb
   (0, _emberQunit.test)('it exists', function (assert) {
     var route = this.subject();
     assert.ok(route);
+  });
+});
+define('banker/tests/unit/services/accounts-test', ['ember-qunit'], function (_emberQunit) {
+  'use strict';
+
+  (0, _emberQunit.moduleFor)('service:accounts', 'Unit | Service | accounts', {
+    // Specify the other units that are required for this test.
+    // needs: ['service:foo']
+  });
+
+  // Replace this with your real tests.
+  (0, _emberQunit.test)('it exists', function (assert) {
+    var service = this.subject();
+    assert.ok(service);
   });
 });
 define('banker/tests/unit/services/session-test', ['ember-qunit'], function (_emberQunit) {

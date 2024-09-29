@@ -11,21 +11,32 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+
+import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 
 import DAO.AccountQueryMap;
+import DAO.BranchQueryMap;
+import DAO.UserQueryMap;
 import model.Account;
+import model.AccountType;
+import model.Status;
 import utility.DbConnection;
 import utility.JsonHandler;
+import utility.SessionHandler;
 
 @SuppressWarnings("serial")
 public class AccountsServlet extends HttpServlet 
 {
-    AccountQueryMap accountQueryMap = new AccountQueryMap();
+    private AccountQueryMap accountQueryMap = new AccountQueryMap();
+    private UserQueryMap userQueryMap = new UserQueryMap();
+    private BranchQueryMap branchQueryMap = new BranchQueryMap();
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException 
     {
+    	SessionHandler.doOptions(request,response);
+
 
     	try (Connection conn = DbConnection.connect()) 
         {
@@ -35,19 +46,19 @@ public class AccountsServlet extends HttpServlet
             Map<String, String[]> parameterMap = request.getParameterMap();
             List<Account> filteredAccounts = accountQueryMap.applyFilters(accounts, parameterMap);
 
-            JsonObject jsonResponse = new JsonObject();
+            JsonArray jsonArray = new JsonArray();
             if (!filteredAccounts.isEmpty()) 
             {
                 for (Account account : filteredAccounts) 
                 {
                     JsonObject accountJson = new JsonObject();
                     accountJson.addProperty("acc_no", account.getAccNo());
-                    accountJson.addProperty("acc_type", account.getAccType());
+                    accountJson.addProperty("acc_type",(""+AccountType.valueOf(account.getAccType())));	
                     accountJson.addProperty("acc_balance", account.getAccBalance());
-                    accountJson.addProperty("acc_status", account.getAccStatus());
-                    accountJson.addProperty("user_id", account.getUserId());
-                    accountJson.addProperty("branch_id", account.getBranchId());
-                    jsonResponse.add(account.getAccNo(), accountJson);
+                    accountJson.addProperty("acc_status", (""+Status.valueOf(account.getAccStatus())));
+                    accountJson.addProperty("user_fullname", userQueryMap.getUsername(conn, account.getUserId()).getFullname());
+                    accountJson.addProperty("branch_name", branchQueryMap.selectBranchById(conn, account.getBranchId()).getName());
+                    jsonArray.add(accountJson);
                 }
             } 
             else 
@@ -57,7 +68,7 @@ public class AccountsServlet extends HttpServlet
             }
 
             response.setContentType("application/json");
-            JsonHandler.sendJsonResponse(response, jsonResponse);
+            JsonHandler.sendJsonResponse(response, jsonArray);
         } 
         catch (SQLException e) 
         {
@@ -70,6 +81,7 @@ public class AccountsServlet extends HttpServlet
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException 
     {
+    	SessionHandler.doOptions(request,response);
 
         try (Connection conn = DbConnection.connect()) 
         {
@@ -94,23 +106,35 @@ public class AccountsServlet extends HttpServlet
         }
     }
     
-    
-    protected void delete(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException, SQLException 
-    {
-    	try (Connection conn = DbConnection.connect()) 
-        {
-
-	        String accNo = request.getParameter("acc_no");
-	
-	        if (accountQueryMap.deleteAccount(conn, accNo)) 
-	        {
-	            response.getWriter().write("Account deleted successfully");
-	        } 
-	        else 
-	        {
-	            response.getWriter().write("Error deleting account");
-	        }
-        }
+    @Override
+    protected void doPut(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException 
+    {  
+    	SessionHandler.doOptions(request,response);
     	
+    	JsonObject jsonRequest = JsonHandler.parseJsonRequest(request);
+
+
+    	String[] path = request.getRequestURI().split("/");
+    	
+        try (Connection conn = DbConnection.connect()) 
+        {
+        	Account newAccount = accountQueryMap.extractAccountDetails(jsonRequest);
+        	
+        	newAccount.setAccNo(Integer.valueOf(path[5]));        	
+            if (accountQueryMap.updateAccount(conn, newAccount)) 
+            {
+                response.getWriter().write("Account updated successfully");
+            } 
+            else 
+            {
+                response.getWriter().write("Error updating Account");
+            }
+        } 
+        catch (SQLException e) 
+        {
+            response.getWriter().write("Error updating account: " + e.getMessage());
+        }
     }
+    
+
 }

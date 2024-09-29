@@ -2,22 +2,22 @@ package model;
 
 public class Account {
 	
-	private String accNo;
-    private String accType;
+	private int accNo;
+    private int accType;
     private double accBalance;
     private int accStatus;
     private int userId;
     private int branchId;
-	public String getAccNo() {
+	public int getAccNo() {
 		return accNo;
 	}
-	public void setAccNo(String accNo) {
-		this.accNo = accNo;
+	public void setAccNo(int i) {
+		this.accNo = i;
 	}
-	public String getAccType() {
+	public int getAccType() {
 		return accType;
 	}
-	public void setAccType(String accType) {
+	public void setAccType(int accType) {
 		this.accType = accType;
 	}
 	public double getAccBalance() {

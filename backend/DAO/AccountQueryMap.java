@@ -4,13 +4,17 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import javax.servlet.ServletException;
+
 import com.google.gson.JsonObject;
 
 import model.Account;
+import model.Status;
 import utility.DbConnection;
 import utility.Query_util;
 
@@ -19,12 +23,14 @@ public class AccountQueryMap {
     private DbConnection db = new DbConnection();
     private Account account = new Account();
 
+    private BranchQueryMap branchQueryMap = new BranchQueryMap();
+
     public boolean insertAccount(Connection conn, Account account) throws SQLException 
     {
         Query_util query = Query_util.create()
 			                .insert("account")
-			                .columns("acc_no", "acc_type", "acc_balance", "acc_status", "user_id", "branch_id")
-			                .values(account.getAccNo(), account.getAccType(), account.getAccBalance(), account.getAccStatus(),
+			                .columns("acc_type", "acc_balance", "acc_status", "user_id", "branch_id")
+			                .values( account.getAccType(), 0, 0,
 			                		account.getUserId(), account.getBranchId());
 
         return query.executeUpdate(conn, db) > 0;
@@ -47,8 +53,8 @@ public class AccountQueryMap {
         while (rs.next()) 
         {
             Account account = new Account();
-            account.setAccNo(rs.getString("acc_no"));
-            account.setAccType(rs.getString("acc_type"));
+            account.setAccNo(rs.getInt("acc_no"));
+            account.setAccType(rs.getInt("acc_type"));
             account.setAccBalance(rs.getDouble("acc_balance"));
             account.setAccStatus(rs.getInt("acc_status"));
             account.setUserId(rs.getInt("user_id"));
@@ -69,9 +75,11 @@ public class AccountQueryMap {
                         
                         switch (param) {
                             case "acc_no":
-                                return account.getAccNo().equals(values[0]);
+                            	int num = Integer.parseInt(values[0]);
+                                return account.getAccNo() == num;
                             case "acc_type":
-                                return account.getAccType().equals(values[0]);
+                            	int type = Integer.parseInt(values[0]);
+                                return account.getAccType() == type;
                             case "acc_balance":
                             	double balance = Double.parseDouble(values[0]);
                                 return account.getAccBalance() == balance;
@@ -93,40 +101,50 @@ public class AccountQueryMap {
 
    
 
-    public boolean updateAccount(Connection conn, Account account) throws SQLException {
+    public boolean updateAccount(Connection conn, Account account) throws SQLException 
+    {
+    	Map<String,Object[]> whereconditions = new HashMap<>();
+    	whereconditions.put("acc_number", new Object[] {"=",account.getAccNo()});
+    	
+    	Map<String,Object> conditions = new HashMap<>();
+    	conditions.put("acc_type",account.getAccType());
+    	conditions.put("acc_balance", account.getAccBalance());
+    	conditions.put("acc_status", account.getAccStatus());
+    	conditions.put("user_id", account.getUserId());
+    	conditions.put("branch_id", account.getBranchId());
     	
         Query_util query = Query_util.create()
                 .update("account")
-                .set("acc_type", account.getAccType())
-                .set("acc_balance", account.getAccBalance())
-                .set("acc_status", account.getAccStatus())
-                .set("user_id", account.getUserId())
-                .set("branch_id", account.getBranchId())
-                .where("acc_no", "=", account.getAccNo());
+                .set(conditions)
+                .where(whereconditions);
 
         return query.executeUpdate(conn, db) > 0;
     }
 
-    public boolean deleteAccount(Connection conn, String accNo) throws SQLException {
+    public boolean deleteAccount(Connection conn, int acc_no) throws SQLException 
+    {
+    	
+    	Map<String,Object[]> conditions = new HashMap<>();
+    	conditions.put("acc_number", new Object[] {"=",account.getAccNo()});
     	
         Query_util query = Query_util.create()
                 .deleteFrom("account")
-                .where("acc_no", "=", accNo);
+                .where(conditions);
 
         return query.executeUpdate(conn, db) > 0;
     }
     
     
-    public Account extractAccountDetails(JsonObject jsonRequest) 
+    public Account extractAccountDetails(JsonObject jsonRequest) throws SQLException, ServletException 
     {
         
         
-        account.setAccNo(jsonRequest.get("acc_no").getAsString());
-        account.setAccType(jsonRequest.get("acc_type").getAsString());
-        account.setAccBalance(jsonRequest.get("acc_balance").getAsDouble());
-        account.setAccStatus(jsonRequest.get("acc_status").getAsInt());
-        account.setUserId(jsonRequest.get("user_id").getAsInt());
-        account.setBranchId(jsonRequest.get("branch_id").getAsInt());
+//        account.setAccNo(jsonRequest.get("acc_no").getAsInt());
+        account.setAccType(jsonRequest.get("acc_type").getAsInt());
+//        account.setAccBalance(jsonRequest.get("acc_balance").getAsDouble());
+        account.setAccStatus(Status.valueOf(jsonRequest.get("acc_status").getAsString().toUpperCase()).getValue());
+        account.setUserId(1);
+        account.setBranchId(branchQueryMap.getBranchId(DbConnection.connect(),jsonRequest.get("branch_name").getAsString()));
 
         return account;
     }

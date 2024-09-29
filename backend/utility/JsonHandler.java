@@ -6,6 +6,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import com.google.gson.Gson;
+import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 
 public class JsonHandler {
@@ -43,6 +44,13 @@ public class JsonHandler {
 	    jsonResponse.addProperty("status", "error");
 	    jsonResponse.addProperty("message", message);
 	    sendJsonResponse(response, jsonResponse);
+	}
+
+	public static void sendJsonResponse(HttpServletResponse response, JsonArray jsonArray) throws IOException {
+		
+		  response.setContentType("application/json");
+	        response.setCharacterEncoding("UTF-8");
+	        response.getWriter().write(gson.toJson(jsonArray));
 	}
 
 

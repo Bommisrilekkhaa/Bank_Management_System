@@ -21,9 +21,9 @@ public class ControllerServlet extends HttpServlet {
 		
 		try 
 		{
-			Class<?> servlet = Class.forName("servlet."+ buildClassName(path[4])+"Servlet");
+			Class<?> servlets = Class.forName("servlet."+ buildClassName(path[4])+"Servlet");
 			
-			HttpServlet servlets =  (HttpServlet) servlet.getDeclaredConstructor().newInstance();
+			HttpServlet servlet =  (HttpServlet) servlets.getDeclaredConstructor().newInstance();
 			String method = request.getMethod();
 			//servlets.doGet(request,response);
 			
@@ -36,13 +36,22 @@ public class ControllerServlet extends HttpServlet {
 			case "POST":
 				method = "doPost";
 				break;
+			
+			case "PUT":
+				method = "doPut";
+				break;
+				
+			case "DELETE":
+				method = "doDelete";
+				break;
+				
 			}
 //			for(Method m:servlet.getMethods())
 //			System.out.println(m);
 			
-			servlet.getDeclaredMethod(method, HttpServletRequest.class,HttpServletResponse.class).invoke(servlets,request,response);
+			servlets.getDeclaredMethod(method, HttpServletRequest.class,HttpServletResponse.class).invoke(servlet,request,response);
 
-			response.getWriter().append("Served at: ").append(servlet.getName());
+//			response.getWriter().append("Served at: ").append(servlet.getName());
 		} 
 		catch (ClassNotFoundException | NoSuchMethodException | SecurityException | IllegalAccessException | IllegalArgumentException | InvocationTargetException | InstantiationException e) 
 		{
@@ -63,5 +72,16 @@ public class ControllerServlet extends HttpServlet {
 		
 		doGet(request, response);
 	}
+	
+	protected void doPut(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+		
+		doGet(request, response);
+	}
+	
+	protected void doDelete(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+		
+		doGet(request, response);
+	}
+	
 
 }

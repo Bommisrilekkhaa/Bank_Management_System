@@ -5,12 +5,14 @@ const EmberApp = require('ember-cli/lib/broccoli/ember-app');
 
 module.exports = function(defaults) {
   let app = new EmberApp(defaults, {
+     proxy: 'http://localhost:8080',
     // Add options here
     // sassOptions: {
     //   // extension:"scss",
       // includePaths:['app/styles']
     // },
   });
+
 
   // Use `app.import` to add additional libraries to the generated
   // output files.

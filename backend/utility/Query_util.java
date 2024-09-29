@@ -5,6 +5,7 @@ import java.sql.Date;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.Map;
 
 public class Query_util 
 {
@@ -34,34 +35,36 @@ public class Query_util
 	        return this;
 	    }
 
-	    public Query_util where(String column, String operator, Object value) 
+	    public Query_util where(Map<String, Object[]> conditions) 
 	    {
-	        query.append("WHERE ").append(column).append(" ").append(operator).append(" ? ");
-	        
-	        if(params!=null)
-	        {
-	        	
-	        	Object[] newParams = new Object[params.length + 1];
-	        	System.arraycopy(params, 0, newParams, 0, params.length);
-	        	
-	        	newParams[params.length] = value;
-	        	this.params = newParams;
-	        	return this;
-	        }
-	        this.params = new Object[]{value};
-	        return this;
-	        	
-	    }
+	        int index = 0;
 
-	    public Query_util and(String column, String operator, Object value) 
-	    {
-	        query.append("AND ").append(column).append(" ").append(operator).append(" ? ");
-	        
-	        Object[] newParams = new Object[params.length + 1];
-	        System.arraycopy(params, 0, newParams, 0, params.length);
-	        
-	        newParams[params.length] = value;
-	        this.params = newParams;
+	        for (Map.Entry<String, Object[]> entry : conditions.entrySet()) 
+	        {
+	            String column = entry.getKey();
+	            Object[] condition = entry.getValue();
+	            String operator = (String) condition[0];
+	            Object value = condition[1];
+
+	            if (index == 0) {
+	                query.append("WHERE ").append(column).append(" ").append(operator).append(" ? ");
+	            } else {
+	                query.append("AND ").append(column).append(" ").append(operator).append(" ? ");
+	            }
+
+	            if (params != null) 
+	            {
+	                Object[] newParams = new Object[params.length + 1];
+	                System.arraycopy(params, 0, newParams, 0, params.length);
+	                newParams[params.length] = value;
+	                this.params = newParams;
+	            } else {
+	                this.params = new Object[] { value };
+	            }
+
+	            index++;
+	        }
+
 	        return this;
 	    }
 
@@ -94,12 +97,38 @@ public class Query_util
 	        return this;
 	    }
 
-	    public Query_util set(String column, Object value) 
+	    public Query_util set(Map<String, Object> columns) 
 	    {
-	        query.append("SET ").append(column).append(" = ? ");
-	        this.params = new Object[]{value};
+	        int index = 0;
+	        
+	        for (Map.Entry<String, Object> entry : columns.entrySet()) 
+	        {
+	            String column = entry.getKey();
+	            Object value = entry.getValue();
+
+	            if (index == 0) {
+	                query.append("SET ").append(column).append(" = ? ");
+	            } else {
+	                query.append(", ").append(column).append(" = ? ");
+	            }
+
+	            
+	            if (params != null) 
+	            {
+	                Object[] newParams = new Object[params.length + 1];
+	                System.arraycopy(params, 0, newParams, 0, params.length);
+	                newParams[params.length] = value;
+	                this.params = newParams;
+	            } else {
+	                this.params = new Object[] { value };
+	            }
+
+	            index++;
+	        }
+
 	        return this;
 	    }
+
 	    
 	    public Query_util deleteFrom(String table) 
 	    {
@@ -118,6 +147,7 @@ public class Query_util
 	        	{
 	        		if(params[i] instanceof Integer) 
 	        		{
+	        			System.out.println(params[i]);
 	        			stmt.setInt(i+1, (int) params[i]);
 	        		}
 	        		else if(params[i] instanceof String)
@@ -149,7 +179,6 @@ public class Query_util
 	    public int executeUpdate(Connection conn, DbConnection dbConn) throws SQLException 
 	    {
 	    	
-	    	System.out.println(query);
 	        PreparedStatement stmt = conn.prepareStatement(query.toString());
 	        
 	        for (int i = 0; i < params.length; i++) 

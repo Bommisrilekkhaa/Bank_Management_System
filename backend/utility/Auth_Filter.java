@@ -40,11 +40,11 @@ public class Auth_Filter extends HttpFilter implements Filter {
 		
 //		System.out.println("cookie"+req.getCookies());
 		
-		String path = req.getParameter("action");
+		String path = req.getRequestURI();
 		
 		if (cookies == null) 
 		{
-			if (path.contains("login") || path.contains("register")) 
+			if (path.contains("login") || path.contains("register") ||path.contains("banks")) 
 			{
 				System.out.println("Login request, skipping auth filter.");
 				
@@ -66,13 +66,14 @@ public class Auth_Filter extends HttpFilter implements Filter {
                     	System.out.println("cookie"+cookie.getValue());
 
                 	    ((HttpServletResponse) response).setStatus(HttpServletResponse.SC_OK);
-                	    JsonHandler.sendSuccessResponse((HttpServletResponse)response, "User is already Logged In");
+//                	    JsonHandler.sendSuccessResponse((HttpServletResponse)response, "User is already Logged In");
                     	
                     }
                     else
         	        {
                     	 ((HttpServletResponse) response).setStatus(HttpServletResponse.SC_BAD_REQUEST);
-                    	 JsonHandler.sendErrorResponse((HttpServletResponse)response, "Invalis session");
+                    	 return;
+//                    	 JsonHandler.sendErrorResponse((HttpServletResponse)response, "Invalis session");
         	        }
                 }
           }

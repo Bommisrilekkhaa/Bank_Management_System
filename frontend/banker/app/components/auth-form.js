@@ -1,6 +1,7 @@
 import Ember from 'ember';
 
 export default Ember.Component.extend({
+  accountsService: Ember.inject.service('accounts'),
   username: '',
   password: '',
   selectedRole: '',
@@ -10,9 +11,20 @@ export default Ember.Component.extend({
   pno: '',
   confirmPassword: '',
   errorMessage: '',
-
+  BankNames:[],
   isSignup: false,
-  
+  init() {
+    this._super(...arguments);
+    this.loadBanks();
+  }, 
+
+  loadBanks() {
+    this.get('accountsService').fetchBanks().then((response) => {
+      this.set('bankNames', response);
+    }).catch((error) => {
+      console.error("Failed to load banks:", error);
+    });
+  },
   actions: {
     submitForm() {
       const username = this.get('username');
@@ -24,10 +36,10 @@ export default Ember.Component.extend({
         return;
       }
       
-      // if (password.length < 8) {
-        //   this.set('errorMessage', 'Password must be at least 8 characters long.');
-        //   return;
-        // }
+      if (password.length < 8) {
+          this.set('errorMessage', 'Password must be at least 8 characters long.');
+          return;
+        }
         
         if (this.get('isSignup')) {
           const confirmPassword = this.get('confirmPassword');
