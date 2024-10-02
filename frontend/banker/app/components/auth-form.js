@@ -11,20 +11,34 @@ export default Ember.Component.extend({
   pno: '',
   confirmPassword: '',
   errorMessage: '',
+  bank_name:'',
   BankNames:[],
   isSignup: false,
+  BankId:'',
   init() {
     this._super(...arguments);
-    this.loadBanks();
+    // this.loadBanks();
   }, 
 
-  loadBanks() {
-    this.get('accountsService').fetchBanks().then((response) => {
-      this.set('bankNames', response);
-    }).catch((error) => {
-      console.error("Failed to load banks:", error);
-    });
-  },
+  // loadBanks() {
+  //   this.get('accountsService').fetchBanks().then((response) => {
+  //     this.set('bankNames', response);
+  //   }).catch((error) => {
+  //     console.error("Failed to load banks:", error);
+  //   });
+  // },
+
+  // setBankId()
+  // {
+  //   for(bank in bankNames)
+  //   {
+  //     if(bank.bank_name == bank_name)
+  //     {
+  //       this.set('BankId',bank.bank_id);
+  //       console.log(bankId);
+  //     }
+  //   }
+  // },
   actions: {
     submitForm() {
       const username = this.get('username');
@@ -75,7 +89,7 @@ export default Ember.Component.extend({
         pno: this.get('pno')
       }
         this.sendAction(action,credentials );
-
+        // this.setBankId();
       },
       
       toggleMode() {

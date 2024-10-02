@@ -10,7 +10,7 @@ import com.google.gson.JsonObject;
 
 import model.Bank;
 import utility.DbConnection;
-import utility.Query_util;
+import utility.QueryUtil;
 
 public class BankQueryMap {
 
@@ -20,7 +20,7 @@ public class BankQueryMap {
     public Bank getBanks(Connection conn) throws SQLException 
     {
     	
-        Query_util query = Query_util.create()
+        QueryUtil query = QueryUtil.create()
             .select("*")
             .from("banks");
         
@@ -48,7 +48,7 @@ public class BankQueryMap {
     	conditions.put("bank_id", new Object[] {"=",bankId});
     	
         
-        Query_util query = Query_util.create()
+        QueryUtil query = QueryUtil.create()
             .select("*")
             .from("banks")
             .where(conditions);
@@ -74,7 +74,7 @@ public class BankQueryMap {
     public boolean insertBank(Connection conn,Bank banks) throws SQLException 
     {
 //    	System.out.println(banks.getBank_name());
-        Query_util query = Query_util.create()
+        QueryUtil query = QueryUtil.create()
             .insert("banks")
             .columns("bank_name", "bank_code","admin_id","main_branch_id")
             .values(banks.getBank_name(), banks.getBank_code(),banks.getAdmin_id(),banks.getMain_branch_id());
@@ -95,7 +95,7 @@ public class BankQueryMap {
         setConditions.put("admin_id", bank.getAdmin_id());
         setConditions.put("main_branch_id", bank.getMain_branch_id());
 
-        Query_util query = Query_util.create()
+        QueryUtil query = QueryUtil.create()
                 .update("bank") 
                 .set(setConditions)
                 .where(whereConditions);

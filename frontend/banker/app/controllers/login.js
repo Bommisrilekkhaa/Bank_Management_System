@@ -10,18 +10,32 @@ export default Ember.Controller.extend({
   addr: '',
   pno: '',
   errorMessage: '',
-
+  userId:'',
+  getUserIdFromCookie() {
+    let value = `; ${document.cookie}`;
+    let parts = value.split(`; ${'sessionData'}=`);
+    if (parts.length === 2) {
+        let cookieData = decodeURIComponent(parts.pop().split(';').shift());
+        let sessionData = JSON.parse(cookieData);  // Parse the JSON string
+        return sessionData.user_id;  // Extract user_id
+    }
+  },
   actions: {
     login(credentials) {
-      var thisvar = this;
       // console.log('Login action triggered'); 
       // console.log(credentials);
       this.get('session').login(credentials)
         .then(() => {
-          thisvar.transitionToRoute('dashboard'); 
+          this.set('userId',this.getUserIdFromCookie());
+          if (this.get('userId')) {
+            // Transition to the dashboard route using the dynamic userId
+            this.transitionToRoute('users.user.dashboard', this.get('userId')); 
+          } else {
+            this.set('errorMessage', 'User ID not found in cookies');
+          }
         })
         .catch((error) => {
-          thisvar.set('errorMessage', error.message || 'Login failed');
+          this.set('errorMessage', error.message || 'Login failed');
         });
     },
 
@@ -30,7 +44,7 @@ export default Ember.Controller.extend({
      
       this.get('session').signup(credentials)
         .then(() => {
-          this.transitionToRoute('dashboard'); 
+          this.transitionToRoute('login'); 
         })
         .catch((error) => {
           this.set('errorMessage', error.message || 'Signup failed');

@@ -6,10 +6,10 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import com.google.gson.JsonObject;
 
+import enums.UserRole;
 import model.User;
-import model.UserRole;
 import utility.DbConnection;
-import utility.Query_util;
+import utility.QueryUtil;
 import utility.SessionHandler;
 
 import java.text.ParseException;
@@ -28,22 +28,26 @@ public class UserQueryMap {
 	    	conditions.put("password", new Object[] {"=",SessionHandler.hashPassword(user.getPassword())});
 	    	conditions.put("user_role", new Object[] {"=", user.getUser_role()});
 	    	
-	        Query_util query = Query_util.create()
+	        QueryUtil query = QueryUtil.create()
 	                			.select("*")
 				                .from("users")
 				                .where(conditions);
 	        
 	        try (ResultSet rs = query.executeQuery(conn, db)) 
 	        {
-	        	
-	        		return rs.next();
+	        	if(rs.next())
+	        	{
+	        		user.setUser_id(rs.getInt("user_id"));
+	        		return true;
+	        	}
+	        	return false;
 	        	
 	        }
 	    }
 
 	    public boolean registerUser(Connection conn, User user) throws SQLException 
 	    {
-	        Query_util query = Query_util.create()
+	        QueryUtil query = QueryUtil.create()
 	                .insert("users")
 	                .columns("full_name", "date_of_birth", "user_phonenumber", "user_address", "user_role", "username", "password", "user_status")
 	                .values(user.getFullname(),user.getDate_of_birth(),
@@ -64,7 +68,7 @@ public class UserQueryMap {
 	    	Map<String,Object[]> conditions = new HashMap<>();
 	    	conditions.put("username", new Object[] {"=",user.getUsername()});
 	    	
-	        Query_util query = Query_util.create()
+	        QueryUtil query = QueryUtil.create()
 	                .select("*")
 	                .from("users")
 	                .where(conditions);
@@ -85,7 +89,7 @@ public class UserQueryMap {
 	             user.setDate_of_birth(strDate); 
 	             user.setUser_phonenumber(jsonRequest.get("user_phonenumber").getAsString());
 	             user.setUser_address(jsonRequest.get("user_address").getAsString());
-	             user.setUser_role(UserRole.valueOf(jsonRequest.get("user_role").getAsString()).getValue());
+	             user.setUser_role(UserRole.valueOf(jsonRequest.get("user_role").getAsString().toUpperCase()).getValue());
 	             user.setUsername(jsonRequest.get("username").getAsString());
 	             user.setPassword(jsonRequest.get("password").getAsString());
 	             user.setUser_status(0);
@@ -100,8 +104,8 @@ public class UserQueryMap {
 		     
 			 User user = new User();
 //			 System.out.println("full_namesatrt");
-		        Query_util query = Query_util.create()
-		                .select("full_name")
+		        QueryUtil query = QueryUtil.create()
+		                .select("full_name,username")
 		                .from("users")
 		                .where(conditions);
 		        try (ResultSet rs = query.executeQuery(conn, db)) 
@@ -109,6 +113,7 @@ public class UserQueryMap {
 		        	
 		        	if(rs.next())
 		            {
+		        		user.setUsername(rs.getString("username"));
 		        		user.setFullname(rs.getString("full_name"));
 		        		return user;
 		            }

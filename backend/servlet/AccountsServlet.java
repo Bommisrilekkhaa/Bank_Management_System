@@ -18,9 +18,10 @@ import com.google.gson.JsonObject;
 import DAO.AccountQueryMap;
 import DAO.BranchQueryMap;
 import DAO.UserQueryMap;
+import enums.AccountType;
+import enums.Status;
 import model.Account;
-import model.AccountType;
-import model.Status;
+import model.User;
 import utility.DbConnection;
 import utility.JsonHandler;
 import utility.SessionHandler;
@@ -31,19 +32,22 @@ public class AccountsServlet extends HttpServlet
     private AccountQueryMap accountQueryMap = new AccountQueryMap();
     private UserQueryMap userQueryMap = new UserQueryMap();
     private BranchQueryMap branchQueryMap = new BranchQueryMap();
+    
+    
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException 
     {
     	SessionHandler.doOptions(request,response);
-
+    	
 
     	try (Connection conn = DbConnection.connect()) 
         {
-            ResultSet rs = accountQueryMap.selectAllAccounts(conn);
+            ResultSet rs = accountQueryMap.selectAllAccounts(conn,ControllerServlet.pathMap);
             
             List<Account> accounts = accountQueryMap.convertResultSetToList(rs);
             Map<String, String[]> parameterMap = request.getParameterMap();
+           
             List<Account> filteredAccounts = accountQueryMap.applyFilters(accounts, parameterMap);
 
             JsonArray jsonArray = new JsonArray();
@@ -53,10 +57,12 @@ public class AccountsServlet extends HttpServlet
                 {
                     JsonObject accountJson = new JsonObject();
                     accountJson.addProperty("acc_no", account.getAccNo());
-                    accountJson.addProperty("acc_type",(""+AccountType.valueOf(account.getAccType())));	
+                    accountJson.addProperty("acc_type",(""+AccountType.valueOf(account.getAccType())).toLowerCase());	
                     accountJson.addProperty("acc_balance", account.getAccBalance());
-                    accountJson.addProperty("acc_status", (""+Status.valueOf(account.getAccStatus())));
-                    accountJson.addProperty("user_fullname", userQueryMap.getUsername(conn, account.getUserId()).getFullname());
+                    accountJson.addProperty("acc_status", ((""+Status.valueOf(account.getAccStatus())).toLowerCase()));
+                    User user = userQueryMap.getUsername(conn, account.getUserId());
+                    accountJson.addProperty("user_fullname", user.getFullname());
+                    accountJson.addProperty("username", user.getUsername());
                     accountJson.addProperty("branch_name", branchQueryMap.selectBranchById(conn, account.getBranchId()).getName());
                     jsonArray.add(accountJson);
                 }
@@ -86,8 +92,8 @@ public class AccountsServlet extends HttpServlet
         try (Connection conn = DbConnection.connect()) 
         {
                     JsonObject jsonRequest = JsonHandler.parseJsonRequest(request);
-                    
                     Account newAccount = accountQueryMap.extractAccountDetails(jsonRequest);
+                    newAccount.setBranchId(ControllerServlet.pathMap.get("branches"));
 
                     if (accountQueryMap.insertAccount(conn, newAccount)) 
                     {
@@ -114,13 +120,12 @@ public class AccountsServlet extends HttpServlet
     	JsonObject jsonRequest = JsonHandler.parseJsonRequest(request);
 
 
-    	String[] path = request.getRequestURI().split("/");
     	
         try (Connection conn = DbConnection.connect()) 
         {
         	Account newAccount = accountQueryMap.extractAccountDetails(jsonRequest);
-        	
-        	newAccount.setAccNo(Integer.valueOf(path[5]));        	
+        	newAccount.setBranchId(ControllerServlet.pathMap.get("branches"));
+        	newAccount.setAccNo(ControllerServlet.pathMap.get(ControllerServlet.pathMap.lastKey()));        	
             if (accountQueryMap.updateAccount(conn, newAccount)) 
             {
                 response.getWriter().write("Account updated successfully");

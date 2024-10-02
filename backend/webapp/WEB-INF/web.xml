@@ -10,7 +10,7 @@
     
      <filter>
         <filter-name>Auth</filter-name>
-        <filter-class>utility.Auth_Filter</filter-class>
+        <filter-class>filter.AuthFilter</filter-class>
     </filter>
     <filter-mapping>
         <filter-name>Auth</filter-name>

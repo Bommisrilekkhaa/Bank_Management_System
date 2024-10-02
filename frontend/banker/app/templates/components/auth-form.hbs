@@ -50,6 +50,7 @@
               {{/unless}}
             </select>
           </div>
+       {{!-- {{#unless isSignup}}   
       {{#unless (eq selectedRole "admin")}}
       <div class="form-group">
         <label for="bank_name">Bank Name</label>
@@ -61,6 +62,7 @@
         </select>
       </div>
       {{/unless}}
+      {{/unless}} --}}
          <div class="form-group">
         <button type="submit" class="btn-primary">{{if isSignup "Register" "Login"}}</button>
         </div>

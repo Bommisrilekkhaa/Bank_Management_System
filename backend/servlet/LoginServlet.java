@@ -14,8 +14,8 @@ import javax.servlet.http.HttpServletResponse;
 import com.google.gson.JsonObject;
 
 import DAO.UserQueryMap;
+import enums.UserRole;
 import model.User;
-import model.UserRole;
 import utility.DbConnection;
 import utility.JsonHandler;
 import utility.SessionHandler;
@@ -78,7 +78,7 @@ public class LoginServlet extends HttpServlet {
 	    JsonObject jsonRequest = JsonHandler.parseJsonRequest(request);
 	    user.setUsername(jsonRequest.get("username").getAsString());
 	    user.setPassword(jsonRequest.get("password").getAsString());
-	    user.setUser_role(UserRole.valueOf(jsonRequest.get("user_role").getAsString()).getValue());
+	    user.setUser_role(UserRole.valueOf(jsonRequest.get("user_role").getAsString().toUpperCase()).getValue());
 
 	    try {
 	    	

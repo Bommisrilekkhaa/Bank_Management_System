@@ -16,7 +16,7 @@ export default Ember.Controller.extend({
            
             this.get('session').signup(credentials)
               .then(() => {
-                this.transitionToRoute('dashboard'); 
+                this.transitionToRoute('login'); 
               })
               .catch((error) => {
                 this.set('errorMessage', error.message || 'Signup failed');

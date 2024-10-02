@@ -3,9 +3,9 @@
 	"file": "banker.css",
 	"sourceRoot": "/Users/bommi-pt7707/Documents/BankManagement/frontend/banker/app/styles",
 	"sources": [
-		"../../sass_compiler-input_base_path-zbR3sXJA.tmp/app/styles/app.scss",
-		"../../sass_compiler-input_base_path-zbR3sXJA.tmp/app/styles/auth.scss",
-		"../../sass_compiler-input_base_path-zbR3sXJA.tmp/app/styles/accounts.scss"
+		"../../sass_compiler-input_base_path-JjWzFSTw.tmp/app/styles/app.scss",
+		"../../sass_compiler-input_base_path-JjWzFSTw.tmp/app/styles/auth.scss",
+		"../../sass_compiler-input_base_path-JjWzFSTw.tmp/app/styles/accounts.scss"
 	],
 	"sourcesContent": [
 		"@import \"./auth.scss\";\n@import \"./accounts.scss\";",

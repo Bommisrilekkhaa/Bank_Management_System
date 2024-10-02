@@ -15,6 +15,11 @@ define('banker/tests/app.lint-test', [], function () {
     assert.ok(true, 'components/auth-form.js should pass ESLint\n\n');
   });
 
+  QUnit.test('components/input-form.js', function (assert) {
+    assert.expect(1);
+    assert.ok(true, 'components/input-form.js should pass ESLint\n\n');
+  });
+
   QUnit.test('controllers/accounts.js', function (assert) {
     assert.expect(1);
     assert.ok(true, 'controllers/accounts.js should pass ESLint\n\n');

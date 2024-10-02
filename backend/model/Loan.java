@@ -5,14 +5,13 @@ import java.sql.Date;
 public class Loan {
 	
 	 private int loan_id;
-	 private String loan_type;
+	 private int loan_type;
 	 private double loan_amount;
 	 private double loan_interest;
 	 private int loan_duration;
 	 private int loan_status;
 	 private Date loan_availed_date;
-	 private int user_id;
-	 private String acc_no;
+	 private int acc_no;
 	 
 	 
 	public int getLoan_id() {
@@ -21,10 +20,10 @@ public class Loan {
 	public void setLoan_id(int loan_id) {
 		this.loan_id = loan_id;
 	}
-	public String getLoan_type() {
+	public int getLoan_type() {
 		return loan_type;
 	}
-	public void setLoan_type(String loan_type) {
+	public void setLoan_type(int loan_type) {
 		this.loan_type = loan_type;
 	}
 	public double getLoan_amount() {
@@ -57,17 +56,12 @@ public class Loan {
 	public void setLoan_availed_date(Date loan_availed_date) {
 		this.loan_availed_date = loan_availed_date;
 	}
-	public int getUser_id() {
-		return user_id;
-	}
-	public void setUser_id(int user_id) {
-		this.user_id = user_id;
-	}
-	public String getAcc_no() {
+	
+	public int getAcc_no() {
 		return acc_no;
 	}
-	public void setAcc_no(String acc_no) {
-		this.acc_no = acc_no;
+	public void setAcc_no(int integer) {
+		this.acc_no = integer;
 	}
 
 	 

@@ -5,7 +5,7 @@ export default Ember.Route.extend({
     {
         if(document.cookie !='')
         {
-            this.transitionTo('dashboard');
+            this.transitionTo('users.user.dashboard',userId);
         }
     }
 });

@@ -2,11 +2,13 @@ import Ember from 'ember';
 
 export default Ember.Route.extend({
 
-    beforeModel()
-    {
+    beforeModel() {
+        let loginController = this.controllerFor('login');
+        let userId = loginController.get('userId');
+    
         if(document.cookie !='')
         {
-            this.transitionTo('dashboard');
+            this.transitionTo('users.user.dashboard',userId);
         }
     }
 });

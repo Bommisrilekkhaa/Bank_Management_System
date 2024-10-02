@@ -10,7 +10,7 @@ import com.google.gson.JsonObject;
 
 import model.Branch;
 import utility.DbConnection;
-import utility.Query_util;
+import utility.QueryUtil;
 
 public class BranchQueryMap {
 
@@ -18,34 +18,35 @@ public class BranchQueryMap {
 
     public boolean insertBranch(Connection conn, Branch branch) throws SQLException 
     {
-        Query_util query = Query_util.create()
+        QueryUtil query = QueryUtil.create()
                 .insert("branch")
-                .columns("branch_name", "branch_address", "branch_number", "bank_id",  "manager_id")
-                .values(branch.getName(), branch.getAddress(), branch.getBranch_number(), branch.getBank_id(),
+                .columns("branch_name", "branch_address", "bank_id",  "manager_id")
+                .values(branch.getName(), branch.getAddress(), branch.getBank_id(),
                          branch.getManager_id());
 
         return query.executeUpdate(conn, db) > 0;
     }
 
-    public Branch selectBranches(Connection conn) throws SQLException 
+    public void selectBranches(Connection conn,Branch branch) throws SQLException 
     {
-        Query_util query = Query_util.create()
+    	Map<String,Object[]> conditions = new HashMap<>();
+    	conditions.put("bank_id", new Object[] {"=",branch.getBank_id()});
+    	
+        QueryUtil query = QueryUtil.create()
                 .select("*")
-                .from("branch");
+                .from("branch")
+                .where(conditions);
 
         try (ResultSet rs = query.executeQuery(conn, db)) {
             if (rs.next()) {
-                Branch branch = new Branch();
                 branch.setBranch_id(rs.getInt("branch_id"));
                 branch.setName(rs.getString("branch_name"));
                 branch.setAddress(rs.getString("branch_address"));
                 branch.setBranch_number(rs.getString("branch_number"));
-                branch.setBank_id(rs.getInt("bank_id"));
                 branch.setManager_id(rs.getInt("manager_id"));
-                return branch;
+
             }
         }
-        return null;
     }
     
     public Branch selectBranchById(Connection conn ,int branchId) throws SQLException 
@@ -53,7 +54,7 @@ public class BranchQueryMap {
     	Map<String,Object[]> conditions = new HashMap<>();
     	conditions.put("branch_id", new Object[] {"=",branchId});
     	
-        Query_util query = Query_util.create()
+        QueryUtil query = QueryUtil.create()
                 .select("*")
                 .from("branch")
                 .where(conditions);
@@ -80,7 +81,7 @@ public class BranchQueryMap {
     	Map<String,Object[]> conditions = new HashMap<>();
     	conditions.put("branch_name", new Object[] {"=",branch_name});
     	
-        Query_util query = Query_util.create()
+        QueryUtil query = QueryUtil.create()
                 .select("*")
                 .from("branch")
                 .where(conditions);
@@ -106,7 +107,7 @@ public class BranchQueryMap {
     	whereconditions.put("branch_id", new Object[]{"=",branch.getBranch_id()});
     	
     	
-        Query_util query = Query_util.create()
+        QueryUtil query = QueryUtil.create()
                 .update("branch")
                 .set(setconditions)
                 .where(whereconditions);
@@ -119,7 +120,7 @@ public class BranchQueryMap {
     	Map<String,Object[]> conditions = new HashMap<>();
     	conditions.put("branch_id", new Object[] {"=",branchId});
     	
-        Query_util query = Query_util.create()
+        QueryUtil query = QueryUtil.create()
                 .deleteFrom("branch")
                 .where(conditions);
 
@@ -131,7 +132,6 @@ public class BranchQueryMap {
     	branch.setName(jsonRequest.get("branch_name").getAsString());
         branch.setAddress(jsonRequest.get("branch_address").getAsString());
         branch.setBranch_number(jsonRequest.get("branch_number").getAsString());
-        branch.setBank_id(jsonRequest.get("bank_id").getAsInt());
         branch.setManager_id(jsonRequest.get("manager_id").getAsInt());
         
 		return branch;

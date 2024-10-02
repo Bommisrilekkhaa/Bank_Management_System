@@ -25,7 +25,7 @@ public class BanksServlet extends HttpServlet
     {
     	SessionHandler.doOptions(request,response);
 //        int bankId = Integer.parseInt(request.getParameter("bank_id"));
-
+    	 System.out.println("gett....");
         try (Connection conn = DbConnection.connect()) 
         {
             Bank bank = bankQueryMap.getBanks(conn);

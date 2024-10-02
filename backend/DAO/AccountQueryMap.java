@@ -7,27 +7,28 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 import java.util.stream.Collectors;
 
 import javax.servlet.ServletException;
 
 import com.google.gson.JsonObject;
 
+import enums.AccountType;
+import enums.Status;
 import model.Account;
-import model.Status;
 import utility.DbConnection;
-import utility.Query_util;
+import utility.QueryUtil;
 
 public class AccountQueryMap {
 
     private DbConnection db = new DbConnection();
     private Account account = new Account();
 
-    private BranchQueryMap branchQueryMap = new BranchQueryMap();
 
     public boolean insertAccount(Connection conn, Account account) throws SQLException 
     {
-        Query_util query = Query_util.create()
+        QueryUtil query = QueryUtil.create()
 			                .insert("account")
 			                .columns("acc_type", "acc_balance", "acc_status", "user_id", "branch_id")
 			                .values( account.getAccType(), 0, 0,
@@ -36,15 +37,27 @@ public class AccountQueryMap {
         return query.executeUpdate(conn, db) > 0;
     }
     
-    public ResultSet selectAllAccounts(Connection conn) throws SQLException 
+    public ResultSet selectAllAccounts(Connection conn,TreeMap<String,Integer> pathMap) throws SQLException 
     {
-        Query_util query = Query_util.create()
-			                .select("*")
-			                .from("account");
-
+    	Map<String,Object[]> conditions = new HashMap<>();
+    	
+    	for(String key:pathMap.keySet()) {
+    		conditions.put(changeName(key), new Object[] {"=",pathMap.get(key)});
+    	}
+    	 QueryUtil query = QueryUtil.create("SELECT * FROM branch b INNER JOIN account a ON b.branch_id=a.branch_id ")
+    			 				.where(conditions);
         return query.executeQuery(conn, new DbConnection());
     }
     
+    public String changeName(String key)
+    {
+    	System.out.println(key);
+    	if(key.equals("branches"))
+    	{
+    		return "a."+key.substring(0,key.length()-2)+"_id";
+    	}
+    	return key.substring(0,key.length()-1)+"_id";
+    }
     
     public List<Account> convertResultSetToList(ResultSet rs) throws SQLException 
     {
@@ -53,7 +66,7 @@ public class AccountQueryMap {
         while (rs.next()) 
         {
             Account account = new Account();
-            account.setAccNo(rs.getInt("acc_no"));
+            account.setAccNo(rs.getInt("acc_number"));
             account.setAccType(rs.getInt("acc_type"));
             account.setAccBalance(rs.getDouble("acc_balance"));
             account.setAccStatus(rs.getInt("acc_status"));
@@ -105,15 +118,17 @@ public class AccountQueryMap {
     {
     	Map<String,Object[]> whereconditions = new HashMap<>();
     	whereconditions.put("acc_number", new Object[] {"=",account.getAccNo()});
+    	whereconditions.put("branch_id", new Object[] {"=",account.getBranchId()});
     	
     	Map<String,Object> conditions = new HashMap<>();
+    	
     	conditions.put("acc_type",account.getAccType());
     	conditions.put("acc_balance", account.getAccBalance());
     	conditions.put("acc_status", account.getAccStatus());
     	conditions.put("user_id", account.getUserId());
     	conditions.put("branch_id", account.getBranchId());
     	
-        Query_util query = Query_util.create()
+        QueryUtil query = QueryUtil.create()
                 .update("account")
                 .set(conditions)
                 .where(whereconditions);
@@ -127,7 +142,7 @@ public class AccountQueryMap {
     	Map<String,Object[]> conditions = new HashMap<>();
     	conditions.put("acc_number", new Object[] {"=",account.getAccNo()});
     	
-        Query_util query = Query_util.create()
+        QueryUtil query = QueryUtil.create()
                 .deleteFrom("account")
                 .where(conditions);
 
@@ -140,12 +155,10 @@ public class AccountQueryMap {
         
         
 //        account.setAccNo(jsonRequest.get("acc_no").getAsInt());
-        account.setAccType(jsonRequest.get("acc_type").getAsInt());
+        account.setAccType((AccountType.valueOf(jsonRequest.get("acc_type").getAsString().toUpperCase())).getValue());
 //        account.setAccBalance(jsonRequest.get("acc_balance").getAsDouble());
         account.setAccStatus(Status.valueOf(jsonRequest.get("acc_status").getAsString().toUpperCase()).getValue());
         account.setUserId(1);
-        account.setBranchId(branchQueryMap.getBranchId(DbConnection.connect(),jsonRequest.get("branch_name").getAsString()));
-
         return account;
     }
 }

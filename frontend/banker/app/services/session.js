@@ -15,6 +15,9 @@ export default Ember.Service.extend({
         credentials:'include',
         contentType: 'application/json',
         data: JSON.stringify({ username, password, user_role: selectedRole }),
+        xhrFields:{
+          withCredentials:true
+        },
         success: (response,txtStatus, xhr) => {
           console.log(xhr);
           return response;
