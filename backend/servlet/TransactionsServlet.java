@@ -15,7 +15,7 @@ import javax.servlet.http.HttpServletResponse;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 
-import DAO.TransactionQueryMap;
+import DAO.TransactionDAO;
 import enums.TransactionStatus;
 import enums.TransactionType;
 import model.Transaction;
@@ -26,13 +26,16 @@ import utility.SessionHandler;
 @SuppressWarnings("serial")
 public class TransactionsServlet extends HttpServlet {
     
-    private TransactionQueryMap transactionQueryMap = new TransactionQueryMap();
+    private TransactionDAO transactionQueryMap = new TransactionDAO();
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException 
     {
         SessionHandler.doOptions(request, response);
-
+        if(request.getSession(false).getAttribute("user_role").equals("CUSTOMER"))
+    	{
+    		ControllerServlet.pathMap.put("user_id",(Integer) request.getSession(false).getAttribute("user_id"));
+    	}
         try (Connection conn = DbConnection.connect()) 
         {
             ResultSet rs = transactionQueryMap.selectAllTransactions(conn, ControllerServlet.pathMap);
@@ -58,7 +61,7 @@ public class TransactionsServlet extends HttpServlet {
             } 
             else 
             {
-                JsonHandler.sendErrorResponse(response, "No matching transactions found.");
+                JsonHandler.sendSuccessResponse(response, "No matching transactions found.");
                 return;
             }
 
@@ -84,7 +87,15 @@ public class TransactionsServlet extends HttpServlet {
 
             if (transactionQueryMap.insertTransaction(conn, newTransaction)) 
             {
-                response.getWriter().write("Transaction inserted successfully");
+            	if(transactionQueryMap.updateBalance(newTransaction.getTransaction_type(),newTransaction.getTransaction_amount()))
+            	{
+            		
+            		response.getWriter().write("Transaction inserted successfully");
+            	}
+            	else 
+                {
+                    response.getWriter().write("Error inserting transaction");
+                }
             } 
             else 
             {

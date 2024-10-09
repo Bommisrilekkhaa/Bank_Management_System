@@ -1,0 +1,28 @@
+<div class="bank-card-wrapper">
+  <div class="bank-card">
+    <h2>Bank Details</h2>
+    {{#each banks as |bank|}}
+     <div class="bank-field">
+      <span class="field-label">Bank Id:</span>
+      <span class="field-value">{{bank.bank_id}}</span>
+    </div>
+    <div class="bank-field">
+      <span class="field-label">Bank Name:</span>
+      <span class="field-value">{{bank.bank_name}}</span>
+    </div>
+    <div class="bank-field">
+      <span class="field-label">Bank Code:</span>
+      <span class="field-value">{{bank.bank_code}}</span>
+    </div>
+    <div class="bank-field">
+      <span class="field-label">Main Branch ID:</span>
+      <span class="field-value">{{bank.main_branch_id}}</span>
+    </div>
+    {{#if (eq role "ADMIN")}}
+     <div>
+        <button class="view-btn"  {{action "updateMainBranch" bank.bank_id bank}}>Update Main Branch</button>
+    </div>
+    {{/if}}
+    {{/each}}
+  </div>
+</div>

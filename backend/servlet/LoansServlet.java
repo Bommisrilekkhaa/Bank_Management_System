@@ -15,7 +15,7 @@ import javax.servlet.http.HttpServletResponse;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 
-import DAO.LoanQueryMap;
+import DAO.LoanDAO;
 import enums.LoanStatus;
 import enums.LoanType;
 import model.Loan;
@@ -26,14 +26,17 @@ import utility.SessionHandler;
 @SuppressWarnings("serial")
 public class LoansServlet extends HttpServlet 
 {
-    private LoanQueryMap loanQueryMap = new LoanQueryMap();
+    private LoanDAO loanQueryMap = new LoanDAO();
     
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException 
     {
         SessionHandler.doOptions(request, response);
-
+        if(request.getSession(false).getAttribute("user_role").equals("CUSTOMER"))
+    	{
+    		ControllerServlet.pathMap.put("user_id",(Integer) request.getSession(false).getAttribute("user_id"));
+    	}
         try (Connection conn = DbConnection.connect()) 
         {
             ResultSet rs = loanQueryMap.selectAllLoans(conn, ControllerServlet.pathMap);
@@ -65,7 +68,7 @@ public class LoansServlet extends HttpServlet
             } 
             else 
             {
-                JsonHandler.sendErrorResponse(response, "No matching loans found.");
+                JsonHandler.sendSuccessResponse(response, "No matching loans found.");
                 return;
             }
 
@@ -87,16 +90,24 @@ public class LoansServlet extends HttpServlet
         try (Connection conn = DbConnection.connect()) 
         {
             JsonObject jsonRequest = JsonHandler.parseJsonRequest(request);
-            Loan newLoan = loanQueryMap.extractLoanDetails(jsonRequest);
+            Loan newLoan = loanQueryMap.extractLoanDetails(jsonRequest,request);
             newLoan.setAcc_no(ControllerServlet.pathMap.get("accounts"));
             
-            if (loanQueryMap.insertLoan(conn, newLoan)) 
+            if(!loanQueryMap.isLoanExists())
             {
-                response.getWriter().write("Loan inserted successfully");
-            } 
-            else 
+            	
+            	if (loanQueryMap.insertLoan(conn, newLoan)) 
+            	{
+            		response.getWriter().write("Loan inserted successfully");
+            	} 
+            	else 
+            	{
+            		response.getWriter().write("Error inserting loan");
+            	}
+            }
+            else
             {
-                response.getWriter().write("Error inserting loan");
+            	response.getWriter().write("Loan already Exists");
             }
         } 
         catch (SQLException e) 
@@ -114,9 +125,9 @@ public class LoansServlet extends HttpServlet
 
         try (Connection conn = DbConnection.connect()) 
         {
-            Loan updatedLoan = loanQueryMap.extractLoanDetails(jsonRequest);
+            Loan updatedLoan = loanQueryMap.extractLoanDetails(jsonRequest,request);
             updatedLoan.setAcc_no(ControllerServlet.pathMap.get("accounts"));
-            updatedLoan.setLoan_id(ControllerServlet.pathMap.get(ControllerServlet.pathMap.lastKey()));
+            updatedLoan.setLoan_id(ControllerServlet.pathMap.get("loans"));
 
             if (loanQueryMap.updateLoan(conn, updatedLoan)) 
             {

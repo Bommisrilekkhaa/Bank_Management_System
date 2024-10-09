@@ -15,9 +15,9 @@ import javax.servlet.http.HttpServletResponse;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 
-import DAO.AccountQueryMap;
-import DAO.BranchQueryMap;
-import DAO.UserQueryMap;
+import DAO.AccountDAO;
+import DAO.BranchDAO;
+import DAO.UserDAO;
 import enums.AccountType;
 import enums.Status;
 import model.Account;
@@ -29,9 +29,9 @@ import utility.SessionHandler;
 @SuppressWarnings("serial")
 public class AccountsServlet extends HttpServlet 
 {
-    private AccountQueryMap accountQueryMap = new AccountQueryMap();
-    private UserQueryMap userQueryMap = new UserQueryMap();
-    private BranchQueryMap branchQueryMap = new BranchQueryMap();
+    private AccountDAO accountQueryMap = new AccountDAO();
+    private UserDAO userQueryMap = new UserDAO();
+    private BranchDAO branchQueryMap = new BranchDAO();
     
     
 
@@ -40,7 +40,10 @@ public class AccountsServlet extends HttpServlet
     {
     	SessionHandler.doOptions(request,response);
     	
-
+    	if(request.getSession(false).getAttribute("user_role").equals("CUSTOMER"))
+    	{
+    		ControllerServlet.pathMap.put("user_id",(Integer) request.getSession(false).getAttribute("user_id"));
+    	}
     	try (Connection conn = DbConnection.connect()) 
         {
             ResultSet rs = accountQueryMap.selectAllAccounts(conn,ControllerServlet.pathMap);
@@ -63,13 +66,18 @@ public class AccountsServlet extends HttpServlet
                     User user = userQueryMap.getUsername(conn, account.getUserId());
                     accountJson.addProperty("user_fullname", user.getFullname());
                     accountJson.addProperty("username", user.getUsername());
-                    accountJson.addProperty("branch_name", branchQueryMap.selectBranchById(conn, account.getBranchId()).getName());
+                    accountJson.addProperty("branch_id", account.getBranchId());
+                    ResultSet rsBranch = branchQueryMap.selectBranchById(conn, account.getBranchId());
+                    if(rsBranch.next())
+                    {
+                    	accountJson.addProperty("branch_name", rsBranch.getString("branch_name"));
+                    }
                     jsonArray.add(accountJson);
                 }
             } 
             else 
             {
-                JsonHandler.sendErrorResponse(response, "No matching accounts found.");
+                JsonHandler.sendSuccessResponse(response, "No matching accounts found.");
                 return;
             }
 
@@ -92,17 +100,26 @@ public class AccountsServlet extends HttpServlet
         try (Connection conn = DbConnection.connect()) 
         {
                     JsonObject jsonRequest = JsonHandler.parseJsonRequest(request);
-                    Account newAccount = accountQueryMap.extractAccountDetails(jsonRequest);
+                    Account newAccount = accountQueryMap.extractAccountDetails(jsonRequest,request);
                     newAccount.setBranchId(ControllerServlet.pathMap.get("branches"));
-
-                    if (accountQueryMap.insertAccount(conn, newAccount)) 
+                    
+                    if(!accountQueryMap.checkAccount())
                     {
-                        response.getWriter().write("Account inserted successfully");
-                    } 
-                    else 
-                    {
-                        response.getWriter().write("Error inserting account");
+                    	
+                    	if (accountQueryMap.insertAccount(conn, newAccount)) 
+                    	{
+                    		response.getWriter().write("Account inserted successfully");
+                    	} 
+                    	else 
+                    	{
+                    		response.getWriter().write("Error inserting account");
+                    	}
                     }
+                    else {
+                    	response.getWriter().write("Account already exists");
+                    	
+                    }
+                    
               
             
         } 
@@ -123,9 +140,9 @@ public class AccountsServlet extends HttpServlet
     	
         try (Connection conn = DbConnection.connect()) 
         {
-        	Account newAccount = accountQueryMap.extractAccountDetails(jsonRequest);
+        	Account newAccount = accountQueryMap.extractAccountDetails(jsonRequest,request);
         	newAccount.setBranchId(ControllerServlet.pathMap.get("branches"));
-        	newAccount.setAccNo(ControllerServlet.pathMap.get(ControllerServlet.pathMap.lastKey()));        	
+        	newAccount.setAccNo(ControllerServlet.pathMap.get("accounts"));        	
             if (accountQueryMap.updateAccount(conn, newAccount)) 
             {
                 response.getWriter().write("Account updated successfully");

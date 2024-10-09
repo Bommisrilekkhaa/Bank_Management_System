@@ -6,9 +6,5 @@ export default Ember.Route.extend({
                 bankId: params.bankId 
             };
             
-          },
-          setupController(controller,model){
-            controller.set('bankId',model.bankId);
-            // controller.loadAccounts();
           }
 });

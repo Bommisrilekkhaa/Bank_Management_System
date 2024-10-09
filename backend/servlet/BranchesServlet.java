@@ -2,6 +2,7 @@ package servlet;
 
 import java.io.IOException;
 import java.sql.Connection;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 
 import javax.servlet.ServletException;
@@ -11,7 +12,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
-import DAO.BranchQueryMap;
+import DAO.BranchDAO;
 import model.Branch;
 import utility.DbConnection;
 import utility.JsonHandler;
@@ -20,7 +21,7 @@ import utility.SessionHandler;
 public class BranchesServlet extends HttpServlet {
 
     private static final long serialVersionUID = 1L;
-    private BranchQueryMap branchQueryMap = new BranchQueryMap();
+    private BranchDAO branchQueryMap = new BranchDAO();
     
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException 
@@ -30,28 +31,32 @@ public class BranchesServlet extends HttpServlet {
 //        String branchId = request.getParameter("branch_id");
 //        if (branchId != null) {
     		Branch branch = new Branch();
+    		ResultSet rs;
             try (Connection conn = DbConnection.connect()) {
-            	String key=ControllerServlet.pathMap.lastKey();
-            	if( key== "banks")
+            	if( !ControllerServlet.pathMap.containsKey("branches"))
             	{
-            		branch.setBank_id(ControllerServlet.pathMap.get(key));
-            		branchQueryMap.selectBranches(conn,branch);
+            		branch.setBank_id(ControllerServlet.pathMap.get("banks"));
+            		rs = branchQueryMap.selectBranches(conn,branch);
             		
             	}
             	else
             	{
-            		branch = branchQueryMap.selectBranchById(conn, ControllerServlet.pathMap.get(key));
+            		rs = branchQueryMap.selectBranchById(conn, ControllerServlet.pathMap.get("branches"));
             	}
             		
                 JsonArray jsonArray = new JsonArray();
-                    JsonObject jsonResponse = new JsonObject();
-                    jsonResponse.addProperty("branch_id", branch.getBranch_id());
-                    jsonResponse.addProperty("branch_name", branch.getName());
-                    jsonResponse.addProperty("branch_address", branch.getAddress());
-                    jsonResponse.addProperty("branch_number", branch.getBranch_number());
-                    jsonResponse.addProperty("bank_id", branch.getBank_id());
-                    jsonResponse.addProperty("manager_id", branch.getManager_id());
-                    jsonArray.add(jsonResponse);
+                while(rs.next())
+                {
+                	
+                	JsonObject jsonResponse = new JsonObject();
+                	jsonResponse.addProperty("branch_id", rs.getInt("branch_id"));
+                	jsonResponse.addProperty("branch_name", rs.getString("branch_name"));
+                	jsonResponse.addProperty("branch_address", rs.getString("branch_address"));
+                	jsonResponse.addProperty("branch_number", rs.getInt("branch_number"));
+                	jsonResponse.addProperty("bank_id", rs.getInt("bank_id"));
+                	jsonResponse.addProperty("manager_id", rs.getInt("manager_id"));
+                	jsonArray.add(jsonResponse);
+                }
                     JsonHandler.sendJsonResponse(response, jsonArray);
                
             } 

@@ -3,8 +3,9 @@ package servlet;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.TreeMap;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
@@ -16,21 +17,21 @@ import utility.SessionHandler;
 
 public class ControllerServlet extends HttpServlet {
 	private static final long serialVersionUID = 1L;
-	public static List<String> resources = Arrays.asList("banks","branches","accounts","transactions","loans","emi");
-	public static TreeMap<String,Integer> pathMap ;
+	public static List<String> resources = Arrays.asList("banks","branches","accounts","transactions","loans","emis","users");
+	public static HashMap<String,Integer> pathMap ;
        
     public ControllerServlet() {
         super();
-        pathMap = new TreeMap<>();
     }
 
 	public void service(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+		pathMap = new LinkedHashMap<>();
 		SessionHandler.doOptions(request,response);
 		String[] path = request.getRequestURI().split("/");
 		String method = request.getMethod();
 		String reqServlet ="";
 		System.out.println(request.getRequestURI());
-		if(!(path[4].contains("login") || path[4] == "register" || path[4]=="banks"))
+		if(!(path[4].contains("login")  || path[path.length-1].equals("banks")))
 		{
 			
 			String role = (String) request.getSession(false).getAttribute("user_role");
@@ -65,7 +66,7 @@ public class ControllerServlet extends HttpServlet {
 		}
 		
 		reflection(reqServlet,method,request,response);
-		
+		pathMap = new LinkedHashMap<>();
 //		if(path[4].contains("login") || path[4] == "register" || path[4]=="banks")
 //		{
 //			reflection(path[4],method,request,response);
@@ -133,6 +134,7 @@ public class ControllerServlet extends HttpServlet {
 		String reqServlet="" ;
 		for(int i=4;i<n-1;i+=2)
 		{
+			System.out.println(path[i]);
 			pathMap.put(path[i],Integer.valueOf(path[i+1]));
 		}
 		if(n%2!=0)

@@ -32,16 +32,15 @@ public class SessionHandler {
 //    	System.out.println("session"+session.getId());
     	session.setAttribute("user_id", user.getUser_id());
     	session.setAttribute("user_role", ""+UserRole.valueOf(user.getUser_role()));
-        
     	JsonObject sessionData = new JsonObject();
         sessionData.addProperty("authToken", session.getId());
         sessionData.addProperty("user_id", user.getUser_id());
-        sessionData.addProperty("user_role", user.getUser_role());
+        sessionData.addProperty("user_role",  ""+UserRole.valueOf(user.getUser_role()));
 
-        // Encoding the JSON string to store in a cookie
+     
         String sessionDataStr = URLEncoder.encode(sessionData.toString(), StandardCharsets.UTF_8.toString());
 
-        // Creating a single cookie with all session data
+     
         Cookie sessionCookie = new Cookie("sessionData", sessionDataStr);
         sessionCookie.setHttpOnly(false); 
         sessionCookie.setMaxAge(COOKIE_MAX_AGE);
@@ -91,15 +90,15 @@ public class SessionHandler {
     	session.removeAttribute("username");
     	session.removeAttribute("userRole");
     	session.invalidate();        
-//    	Cookie cookie = new Cookie("authToken", null);
-//        cookie.setHttpOnly(false);
-//        cookie.setPath("/");
-//        cookie.setMaxAge(0); 
-//        response.addCookie(cookie);
-//        Cookie jsessionCookie = new Cookie("JSESSIONID", null);
-//        jsessionCookie.setMaxAge(0);
-//        jsessionCookie.setPath("/");
-//        response.addCookie(jsessionCookie);
+    	Cookie cookie = new Cookie("sessionData", null);
+        cookie.setHttpOnly(false);
+        cookie.setPath("/");
+        cookie.setMaxAge(0); 
+        response.addCookie(cookie);
+        Cookie jsessionCookie = new Cookie("JSESSIONID", null);
+        jsessionCookie.setMaxAge(0);
+        jsessionCookie.setPath("/");
+        response.addCookie(jsessionCookie);
 
     }
     

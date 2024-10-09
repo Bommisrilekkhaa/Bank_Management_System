@@ -43,6 +43,11 @@ public class QueryUtil
 	        query.append("FROM ").append(table).append(" ");
 	        return this;
 	    }
+	    
+	    public QueryUtil join(String table, String condition, String joinType) {
+	        query.append(joinType).append(" JOIN ").append(table).append(" ON ").append(condition).append(" ");
+	        return this;
+	    }
 
 	    public QueryUtil where(Map<String, Object[]> conditions) 
 	    {

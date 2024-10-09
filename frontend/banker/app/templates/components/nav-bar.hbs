@@ -1,0 +1,30 @@
+<div class="navbar">
+  <ul class="nav-items">
+    {{!-- {{#unless (eq role "CUSTOMER")}}
+      <li {{action "toUsers"}}><a>Users</a></li>
+    {{/unless}} --}}
+    <li {{action "todashboard"}}><a>DashBoard</a></li>
+    <li {{action "toBank"}}><a>Bank</a></li>
+    {{#if (eq role "ADMIN")}}
+      <li {{action "toBranches"}}><a>Branches</a></li>
+    {{/if}}
+    {{#if (eq role "MANAGER")}}
+      <li {{action "toBranch"}}><a>Branch</a></li>
+    {{/if}}
+    <li {{action "toAccounts"}}><a>Accounts</a></li>
+    <li {{action "toTransactions"}}><a>Transactions</a></li>
+    <li {{action "toLoans"}}><a>Loans</a></li>
+  </ul>
+  {{#unless (eq role "MANAGER")}}
+  <div class="branch-dropdown">
+    <select id="branch" onchange={{action "setbranch" value="target.value"}} >
+      <option value="all">All Branches</option>
+      {{#each branches as |branch|}}
+        <option value={{branch.branch_name}}>{{branch.branch_name}}</option>
+      {{/each}}
+    </select>
+  </div>
+  {{/unless}}
+
+  <button class="logout" {{action "logout"}}>Logout</button>
+</div>

@@ -8,7 +8,8 @@ public enum LoanStatus {
 		
 		PENDING(0),
 		APPROVED(1),
-		CLOSED(2);
+		CLOSED(2),
+		REJECTED(3);
 
 		
 		private int value;

@@ -2,14 +2,17 @@ package servlet;
 
 import java.io.IOException;
 import java.sql.Connection;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+
+import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 
-import DAO.BankQueryMap;
+import DAO.BankDAO;
 import model.Bank;
 import utility.DbConnection;
 import utility.JsonHandler;
@@ -18,7 +21,7 @@ import utility.SessionHandler;
 @SuppressWarnings("serial")
 public class BanksServlet extends HttpServlet 
 {
-    BankQueryMap bankQueryMap = new BankQueryMap();
+    BankDAO bankQueryMap = new BankDAO();
     
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException 
@@ -28,19 +31,21 @@ public class BanksServlet extends HttpServlet
     	 System.out.println("gett....");
         try (Connection conn = DbConnection.connect()) 
         {
-            Bank bank = bankQueryMap.getBanks(conn);
+            ResultSet rs = bankQueryMap.getBanks(conn,ControllerServlet.pathMap);
+            JsonArray jsonArray = new JsonArray();
             
-            JsonObject jsonResponse = new JsonObject();
-            if (bank != null) 
+            while(rs.next()) 
             {
-                jsonResponse.addProperty("bank_id", bank.getBank_id());
-                jsonResponse.addProperty("bank_name", bank.getBank_name());
-                jsonResponse.addProperty("bank_code", bank.getBank_code());
-                jsonResponse.addProperty("main_branch_id", bank.getMain_branch_id());
+            	JsonObject jsonResponse = new JsonObject();
+                jsonResponse.addProperty("bank_id", rs.getInt("bank_id"));
+                jsonResponse.addProperty("bank_name", rs.getString("bank_name"));
+                jsonResponse.addProperty("bank_code", rs.getString("bank_code"));
+                jsonResponse.addProperty("admin_id", rs.getString("admin_id"));
+                jsonResponse.addProperty("main_branch_id", rs.getInt("main_branch_id"));
+                jsonArray.add(jsonResponse);
             }
-            
             response.setContentType("application/json");
-            JsonHandler.sendJsonResponse(response, jsonResponse);
+            JsonHandler.sendJsonResponse(response, jsonArray);
         } 
         catch (SQLException e) 
         {
@@ -82,7 +87,7 @@ public class BanksServlet extends HttpServlet
         JsonObject jsonRequest = JsonHandler.parseJsonRequest(request);
 
         Bank bank = new Bank();
-        bank.setBank_id(jsonRequest.get("bank_id").getAsInt());
+        bank.setBank_id(ControllerServlet.pathMap.get("banks"));
         bank.setBank_name(jsonRequest.get("bank_name").getAsString());
         bank.setBank_code(jsonRequest.get("bank_code").getAsString());
         bank.setAdmin_id(jsonRequest.get("admin_id").getAsInt());

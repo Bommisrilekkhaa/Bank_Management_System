@@ -1,8 +1,9 @@
 import Ember from 'ember';
 
 export default Ember.Controller.extend({
+  branchesService: Ember.inject.service('branches'),
   accountsService: Ember.inject.service('accounts'),
-  bankId: '',
+  bankId: localStorage.getItem('bankId'),
   init() {
     // console.log("controller");
     // this._super(...arguments);
@@ -22,6 +23,24 @@ export default Ember.Controller.extend({
   },
 
   actions: {
+
+    viewaccount(account)
+    {
+      this.get('branchesService').set('branchId',account.branch_id);
+      localStorage.setItem('branchId',account.branch_id);
+      localStorage.setItem('accNo',account.acc_no);
+      // console.log("view...."+this.get('bankId'));
+
+        this.transitionToRoute('banks.bank.accounts.account',this.get('bankId'),account.acc_no).then((newRoute)=>{
+          newRoute.controller.setProperties({
+            bankId:this.get('bankId'),
+            branchId:account.branch_id,
+            account:account
+          });
+        }).catch((error) => {
+          console.error("Transition failed", error);
+        });
+    },
     addNewAccount() {
       console.log(this.get('bankId'));
       this.transitionToRoute('banks.bank.accounts.new').then((newRoute)=>{
@@ -29,29 +48,32 @@ export default Ember.Controller.extend({
         newRoute.controller.setProperties({
           bankId:this.get('bankId')
         });
+        
       }).catch((error) => {
         console.error("Transition failed", error);
       });
         
     },
 
-    editAccount(account) {
+    editAccount(isEdit,account,branchId) {
       this.transitionToRoute('banks.bank.accounts.account.edit',this.get('bankId'),account.acc_no).then((newRoute)=>{
 
         newRoute.controller.setProperties({
-          isEdit: true,
-          acc_no: account.acc_no,
+          isEdit: isEdit,
+          accNo: account.acc_no,
           acc_type: account.acc_type,
           acc_balance: account.acc_balance,
           acc_status: account.acc_status,
           username:account.username,
           fullname: account.user_fullname,
           branch_name: account.branch_name,
+          branch_Id:branchId,
           bankId:this.get('bankId')
         });
       }).catch((error) => {
         console.error("Transition failed", error);
       });
-    }
+    },
+   
   }
 });

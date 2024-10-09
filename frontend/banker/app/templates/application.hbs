@@ -1,2 +1,16 @@
+<div class="container">
+  {{#unless isAuthRoute}}
 
-{{outlet}}
+    {{nav-bar 
+    logout=(action "logout") 
+     toAccounts=(action "toAccounts")
+     todashboard=(action "todashboard")
+     toBranch=(action "toBranch")
+     toBranches=(action "toBranches")
+     toTransactions=(action "toTransactions")
+     toLoans=(action "toLoans")
+     toBank=(action "toBank")
+     }}
+  {{/unless}}
+  {{outlet}}
+</div>

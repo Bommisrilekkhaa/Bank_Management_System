@@ -1,0 +1,15 @@
+import Ember from 'ember';
+
+export default Ember.Route.extend({
+  beforeModel()
+  {
+    if(document.cookie =='')
+      {
+          this.transitionTo('login');
+      }
+    localStorage.setItem('accNo','*');  
+    localStorage.setItem('loanId','*');
+
+    localStorage.setItem('branchId','*');
+  }
+});

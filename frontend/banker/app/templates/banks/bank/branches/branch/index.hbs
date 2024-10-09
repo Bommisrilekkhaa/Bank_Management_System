@@ -1,0 +1,37 @@
+<div class="branch-card-wrapper">
+  <div class="branch-card">
+    <h2>Branch Details</h2>
+    <div class="branch-field">
+      <span class="field-label">Branch ID:</span>
+      <span class="field-value">{{Branch.branch_id}}</span>
+    </div>
+    <div class="branch-field">
+      <span class="field-label">Branch Name:</span>
+      <span class="field-value">{{Branch.branch_name}}</span>
+    </div>
+    <div class="branch-field">
+      <span class="field-label">Branch Number:</span>
+      <span class="field-value">{{Branch.branch_number}}</span>
+    </div>
+    <div class="branch-field">
+      <span class="field-label">Address:</span>
+      <span class="field-value">{{Branch.branch_address}}</span>
+    </div>
+    <div class="branch-field">
+      <span class="field-label">Bank ID:</span>
+      <span class="field-value">{{Branch.bank_id}}</span>
+    </div>
+    <div class="branch-field">
+      <span class="field-label">Manager ID:</span>
+      <span class="field-value">{{Branch.manager_id}}</span>
+    </div>
+    <div >
+        <button class="view-btn"  {{action "viewAccounts" Branch}}>View Accounts</button>
+    </div>
+    {{#if (eq role "MANAGER")}}
+     <div >
+        <button class="view-btn" {{action "delete" Branch}} >delete Branch</button>
+    </div>
+    {{/if}}
+  </div>
+</div>

@@ -13,7 +13,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import com.google.gson.JsonObject;
 
-import DAO.UserQueryMap;
+import DAO.UserDAO;
 import enums.UserRole;
 import model.User;
 import utility.DbConnection;
@@ -24,7 +24,7 @@ public class LoginServlet extends HttpServlet {
 	
 	private static final long serialVersionUID = 1L;
     private SessionHandler sessionHandler = new SessionHandler();
-    private UserQueryMap userQueryMap = new UserQueryMap();
+    private UserDAO userQueryMap = new UserDAO();
 	private User user = new User();
 
 	@Override

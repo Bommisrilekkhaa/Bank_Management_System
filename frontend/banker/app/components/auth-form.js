@@ -1,6 +1,7 @@
 import Ember from 'ember';
 
 export default Ember.Component.extend({
+  banksService: Ember.inject.service('banks'),
   accountsService: Ember.inject.service('accounts'),
   username: '',
   password: '',
@@ -17,28 +18,42 @@ export default Ember.Component.extend({
   BankId:'',
   init() {
     this._super(...arguments);
-    // this.loadBanks();
+    this.loadBanks();
   }, 
 
-  // loadBanks() {
-  //   this.get('accountsService').fetchBanks().then((response) => {
-  //     this.set('bankNames', response);
-  //   }).catch((error) => {
-  //     console.error("Failed to load banks:", error);
-  //   });
-  // },
+  loadBanks() {
+    this.get('banksService').fetchBanks().then((response) => {
+      this.set('bankNames', response);
+    }).catch((error) => {
+      console.error("Failed to load banks:", error);
+    });
+  },
 
-  // setBankId()
-  // {
-  //   for(bank in bankNames)
-  //   {
-  //     if(bank.bank_name == bank_name)
-  //     {
-  //       this.set('BankId',bank.bank_id);
-  //       console.log(bankId);
-  //     }
-  //   }
-  // },
+  setBankId()
+  {
+    let array=this.get('bankNames');
+    for (let i = 0; i < array.length; i++) {
+      let item = array[i];
+      if(item['bank_name']==this.get('bank_name'))
+      {
+        this.BankId = item['bank_id'];
+        break;
+      }
+    }
+    
+    
+    
+  },
+  checkStorage()
+  {
+    if(localStorage.length!=0)
+    {
+      localStorage.clear();
+    }
+
+    localStorage.setItem('bankId', this.get('BankId'));
+   
+  },
   actions: {
     submitForm() {
       const username = this.get('username');
@@ -88,8 +103,10 @@ export default Ember.Component.extend({
         addr: this.get('addr'), 
         pno: this.get('pno')
       }
+
+      this.setBankId();
+      this.checkStorage();
         this.sendAction(action,credentials );
-        // this.setBankId();
       },
       
       toggleMode() {

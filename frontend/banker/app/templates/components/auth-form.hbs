@@ -1,5 +1,4 @@
 <body>
-  {{!-- <div class="main-content"> --}}
     <div class="auth-form">
       <h2>{{if isSignup "Register" "Login"}}</h2>
       <form {{action "submitForm" on="submit"}}>
@@ -50,8 +49,7 @@
               {{/unless}}
             </select>
           </div>
-       {{!-- {{#unless isSignup}}   
-      {{#unless (eq selectedRole "admin")}}
+       {{#unless isSignup}}   
       <div class="form-group">
         <label for="bank_name">Bank Name</label>
         <select id="bank_name" class="form-control" onchange={{action (mut bank_name) value="target.value"}}>
@@ -62,7 +60,6 @@
         </select>
       </div>
       {{/unless}}
-      {{/unless}} --}}
          <div class="form-group">
         <button type="submit" class="btn-primary">{{if isSignup "Register" "Login"}}</button>
         </div>
@@ -76,5 +73,4 @@
         <div class="error-message">* {{errorMessage}}</div>
       {{/if}}
     </div>
-  {{!-- </div> --}}
 </body>

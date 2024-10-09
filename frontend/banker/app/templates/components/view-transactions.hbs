@@ -1,0 +1,31 @@
+<div class="transactions-list">
+  <button {{action "addNewTransaction"}} class="new-transaction-btn">New Transaction</button>
+  
+  <table class="transactions-table">
+    <thead>
+      <tr>
+        <th>Transaction Id</th>
+        <th>Transaction Type</th>
+        {{#unless (eq role "CUSTOMER")}}
+        <th>Account Number</th>
+        {{/unless}}
+        <th>Amount</th>
+        <th>Date and Time</th>
+      </tr>
+    </thead>
+    <tbody>
+      {{#each transactions as |transaction|}}
+        <tr {{action "viewTransaction" transaction}}>
+          <td>{{transaction.transaction_id}}</td>
+          <td>{{transaction.transaction_type}}</td>
+          {{#unless (eq role "CUSTOMER")}}
+            <td>{{transaction.acc_number}}</td>
+          {{/unless}}
+          <td>Rs.{{transaction.transaction_amount}}</td>
+          <td>{{transaction.transaction_datetime}}</td>
+         
+        </tr>
+      {{/each}}
+    </tbody>
+  </table>
+</div>

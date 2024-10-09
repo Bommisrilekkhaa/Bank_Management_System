@@ -1,0 +1,27 @@
+<div class="branches-list">
+  <button {{action "addNewBranch"}} class="new-branch-btn">New Branch</button>
+  
+  <table class="branches-table">
+    <thead>
+      <tr>
+        <th>Branch ID</th>
+        <th>Branch Name</th>
+        <th>Branch Number</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {{#each branches as |branch|}}
+        <tr {{action "viewBranch" branch}}>
+          <td>{{branch.branch_id}}</td>
+          <td>{{branch.branch_name}}</td>
+          <td>{{branch.branch_number}}</td>
+          <td>
+            <button {{action "editBranch" branch}}>Edit</button>
+            <button {{action "deleteBranch" branch}}>Delete</button>
+          </td>
+        </tr>
+      {{/each}}
+    </tbody>
+  </table>
+</div>

@@ -1,22 +1,9 @@
-body {
-  margin: 0;
-  padding: 0;
-  min-height: 100vh;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  // background: linear-gradient(180deg, #ffffff, #ffffff, #ffffff, #548c9a);
-  background: linear-gradient(to bottom, #0D1B2A, black);
-  font-family: Arial, sans-serif;
-}
 
-.main-content {
-  width: 100%;
-  max-width: 570px; 
-  padding: 40px; 
-}
 
-.auth-form,.account-form {
+.auth-form,.account-form,.branch-form {
+ 
+  width: 25%;
+  margin-top: 70px;
   background-color: rgb(235, 234, 234);
   border-radius: 8px;
   box-shadow: 3px 4px 10px rgb(235, 234, 234) !important;
@@ -82,6 +69,7 @@ select.form-control {
 }
 
 .btn-primary {
+  position:relative;
   width: 100%;
   padding: 14px 0;
   background-color: #134B70 !important;

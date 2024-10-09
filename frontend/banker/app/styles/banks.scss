@@ -1,0 +1,50 @@
+.bank-card-wrapper {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: transparent;
+    margin-top: 20px;
+  }
+  
+  .bank-card {
+    background-color: white;
+    border-radius: 8px;
+    padding: 40px;
+    width: 500px;
+    box-shadow: 0 4px 12px rgb(255, 255, 255);
+    font-family: 'Arial', sans-serif;
+  }
+  
+  .bank-card h2 {
+    text-align: center;
+    font-size: 24px;
+    margin-bottom: 20px;
+    color: #0d1b2a;
+  }
+  
+  .bank-field {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 15px;
+  }
+  
+  .bank-field .field-label,
+  .bank-field .field-value {
+    width: 45%; 
+    display: inline-block;
+  }
+  
+  .bank-field .field-label {
+    font-weight: bold;
+    color: #134B70;
+  }
+  
+  .bank-field .field-value {
+    color: #222;
+  }
+  
+
+  .bank-card-wrapper .bank-card .bank-field:last-child {
+    margin-bottom: 0;
+  }
+  

@@ -6,8 +6,19 @@ export default Ember.Service.extend({
 
  
   fetchAccounts(bankId) {
+    let url1 = `http://localhost:8080/banker/api/v1/banks/${bankId}`;
+    let url3 = `/accounts`;
+    let url =``;
+    if(localStorage.getItem("branchId")!="*")
+    {
+      url = url1+`/branches/${localStorage.getItem("branchId")}`+url3;
+    }
+    else
+    {
+      url = url1+url3;
+    }
     return $.ajax({
-      url: `http://localhost:8080/banker/api/v1/banks/${bankId}/accounts`,
+      url: url,
       type: 'GET',
       contentType: 'application/json',
       credentials: 'include',
@@ -32,8 +43,8 @@ export default Ember.Service.extend({
 
   
   createAccount(accountDetails) {
-    const {  acc_type,acc_status, username,bankId,branchId } = accountDetails;
-
+    const {  acc_type,acc_status, username,bankId} = accountDetails;
+    let branchId =localStorage.getItem('branchId');
     console.log("insert...");
     return $.ajax({
       url: `http://localhost:8080/banker/api/v1/banks/${bankId}/branches/${branchId}/accounts`,
@@ -42,9 +53,9 @@ export default Ember.Service.extend({
       data: JSON.stringify({
         // acc_no,
         acc_type,
+        username:username,
         // acc_balance,
         acc_status,
-        username
       }),
       
       success: (response) => {
@@ -59,10 +70,10 @@ export default Ember.Service.extend({
 
   // Update an account
   updateAccount(accountDetails) {
-    const {  acc_no,acc_type,  acc_status, fullname,username, branch_name ,bankId,branchId} = accountDetails;
+    const {  accNo,acc_type,  acc_status, fullname,username, branch_name ,bankId} = accountDetails;
 
     return $.ajax({
-      url: `http://localhost:8080/banker/api/v1/banks/${bankId}/branches/${branchId}/accounts/${acc_no}`,
+      url: `http://localhost:8080/banker/api/v1/banks/${bankId}/branches/${localStorage.getItem('branchId')}/accounts/${accNo}`,
       type: 'PUT',
       contentType: 'application/json',
       
@@ -84,30 +95,7 @@ export default Ember.Service.extend({
     });
   },
 
-  fetchBranches(bankId) {
-    return $.ajax({
-      url: `http://localhost:8080/banker/api/v1/banks/${bankId}/branches`,
-      type: 'GET',
-      contentType: 'application/json',
-      credentials: 'include',
-      xhrFields: {
-        withCredentials: true 
-      },
-      success: (response) => {
-        // console.log("branches");
-        return response;
-      },
-      error: (error) => {
-        console.error("Error fetching branches:", error);
-        // if (error.responseJSON) {
-        //   alert(`Error: ${error.responseJSON.message}`);
-        // } else {
-        //   alert("An error occurred while fetching branches.");
-        // }
-        throw error.responseJSON || error;
-      }
-    });
-  },
+ 
 
   
 
@@ -132,28 +120,5 @@ export default Ember.Service.extend({
     });
   },
 
-  fetchBanks() {
-    return $.ajax({
-      url: `http://localhost:8080/banker/api/v1/banks`,
-      type: 'GET',
-      contentType: 'application/json',
-      credentials: 'include',
-      xhrFields: {
-        withCredentials: true 
-      },
-      success: (response) => {
-        // console.log("banks");
-        return response;
-      },
-      error: (error) => {
-        console.error("Error fetching banks:", error);
-        if (error.responseJSON) {
-          alert(`Error: ${error.responseJSON.message}`);
-        } else {
-          alert("An error occurred while fetching banks.");
-        }
-        throw error.responseJSON || error;
-      }
-    });
-  }
+ 
 });

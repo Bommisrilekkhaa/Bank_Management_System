@@ -29,7 +29,7 @@ export default Ember.Controller.extend({
           this.set('userId',this.getUserIdFromCookie());
           if (this.get('userId')) {
             // Transition to the dashboard route using the dynamic userId
-            this.transitionToRoute('users.user.dashboard', this.get('userId')); 
+            this.transitionToRoute('banks.bank.users.user.dashboard',localStorage.getItem('bankId'), this.get('userId')); 
           } else {
             this.set('errorMessage', 'User ID not found in cookies');
           }

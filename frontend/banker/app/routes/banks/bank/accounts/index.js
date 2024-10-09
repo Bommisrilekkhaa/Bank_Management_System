@@ -1,12 +1,17 @@
 import Ember from 'ember';
 
 export default Ember.Route.extend({
-
-    model(params) {
-        return this.modelFor('banks.bank'); // fetches the model from the parent route
-      },
+  beforeModel()
+  {
+    if(document.cookie =='')
+      {
+          this.transitionTo('login');
+      }
+    localStorage.setItem('accNo','*');  
+    localStorage.setItem('branchId','*');
+    localStorage.setItem('loanId','*');
+  },
       setupController(controller, model) {
-        controller.set('bankId', model.bankId); // sets the bankId in the controller
         this._super(controller, model);
         controller.loadAccounts();
       }

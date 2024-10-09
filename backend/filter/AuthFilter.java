@@ -51,11 +51,11 @@ public class AuthFilter extends HttpFilter implements Filter {
 		
 //		System.out.println("cookie"+req.getCookies());
 		doOptions(req,res);
-		String path = req.getRequestURI();
+		String[] path = req.getRequestURI().split("/");
 		
 		if (cookies == null) 
 		{
-			if (path.contains("login") || path.contains("register") ) 
+			if (path[4].equals("login") || path[path.length-1].equals("banks")) 
 			{
 				System.out.println("Login request, skipping auth filter.");
 				

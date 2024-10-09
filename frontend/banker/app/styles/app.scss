@@ -1,2 +1,30 @@
 @import "./auth.scss";
 @import "./accounts.scss";
+@import "./loans.scss";
+@import "./navbar.scss";
+@import "./transactions.scss";
+@import "./banks.scss";
+@import "./branches.scss";
+@import "./users.scss";
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+  
+  body {
+    font-family: Arial, sans-serif;
+    background: linear-gradient(to bottom, #0d1b2a, black);
+    height: 100vh;
+    width: 100vw; 
+    display: flex !important;
+    flex-direction: column;
+    align-items: center !important;
+    justify-content: flex-start !important;
+  }
+
+.container{
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+}

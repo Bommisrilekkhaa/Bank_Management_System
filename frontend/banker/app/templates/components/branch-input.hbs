@@ -1,0 +1,44 @@
+<body>
+  <div class="branch-form">
+    <h2>{{if isEdit "Edit Branch" "Create New Branch"}}</h2>
+    
+    <form {{action "submitForm" on="submit"}}>
+      {{#if isEdit}}
+      <div class="form-group">
+        <label for="branchId">Branch ID</label>
+        <input type="text" id="branchId" value={{branchId}} class="form-control" oninput={{action (mut branchId) value="target.value"}} disabled>
+      </div>
+      {{/if}}
+  
+      <div class="form-group">
+        <label for="name">Branch Name</label>
+        <input type="text" id="name" value={{name}} class="form-control" oninput={{action (mut name) value="target.value"}}>
+      </div>
+  
+      <div class="form-group">
+        <label for="address">Branch Address</label>
+        <input type="text" id="address" value={{address}} class="form-control" oninput={{action (mut address) value="target.value"}}>
+      </div>
+     {{#if isEdit}}
+      <div class="form-group">
+        <label for="branch_number">Branch Number</label>
+        <input type="text" id="branch_number" value={{branch_number}} class="form-control" oninput={{action (mut branch_number) value="target.value"}} disabled>
+      </div>
+    {{/if}}
+      <div class="form-group">
+        <label for="manager_id">Manager ID</label>
+        <input type="text" id="manager_id" value={{manager_id}} class="form-control" oninput={{action (mut manager_id) value="target.value"}}>
+      </div>
+  
+      <button type="submit" class="btn-primary">{{if isEdit "Update Branch" "Create Branch"}}</button>
+      
+      {{#link-to "banks.bank.branches" bankId}}
+        <button {{action "cancel"}} class="btn-secondary">Cancel</button>
+      {{/link-to}}
+
+      {{#if errorMessage}}
+        <div class="error-message">* {{errorMessage}}</div>
+      {{/if}}
+    </form>
+  </div>
+</body>
