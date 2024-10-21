@@ -6,25 +6,58 @@
   background-color: transparent;
 }
 
-.view-btn{
+.filters {
   display: flex;
-  justify-content: center;
   align-items: center;
-  border-width: 2px;
-  border-style: solid;
-  border-color: #ED8936;
-  color: #ED8936;
-  padding: 8px 15px;
-  border-radius: 5px;
-  background-color: transparent;
-  box-shadow:  2px 2px 10px rgb(237, 137, 54);
-  cursor: pointer;
+  margin-bottom: 20px;
+
+  label {
+    margin-right: 10px;
+    font-weight: bold;
+    font-size: 14px;
+    color:white;
+  }
+
+  select {
+    padding: 5px 10px;
+    margin-right: 20px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 14px;
+    cursor: pointer;
+    background-color: #a2cbd5a5;
+
+    &:focus {
+      border-color: rgba(0, 123, 255, 0.5);;
+      outline: none;
+      box-shadow: 0 0 5px rgba(0, 123, 255, 0.5);
+    }
+  }
+
+  .reset-button {
+    padding: 6px 12px;
+    border: none;
+    border-radius: 4px;
+    background-color: #f44336;
+    color: white;
+    font-size: 14px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+
+    &:hover {
+      background-color: #d32f2f; 
+    }
+
+    &:focus {
+      outline: none;
+      box-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
+    }
+  }
 }
 
-.view-btn:hover {
-  color:white;
-  background-color: #ED8936;
-}
+
+
 
 .account-card {
   margin-top: 60px;
@@ -50,8 +83,7 @@
 }
 
 .field-label,
-.field-value {
-  width: 45%;  /* Each column takes up 45% of the row width */
+.field-value { 
   display: inline-block;
 }
 
@@ -74,6 +106,25 @@
     max-width: 1500px;
   }
   
+  .clear{
+    background-color: transparent;
+    color: #e0e1dd;
+    padding: 10px 20px;
+    border-width: 2px;
+    border-style: solid;
+    border-color: #134B70;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+    margin-bottom: 10px;
+    box-shadow:  2px 2px 10px #134B70;
+    display: inline;
+
+  }
+  .clear:hover{
+    background-color: #2a8aa5;
+  }
+
   .new-account-btn {
     background-color: transparent;
     color: #e0e1dd;
@@ -110,30 +161,130 @@
     background-color: transparent !important;
     color: #fff !important;
   }
+  .accounts-table tr{
+    cursor:pointer;
+  }
+  .accounts-table tr:hover{
+    background-color: #134B70 !important;
+    color: #fff !important;
+    cursor:pointer;
+  }
   .accounts-table th {
     background-color: rgba(226, 232, 240,0.4);
     color: #fff;
   }
-  
-  .accounts-table tr:nth-child(even) {
-    background-color: transparent !important;
-    color: #fff !important;
-  }
-  
-  .accounts-table td button {
-    border-width: 2px;
-    border-style: solid;
-    border-color: #ED8936;
-    color: rgb(238, 238, 238);
-    padding: 8px 15px;
-    border-radius: 5px;
+  .dashboard-container {
+    display: flex;
+    height: 90vh;
+    overflow: hidden;
+}
+
+.dashboard-container h2 {
+    color: rgb(198, 96, 12);
+    text-shadow: 2px 2px 5px rgba(198, 96, 12, 0.7);
+    -webkit-background-clip: text;
+    background-clip: text;
+}
+
+.dashboard-section {
+    padding: 20px;
+    flex: 1;
+    border: 1px solid #ddd;
+    margin: 0 10px !important;
+    border-radius: 4px;
     background-color: transparent;
-    box-shadow:  2px 2px 10px rgb(237, 137, 54);
-    cursor: pointer;
-  }
-  
-  .accounts-table td button:hover {
-    background-color: #ED8936;
-  }
-  
-  
+    overflow-y: auto;
+}
+
+.right-container {
+    display: flex;
+    flex-direction: column;
+    margin: 0 10px !important;
+    flex: 1;
+    gap: 20px;
+}
+
+.loan-card-container,
+.transaction-card-container,
+.account-card-container {
+    background-color: transparent;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    align-items: center;
+}
+
+
+
+
+.accounts-table td button {
+  border-width: 2px;
+  border-style: solid;
+  border-color: #ED8936;
+  color: rgb(238, 238, 238);
+  padding: 8px 15px;
+  border-radius: 5px;
+  background-color: transparent;
+  box-shadow:  2px 2px 10px #ED8936;
+  cursor: pointer;
+}
+
+.accounts-table td button:hover {
+  background-color: #ED8936;
+}
+
+
+.loan-card-dash h3,
+.transaction-card-dash h3,
+.account-card-dash h3 {
+    text-align: center;
+    margin-top: 0;
+}
+
+.loan-card h3 {
+    font-size: 1.25em;
+}
+
+.section-2 {
+    margin-bottom: 10px;
+}
+
+.account-card h3 {
+    display: inline-block;
+    margin-right: 10px;
+}
+
+.account-field {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: 20px;
+    margin-left: 15%;
+
+}
+
+.field-label {
+    font-weight: bold;
+    margin-right: 10px;
+}
+
+.field-value {
+    display: inline-block;
+    text-align: left;
+}
+
+.loan-field,
+.transaction-field {
+    display: flex;
+    margin-bottom: 8px;
+    margin:20px;
+}
+
+.field-label {
+    font-weight: bold;
+    margin-right: 10px;
+}
+
+.field-value {
+    flex: 1;
+}

@@ -55,8 +55,91 @@ public class BranchDAO {
 
         return query.executeQuery(conn, db);
     }
-
     
+    public ResultSet selectBranchByManager(Connection conn ,int managerId) throws SQLException 
+    {
+    	Map<String,Object[]> conditions = new HashMap<>();
+    	conditions.put("manager_id", new Object[] {"=",managerId});
+    	
+        QueryUtil query = QueryUtil.create()
+                .select("*")
+                .from("branch")
+                .where(conditions);
+
+        return query.executeQuery(conn, db);
+    }
+
+    public ResultSet selectBranchesAndAccounts(Connection conn,HashMap<String, Integer> pathMap) throws SQLException 
+    {
+    	Map<String,Object[]> conditions = new HashMap<>();
+    	for(String key:pathMap.keySet()) {
+    		conditions.put(changeName(key), new Object[] {"=",pathMap.get(key)});
+    	}
+    	
+    	QueryUtil query = QueryUtil.create()
+    		    .select("b.branch_name AS branchName, COUNT(a.acc_number) AS accountCount, "
+    		          + "SUM(a.acc_balance) AS totalDeposits, COUNT(l.loan_id) AS loansAvailed,b.manager_id")
+    		    .from("branch b")
+    		    .join("account a", "b.branch_id = a.branch_id", "LEFT")
+    		    .join("loan l", "l.acc_number = a.acc_number", "LEFT")
+    		    .where(conditions)
+    		    .append("GROUP BY b.branch_id, b.branch_name");
+
+
+        return query.executeQuery(conn, db);
+    }
+    public ResultSet selectBranchAndAccounts(Connection conn,HashMap<String, Integer> pathMap) throws SQLException 
+    {
+    	Map<String,Object[]> conditions = new HashMap<>();
+    	for(String key:pathMap.keySet()) {
+    		conditions.put(changeName(key), new Object[] {"=",pathMap.get(key)});
+    	}
+    
+	    QueryUtil query = QueryUtil.create()
+	    	    .select("b.branch_name AS branchName, " +
+	    	    		"b.branch_id AS branch_id, "+
+	    	    		"b.manager_id AS manager_id, "+
+	    	            "COUNT(CASE WHEN a.acc_type = 1 THEN a.acc_number END) AS savingsAccountCount, " +
+	    	            "COUNT(CASE WHEN a.acc_type = 0 THEN a.acc_number END) AS businessAccountCount, " +
+	    	            "SUM(CASE WHEN a.acc_type = 1 THEN a.acc_balance ELSE 0 END) AS totalSavingsDeposits, " +
+	    	            "SUM(CASE WHEN a.acc_type = 0 THEN a.acc_balance ELSE 0 END) AS totalBusinessDeposits, " +
+	    	            "COUNT(CASE WHEN l.loan_type = 0 THEN l.loan_id END) AS homeLoanCount, " +
+	    	            "COUNT(CASE WHEN l.loan_type = 1 THEN l.loan_id END) AS educationLoanCount, " +
+	    	            "COUNT(CASE WHEN l.loan_type = 2 THEN l.loan_id END) AS businessLoanCount")
+	    	    .from("branch b")
+	    	    .join("account a", "b.branch_id = a.branch_id", "LEFT")
+	    	    .join("loan l", "l.acc_number = a.acc_number", "LEFT")
+	    	    .where(conditions)
+	    	    .append("GROUP BY b.branch_id, b.branch_name");
+	    return query.executeQuery(conn, db);
+
+    }
+    
+    
+    public String changeName(String key)
+    {
+    	System.out.println(key);
+    	if(key.equals("branches"))
+    	{
+    		return "b."+key.substring(0,key.length()-2)+"_id";
+    	}
+    	else if(key.equals("accounts"))
+    	{
+    		return "a."+key.substring(0,3)+"_number";
+    	}
+    	else if(key.equals("banks"))
+    	{
+    		
+    		return "b."+key.substring(0,key.length()-1)+"_id";
+    	}
+    	else if(key.equals("users"))
+    	{
+    		
+    		return "a."+key.substring(0,key.length()-1)+"_id";
+    	}
+    	else
+    		return key;
+    }
     
     public int getBranchId(Connection conn, String branch_name) throws SQLException 
     {
@@ -83,8 +166,6 @@ public class BranchDAO {
     	Map<String,Object> setconditions = new HashMap<>();
     	setconditions.put("branch_name", branch.getName());
     	setconditions.put("branch_address", branch.getAddress());
-    	setconditions.put("branch_number", branch.getBranch_number());
-    	setconditions.put("bank_id", branch.getBank_id());
     	setconditions.put("manager_id", branch.getManager_id());
     	whereconditions.put("branch_id", new Object[]{"=",branch.getBranch_id()});
     	
@@ -129,11 +210,12 @@ public class BranchDAO {
             account.setAccBalance(rs.getDouble("acc_balance"));
             account.setUserId(rs.getInt("user_id"));
             if(rsBank.next())
+            {
             	account.setBranchId(rsBank.getInt("main_branch_id"));
-
+            }
+            
             accountQueryMap.updateAccount(conn, account);
     	}
-    	
     	
     }
     
@@ -141,7 +223,6 @@ public class BranchDAO {
     {
     	branch.setName(jsonRequest.get("branch_name").getAsString());
         branch.setAddress(jsonRequest.get("branch_address").getAsString());
-        branch.setBranch_number(jsonRequest.get("branch_number").getAsString());
         branch.setManager_id(jsonRequest.get("manager_id").getAsInt());
         
 		return branch;

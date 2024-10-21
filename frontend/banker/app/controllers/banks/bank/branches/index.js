@@ -42,6 +42,7 @@ export default Ember.Controller.extend({
     },
 
     editBranch(branch) {
+      localStorage.setItem('branchId',branch.branch_id);
       this.transitionToRoute('banks.bank.branches.branch.edit', this.get('bankId'), branch.branch_id).then((newRoute) => {
         newRoute.controller.setProperties({
           isEdit: true,
@@ -50,6 +51,7 @@ export default Ember.Controller.extend({
           branch_address: branch.branch_address,
           branch_number: branch.branch_number,
           manager_id:branch.manager_id,
+          manager_name:branch.manager_name,
           bankId: this.get('bankId')
         });
       }).catch((error) => {

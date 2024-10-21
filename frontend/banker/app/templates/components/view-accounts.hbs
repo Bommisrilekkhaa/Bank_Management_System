@@ -1,6 +1,25 @@
 <div class="accounts-list">
   <button {{action "addNewAccount"}} class="new-account-btn">New Account</button>
-  
+
+  <div class="filters">
+    <label for="accountType">Type </label>
+    <select id="accountType" value={{selectedAccountType}} onchange={{action (mut selectedAccountType) value="target.value"}}>
+      <option value="">All</option>
+      <option value="savings">Savings</option>
+      <option value="business">Business</option>
+    </select>
+
+    <label for="accountStatus">Status </label>
+    <select id="accountStatus" value={{selectedAccountStatus}} onchange={{action (mut selectedAccountStatus) value="target.value"}}>
+      <option value="">All</option>
+      <option value="active">Active</option>
+      <option value="inactive">Inactive</option>
+      <option value="pending">Pending</option>
+    </select>
+  <button class="clear" {{action (mut selectedAccountType) value=''}} {{action (mut selectedAccountStatus) value=''}}>Clear</button>
+  </div>
+
+
   <table class="accounts-table">
     <thead>
       <tr>
@@ -9,29 +28,29 @@
         <th>Balance</th>
         <th>Status</th>
         {{#unless (eq role "CUSTOMER")}}
-        <th>Fullname</th>
+          <th>Fullname</th>
         {{/unless}}
         <th>BranchName</th>
-         {{#unless (eq role "CUSTOMER")}}
-        <th>Actions</th>
+        {{#unless (eq role "CUSTOMER")}}
+          <th>Actions</th>
         {{/unless}}
       </tr>
     </thead>
     <tbody>
-      {{#each accounts as |account|}}
+      {{#each filteredAccounts as |account|}}
         <tr {{action "viewAccount" account}}>
           <td>{{account.acc_no}}</td>
           <td>{{account.acc_type}}</td>
           <td>Rs.{{account.acc_balance}}</td>
           <td>{{account.acc_status}}</td>
           {{#unless (eq role "CUSTOMER")}}
-          <td>{{account.user_fullname}}</td>
+            <td>{{account.user_fullname}}</td>
           {{/unless}}
           <td>{{account.branch_name}}</td>
           {{#unless (eq role "CUSTOMER")}}
-          <td>
-            <button {{action "editAccount" account}}>Edit</button>
-          </td>
+            <td>
+              <button {{action "editAccount" account}}>Edit</button>
+            </td>
           {{/unless}}
         </tr>
       {{/each}}

@@ -5,24 +5,26 @@ export default Ember.Service.extend({
 
   ajax: Ember.inject.service(),
  
-  fetchTransactions(accNo, bankId) {
-    let url1 = `http://localhost:8080/banker/api/v1/banks/${bankId}`;
-    let url2=`/branches/${localStorage.getItem("branchId")}`;
-    let url3 = `/accounts/${localStorage.getItem("accNo")}`;
-    let url4 = `/transactions`;
-    let url =``;
-    if(localStorage.getItem("branchId")!="*" && localStorage.getItem("accNo")!='*')
+  fetchTransactions(accNo, bankid) {
+    let url = `http://localhost:8080/banker/api/v1/`;
+    let bankId =localStorage.getItem('bankId');
+    let branchId = localStorage.getItem("branchId");
+    let accno = localStorage.getItem('accNo');
+    if(bankId!="*")
     {
-      url = url1+url2+url3+url4;
+      url=url +`banks/${bankId}`;
     }
-    else if(localStorage.getItem("branchId")!="*")
+    if(branchId!='*')
     {
-      url = url1+url2+url4;
+      url=url+`/branches/${branchId}`;
     }
-    else
+    if(accno!="*")
     {
-      url = url1+url4;
+      url = url+`/accounts/${accno}`;
     }
+    url=url+`/transactions`;
+
+    
     return $.ajax({
       url: url,
       type: 'GET',
@@ -47,24 +49,75 @@ export default Ember.Service.extend({
     });
 },
 
+fetchTransaction() {
+  let transactionId = localStorage.getItem("transactionId");
+  let url = `http://localhost:8080/banker/api/v1/`;
+  let bankId =localStorage.getItem('bankId');
+  let branchId = localStorage.getItem("branchId");
+  let accno = localStorage.getItem('accNo');
+  if(bankId!="*")
+  {
+    url=url +`banks/${bankId}`;
+  }
+  if(branchId!='*')
+  {
+    url=url+`/branches/${branchId}`;
+  }
+  if(accno!="*")
+  {
+    url = url+`/accounts/${accno}`;
+  }
+  if(transactionId!="*")
+  {
+
+    url=url+`/transactions/${transactionId}`;
+  }
+
+  
+  return $.ajax({
+    url: url,
+    type: 'GET',
+    contentType: 'application/json',
+    credentials: 'include',
+    xhrFields: {
+      withCredentials: true 
+    },
+    success: (response) => {
+      console.log("transactions");
+      return response;
+    },
+    error: (error) => {
+      console.error("Error fetching transactions:", error);
+      if (error.responseJSON) {
+        alert(`Error: ${error.responseJSON.message}`);
+      } else {
+        alert("An error occurred while fetching transactions.");
+      }
+      throw error.responseJSON || error;
+    }
+  });
+},
   createTransaction(details) {
-    let url1 = `http://localhost:8080/banker/api/v1/banks/${details.bankId}`;
-    let url2=`/branches/${details.branchId}`;
-    let url3 = `/accounts/${details.accNo}`;
-    let url4 = `/transactions`;
-    let url =``;
-    if(details.branchId!="*" && details.accNo!='*')
+
+    let url = `http://localhost:8080/banker/api/v1/`;
+    let bankId = details.bankId;
+    let branchId =details.branchId;
+    let accno = details.accNo;
+    if(bankId!="*")
     {
-      url = url1+url2+url3+url4;
+      url=url +`banks/${bankId}`;
     }
-    else if(details.branchId!="*")
+    if(branchId!='*')
     {
-      url = url1+url2+url4;
+      url=url+`/branches/${branchId}`;
     }
-    else
+    if(accno!="*")
     {
-      url = url1+url4;
+      url = url+`/accounts/${accno}`;
     }
+    url=url+`/transactions`;
+
+   
     return $.ajax({
       url: url,
       type: 'POST',

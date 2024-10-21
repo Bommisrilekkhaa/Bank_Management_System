@@ -3,26 +3,26 @@
     <h2>Account Details</h2>
     <div class="account-field">
       <span class="field-label">Account Number:</span>
-      <span class="field-value">{{account.acc_no}}</span>
+      <span class="field-value">{{acc.acc_no}}</span>
     </div>
     <div class="account-field">
       <span class="field-label">Account Type:</span>
-      <span class="field-value">{{account.acc_type}}</span>
+      <span class="field-value">{{acc.acc_type}}</span>
     </div>
     <div class="account-field">
       <span class="field-label">Account Balance:</span>
-      <span class="field-value">{{account.acc_balance}}</span>
+      <span class="field-value">{{acc.acc_balance}}</span>
     </div>
     <div class="account-field">
       <span class="field-label">Branch Name:</span>
-      <span class="field-value">{{account.branch_name}}</span>
+      <span class="field-value">{{acc.branch_name}}</span>
     </div>
     <div class="account-field">
       <span class="field-label">Status:</span>
-      <span class="field-value">{{account.acc_status}}</span>
+      <span class="field-value">{{acc.acc_status}}</span>
     </div>
-    {{#if (eq account.acc_status "active")}}
-    <div >
+    {{#if (eq acc.acc_status "active")}}
+    <div class="view-wrap">
         <button class="view-btn"  {{action "loans"}}>View Loans</button>
          <button class="view-btn"  {{action "transactions"}}>View Transactions</button>
     </div>

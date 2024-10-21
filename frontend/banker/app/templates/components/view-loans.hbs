@@ -1,35 +1,55 @@
 <div class="loans-list">
   <button {{action "addNewLoan"}} class="new-loan-btn">New Loan</button>
-  
+
+  <div class="filters">
+    <label for="loanType">Type</label>
+    <select id="loanType" onchange={{action (mut selectedLoanType) value="target.value"}}>
+      <option value="">All</option>
+      <option value="homeloan">Home Loan</option>
+      <option value="businessloan">Business Loan</option>
+      <option value="educationloan">Education Loan</option>
+    </select>
+
+    <label for="loanStatus">Status</label>
+    <select id="loanStatus" onchange={{action (mut selectedLoanStatus) value="target.value"}}>
+      <option value="">All</option>
+      <option value="approved">Approved</option>
+      <option value="pending">Pending</option>
+      <option value="rejected">Rejected</option>
+      <option value="closed">Closed</option>
+    </select>
+
+    <button class="clear" {{action "clearFilters"}}>Clear</button>
+  </div>
+
   <table class="loans-table">
     <thead>
       <tr>
-        <th>LoanId</th>
-        <th>LoanType</th>
+        <th>Loan Id</th>
+        <th>Loan Type</th>
+        <th>Loan Status</th>
         <th>Amount</th>
-        <th>Duration</th>
-        <th>AvailedDate</th>
+        <th>Availed Date</th>
         {{#unless (eq role "CUSTOMER")}}
-        <th>Actions</th>
+        <th>Action</th>
         {{/unless}}
       </tr>
     </thead>
     <tbody>
-      {{#each loans as |loan|}}
+      {{#each filteredLoans as |loan|}}
         <tr {{action "viewLoan" loan}}>
           <td>{{loan.loan_id}}</td>
           <td>{{loan.loan_type}}</td>
+          <td>{{loan.loan_status}}</td>
           <td>Rs.{{loan.loan_amount}}</td>
-          <td>{{loan.loan_duration}}</td>
           <td>{{loan.loan_availed_date}}</td>
           {{#unless (eq role "CUSTOMER")}}
-          <td>
-            <button {{action "editLoan" loan}}>Edit</button>
-          </td>
+            <td>
+              <button class="view-btn" {{action "editLoan" loan}}>Edit</button>
+            </td>
           {{/unless}}
         </tr>
       {{/each}}
     </tbody>
   </table>
 </div>
-

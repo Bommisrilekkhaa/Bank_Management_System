@@ -29,8 +29,12 @@
       <span class="field-label">Availed Date:</span>
       <span class="field-value">{{loan.loan_availed_date}}</span>
     </div>
+    <div class="loan-field">
+      <span class="field-label">Account Number:</span>
+      <span class="field-value">{{loan.acc_number}}</span>
+    </div>
     {{#if (eq loan.loan_status "approved")}}
-    <div>
+    <div class="view-wrap">
         <button class="view-btn"  {{action "toEmis" loan}}>View Emis</button>
     </div>
     {{/if}}

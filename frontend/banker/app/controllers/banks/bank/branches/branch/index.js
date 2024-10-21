@@ -2,6 +2,7 @@ import Ember from 'ember';
 
 export default Ember.Controller.extend({
   branchesService: Ember.inject.service('branches'),
+  branch:[],
   role:Ember.computed(()=>{
     let value = `; ${document.cookie}`;
     let parts = value.split(`; ${'sessionData'}=`);
@@ -11,6 +12,15 @@ export default Ember.Controller.extend({
         return sessionData.user_role;  
     }
   }),
+  loadBranch(){
+    this.get('branchesService').fetchBranch(this.get('bankId')).then((response) => {
+      this.set('branch', response);
+      this.set('branch',this.get('branch')[0]);
+      console.log(this.get('branch'));
+    }).catch((error) => {
+      console.error("Failed to load branch:", error);
+    });
+  },
   actions: {
     viewAccounts(branch) {
       localStorage.setItem("branchId",branch.branch_id);

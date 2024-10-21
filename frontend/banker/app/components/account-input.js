@@ -1,7 +1,6 @@
 import Ember from 'ember';
-
 export default Ember.Component.extend({
-
+  notification: Ember.inject.service('notify'),
   branchesService: Ember.inject.service('branches'),
   accountsService: Ember.inject.service('accounts'),
   errorMessage: '',
@@ -17,7 +16,7 @@ export default Ember.Component.extend({
         return sessionData.user_role;  
     }
   }),
-
+  
   init() {
     this._super(...arguments);
     console.log("init...");
@@ -32,6 +31,8 @@ export default Ember.Component.extend({
           return sessionData.user_id;  
     }
   }),
+
+  
   accNo: '',
   acc_type: '',
   acc_balance: '',
@@ -43,9 +44,10 @@ export default Ember.Component.extend({
   isEdit: false,  
   branchId:'',
   loadBranches() {
-    console.log(this.get('bankId'));
+    // console.log(this.get('bankId'));
     this.get('branchesService').fetchBranches(this.get('bankId')).then((response) => {
       this.set('branchNames', response);
+     
     }).catch((error) => {
       console.error("Failed to load branches:", error);
     });
@@ -59,15 +61,6 @@ export default Ember.Component.extend({
       return;
     }
 
-    // if (!this.get('statuses').includes(this.get('acc_status'))) {
-    //   this.set("errorMessage","Please select a valid account status.");
-    //   return;
-    // }
-
-    // if (!this.get('username') || this.get('username').trim() === '') {
-    //   this.set("errorMessage",'Username cannot be empty.');
-    //   return;
-    // }
 
     if (!this.get('branch_name') || this.get('branch_name').trim() === '') {
       this.set("errorMessage",'Please select a branch.');
@@ -81,10 +74,15 @@ export default Ember.Component.extend({
         this.branchId = item['branch_id'];
       }
     }
-        
-       localStorage.setItem('branchId',this.get('branchId'));
+      
+      if(this.get('role')!='MANAGER')
+      {
+
+        localStorage.setItem('branchId',this.get('branchId'));
+      }
         const userData={
           fullname:this.get('fullname'),
+          userId:this.get('userId')
         }
         const accountData = {
           accNo: this.get('accNo'),
@@ -94,23 +92,22 @@ export default Ember.Component.extend({
           acc_status: this.get('acc_status'),
           fullname: this.get('fullname'),
           bankId:this.get('bankId'),
-          branch_name: this.get('branch_name'),
         };
 
 
     
     if (this.get('isEdit')) {
-      
-            this.get('accountsService').updateUser(userData).then(() => {
-              console.log("fullname updated");
-            }).catch((error) => {
-              console.error(error);
-            });        
+            
        
         this.get('accountsService').updateAccount(accountData).then(() => {
           // alert('Account updated successfully!');
+
           this.resetForm();
-          this.sendAction("toAccount");
+          this.get('notification').showNotification('Account Edited successfully!', 'success');
+
+           Ember.run.later(() => {
+            this.sendAction("toAccount");
+            }, 2000);
         }).catch((error) => {
           // alert('Error updating account');
           console.error(error);
@@ -120,9 +117,15 @@ export default Ember.Component.extend({
       } else {
        
         this.get('accountsService').createAccount(accountData).then(() => {
+
           // alert('Account created successfully!');
           this.resetForm();
-          this.sendAction("toAccount");
+        
+          this.get('notification').showNotification('Account Created successfully!', 'success');
+
+           Ember.run.later(() => {
+            this.sendAction("toAccount");
+            }, 2000);
         }).catch((error) => {
           // alert('Error creating account');
           console.error(error);

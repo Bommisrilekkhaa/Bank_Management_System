@@ -1,13 +1,13 @@
 import Ember from 'ember';
 
 export default Ember.Component.extend({
-    // InterestRate =  / 12 / 100;
-    // emiAmount = (loanAmount * monthlyInterestRate * Math.pow(1 + monthlyInterestRate, tenureMonths)) 
-    //               / (Math.pow(1 + monthlyInterestRate, tenureMonths) - 1);
     actions:{
-        toEmis(loanId)
+        toEmis(loan)
         {
-            this.sendAction("toEmis",loanId);
+            let InterestRate= loan.loan_interest/ 12 / 100;
+            let emiAmount =(loan.loan_amount * InterestRate * Math.pow(1 + InterestRate, loan.loan_duration)) / (Math.pow(1 + InterestRate, loan.loan_duration) - 1);
+            emiAmount = Math.round(emiAmount);
+            this.sendAction("toEmis",loan,emiAmount);
         }
     }
 });

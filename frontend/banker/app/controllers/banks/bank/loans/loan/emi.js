@@ -13,18 +13,22 @@ export default Ember.Controller.extend({
             this.set('generatedEmis', this.generateTable(this.get('emis')));
         }).catch((error) => {
             console.error("Failed to load EMIs:", error);
+            this.set('generatedEmis', this.generateTable([]));
         });
     },
 
     generateTable(emis) {
         let emiSchedule = [];
         
+        console.log(this.get('loan'));
         let totalEmis = this.get('loan').loan_duration;
-        
         let loanAvailedDate =this.get('loan').length <= 0 ? new Date() : new Date(this.get('loan').loan_availed_date.replace(/-/g, '/')) ;
         
-        if (emis && emis.length > 0) {
-            emis.forEach((emi) => {
+        
+            let emisArray = this.get('emis'); 
+            
+            for (let i = 0; i < emisArray.length; i++) {
+                let emi = emisArray[i];
                 let emiNumber = emi.emi_number || '-';
                 let transactionId = emi.transaction_id || '-';
                 let actualPaidDate = emi.actual_paid_date ? new Date(emi.actual_paid_date.replace(/-/g, '/')) : '-';
@@ -35,15 +39,15 @@ export default Ember.Controller.extend({
                 } else {
                     toBePaidDate = 'Invalid Date';
                 }
-    
+            
                 emiSchedule.push({
                     emiNumber,
                     transactionId,
                     toBePaidDate: toBePaidDate instanceof Date ? toBePaidDate.toLocaleDateString() : toBePaidDate,
                     actualPaidDate: actualPaidDate instanceof Date ? actualPaidDate.toLocaleDateString() : actualPaidDate
                 });
-            });
-        }
+            }
+        
         
         let nextEmiNumber = emis.length > 0 ? emis[emis.length - 1].emi_number + 1 : 1;
         if (nextEmiNumber <= totalEmis) {
@@ -82,20 +86,25 @@ export default Ember.Controller.extend({
         return emiSchedule;
     },
 
-    // addNewEmi()
-    // {
-    //     this.transitionToRoute('banks.bank.accounts.account.transactions',this.get('bankId'),localStorage.getItem('accNo'))
-    //     .then((newRoute) => {
-    //         newRoute.controller.setProperties({
-    //             transaction_type:'emi',
-    //             transaction_amount:
-    //         });
-    //       })
-    //       .catch((error) => {
-    //         console.error("Transition failed", error);
-    //       });
-        
-    // }
+    actions:{
+
+        addNewEmi()
+        {
+            this.transitionToRoute('banks.bank.accounts.account.transactions.new',this.get('bankId'),this.get('loan').acc_number)
+            .then((newRoute) => {
+                newRoute.controller.setProperties({
+                    transaction_type:'emi',
+                    transaction_amount:this.get('loanAmount'),
+                    accNo:this.get('loan').acc_number
+                });
+              })
+              .catch((error) => {
+                console.error("Transition failed", error);
+              });
+            
+        }
+    }
+
     
     
 });

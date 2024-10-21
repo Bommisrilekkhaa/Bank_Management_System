@@ -6,9 +6,9 @@
 @import "./banks.scss";
 @import "./branches.scss";
 @import "./users.scss";
+@import "./notify.scss";
 * {
     margin: 0;
-    padding: 0;
     box-sizing: border-box;
   }
   
@@ -28,3 +28,9 @@
     flex-direction: column;
     width: 100%;
 }
+html,body{
+  height: 100%;
+    margin: 0;
+}
+
+

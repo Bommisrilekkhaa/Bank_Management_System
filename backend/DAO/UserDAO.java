@@ -8,6 +8,7 @@ import com.google.gson.JsonObject;
 
 import enums.Status;
 import enums.UserRole;
+import model.Bank;
 import model.User;
 import servlet.ControllerServlet;
 import utility.DbConnection;
@@ -20,18 +21,19 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 public class UserDAO {
 
 	    private DbConnection db = new DbConnection();
+	    private BankDAO bankDao = new BankDAO();
+	    private BranchDAO branchDao = new BranchDAO();
 
-	    public boolean authenticateUser(Connection conn, User user) throws SQLException 
+	    public boolean authenticateUser(Connection conn, User user,Bank bank) throws SQLException 
 	    {
 	    	Map<String,Object[]> conditions = new HashMap<>();
 	    	conditions.put("username", new Object[] {"=",user.getUsername()});
 	    	conditions.put("password", new Object[] {"=",SessionHandler.hashPassword(user.getPassword())});
-	    	conditions.put("user_role", new Object[] {"=", user.getUser_role()});
+	    	
 	    	
 	        QueryUtil query = QueryUtil.create()
 	                			.select("*")
@@ -43,9 +45,34 @@ public class UserDAO {
 	        	if(rs.next())
 	        	{
 	        		user.setUser_id(rs.getInt("user_id"));
-	        		System.out.println("status"+(Integer)Status.ACTIVE.getValue());
+	        		user.setUser_role(rs.getInt("user_role"));
+//	        		System.out.println("status"+(Integer)Status.ACTIVE.getValue());
 	        		if(rs.getInt("user_status")== (Integer)Status.ACTIVE.getValue())
 	        		{
+	        			if(user.getUser_role()==(Integer)UserRole.ADMIN.getValue())
+	        			{
+	        				Bank newBank = bankDao.getBankById(conn, bank.getBank_id());
+	        				if(newBank.getAdmin_id()==user.getUser_id())
+	        				{
+	        					return true;
+	        				}
+	        				
+	        				return false;
+
+	        			}
+	        			else if(user.getUser_role()==(Integer)UserRole.MANAGER.getValue())
+	        			{
+	        				ResultSet rsBranch = branchDao.selectBranchByManager(conn, user.getUser_id());
+	        				if(rsBranch.next())
+	        				{
+	        					if(rsBranch.getInt("bank_id") == bank.getBank_id())
+	        					{
+	        						return true;
+	        					}
+	        					return false;
+	        				}
+	        				return false;
+	        			}
 	        			return true;
 	        		}
 	        		return false;
@@ -76,8 +103,13 @@ public class UserDAO {
 	    public ResultSet selectAllUsers(Connection conn) throws SQLException 
 	    {
 	    	Map<String,Object[]> conditions = new HashMap<>();
-	    	conditions.put("bank_id", new Object[] {"=",ControllerServlet.pathMap.get("banks")});
-	        QueryUtil query = QueryUtil.create()
+	    	
+	    	if(ControllerServlet.pathMap.containsKey("users")) 
+	    	{
+	    		conditions.put("user_id", new Object[] {"=",ControllerServlet.pathMap.get("users")});
+	    	}
+	    	
+	    	QueryUtil query = QueryUtil.create()
 	                .select("*")
 	                .from("users")
 	                .where(conditions);
@@ -107,34 +139,38 @@ public class UserDAO {
 	        return userList;
 	    }
 
-	    public List<User> applyFilters(List<User> users, Map<String, String[]> parameterMap) 
+	    
+	    
+	    public ResultSet getUnassignedManagers(Connection conn) throws SQLException
 	    {
-	        return users.stream()
-	                .filter(user -> parameterMap.entrySet().stream()
-	                    .allMatch(entry -> {
-	                        String param = entry.getKey();
-	                        String[] values = entry.getValue();
+	    	
+	    	Map<String,Object[]> conditions = new HashMap<>();
+	    	conditions.put("u.user_role", new Object[] {"=",UserRole.MANAGER.getValue()});
+	    	 QueryUtil query = QueryUtil.create()
+		                .select("*")
+		                .from("users u")
+		                .join("branch b", "u.user_id = b.manager_id", "LEFT")
+		                .where(conditions);
+	    	 
+	    	query.append("AND b.manager_id IS NULL");
+	    	return query.executeQuery(conn, db);
 
-	                        switch (param) {
-	                            case "user_id":
-	                                int userId = Integer.parseInt(values[0]);
-	                                return user.getUser_id() == userId;
-	                            case "full_name":
-	                                return user.getFullname().equalsIgnoreCase(values[0]);
-	                            case "user_phonenumber":
-	                                return user.getUser_phonenumber().equals(values[0]);
-	                            case "user_role":
-	                                int userRole = Integer.parseInt(values[0]);
-	                                return user.getUser_role() == userRole;
-	                            case "user_status":
-	                                int status = Integer.parseInt(values[0]);
-	                                return user.getUser_status() == status;
-	                            default:
-	                                return true;
-	                        }
-	                    })
-	                )
-	                .collect(Collectors.toList());
+	    }
+	    
+	    public ResultSet getUnassignedAdmins(Connection conn) throws SQLException
+	    {
+	    	
+	    	Map<String,Object[]> conditions = new HashMap<>();
+	    	conditions.put("u.user_role", new Object[] {"=",UserRole.ADMIN.getValue()});
+	    	 QueryUtil query = QueryUtil.create()
+		                .select("*")
+		                .from("users u")
+		                .join("banks b", "u.user_id = b.admin_id", "LEFT")
+		                .where(conditions);
+	    	 
+	    	query.append("AND b.admin_id IS NULL");
+	    	return query.executeQuery(conn, db);
+
 	    }
 	    
 	    public boolean isUsernameTaken(Connection conn, User user) throws SQLException 
@@ -160,11 +196,6 @@ public class UserDAO {
 	    	
 	    	Map<String,Object> conditions = new HashMap<>();
 	    	
-	    	conditions.put("fullname", user.getFullname());
-	    	conditions.put("date_of_birth", user.getDate_of_birth());
-	    	conditions.put("user_phonenumber", user.getUser_phonenumber());
-	    	conditions.put("user_address", user.getUser_address());
-	    	conditions.put("user_role", user.getUser_role());
 	    	conditions.put("user_status", user.getUser_status());
 	    	
 	        QueryUtil query = QueryUtil.create()
@@ -175,6 +206,23 @@ public class UserDAO {
 	        return query.executeUpdate(conn, db) > 0;
 	    }
 	    
+	    public boolean updateFullname(Connection conn,User user) throws SQLException 
+	    {
+	    	Map<String,Object[]> whereconditions = new HashMap<>();
+	    	whereconditions.put("user_id", new Object[] {"=",user.getUser_id()});
+	    	
+	    	Map<String,Object> conditions = new HashMap<>();
+	    	
+	    	conditions.put("full_name", user.getFullname());
+	    	
+	    	 QueryUtil query = QueryUtil.create()
+		                .update("users")
+		                .set(conditions)
+		                .where(whereconditions);
+
+		        return query.executeUpdate(conn, db) > 0;
+	    	
+	    }
 	    public boolean deleteUser(Connection conn,int userId) throws SQLException 
 	    {
 	    	Map<String,Object[]> conditions = new HashMap<>();
@@ -187,20 +235,45 @@ public class UserDAO {
 	        return query.executeUpdate(conn, db) > 0;
 	    }
 
-		public User extractUserDetails(JsonObject jsonRequest,User user) throws ParseException 
-	    {
+	    public User extractUserDetails(JsonObject jsonRequest, User user) throws ParseException {
+	        SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");  
+
+	        if (jsonRequest.has("full_name")) {
+	            user.setFullname(jsonRequest.get("full_name").getAsString());
+	        }
+
+	        if (jsonRequest.has("date_of_birth")) {
+	            Date strDate = new java.sql.Date(formatter.parse(jsonRequest.get("date_of_birth").getAsString()).getTime());
+	            user.setDate_of_birth(strDate);
+	        }
+
+	        if (jsonRequest.has("user_phonenumber")) {
+	            user.setUser_phonenumber(jsonRequest.get("user_phonenumber").getAsString());
+	        }
+
+	        if (jsonRequest.has("user_address")) {
+	            user.setUser_address(jsonRequest.get("user_address").getAsString());
+	        }
+
+	        if (jsonRequest.has("user_role")) {
+	            user.setUser_role(UserRole.valueOf(jsonRequest.get("user_role").getAsString().toUpperCase()).getValue());
+	        }
+
+	        if (jsonRequest.has("username")) {
+	            user.setUsername(jsonRequest.get("username").getAsString());
+	        }
+
+	        if (jsonRequest.has("password")) {
+	            user.setPassword(jsonRequest.get("password").getAsString());
+	        }
 	        
-		  
-		    SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");  
-		    Date strDate=  new java.sql.Date(formatter.parse(jsonRequest.get("date_of_birth").getAsString()).getTime());  
-	             user.setFullname(jsonRequest.get("full_name").getAsString());
-	             user.setDate_of_birth(strDate); 
-	             user.setUser_phonenumber(jsonRequest.get("user_phonenumber").getAsString());
-	             user.setUser_address(jsonRequest.get("user_address").getAsString());
-	             user.setUser_role(UserRole.valueOf(jsonRequest.get("user_role").getAsString().toUpperCase()).getValue());
-	             user.setUsername(jsonRequest.get("username").getAsString());
-	             user.setPassword(jsonRequest.get("password").getAsString());
-	                
+	        if(jsonRequest.has("user_status"))
+	        {
+
+	            user.setUser_status(Status.valueOf(jsonRequest.get("user_status").getAsString().toUpperCase()).getValue());
+	          
+	        }
+
 	        return user;
 	    }
 		

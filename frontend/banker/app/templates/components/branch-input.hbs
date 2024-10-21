@@ -25,10 +25,21 @@
         <input type="text" id="branch_number" value={{branch_number}} class="form-control" oninput={{action (mut branch_number) value="target.value"}} disabled>
       </div>
     {{/if}}
-      <div class="form-group">
-        <label for="manager_id">Manager ID</label>
-        <input type="text" id="manager_id" value={{manager_id}} class="form-control" oninput={{action (mut manager_id) value="target.value"}}>
-      </div>
+     <div class="form-group">
+      <label for="manager_id">Manager Name</label>
+      <select id="manager_id" class="form-control" onchange={{action (mut manager_id) value="target.value"}}>
+        {{#if isEdit}}
+          <option value={{manager_id}}>{{manager_name}}</option>
+        {{else}}
+          <option value="">Select Manager</option>
+        {{/if}}
+        {{#each availableManagers as |manager|}}
+          <option value={{manager.manager_id}}>{{manager.manager_name}}</option>
+        {{/each}}
+      </select>
+    </div>
+
+
   
       <button type="submit" class="btn-primary">{{if isEdit "Update Branch" "Create Branch"}}</button>
       
@@ -41,4 +52,5 @@
       {{/if}}
     </form>
   </div>
+  {{notify-box message=notification.message type=notification.type}}
 </body>

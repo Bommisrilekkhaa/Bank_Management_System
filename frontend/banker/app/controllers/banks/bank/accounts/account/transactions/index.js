@@ -18,12 +18,13 @@ export default Ember.Controller.extend({
 
   actions: {
     viewTransaction(transaction) {
+      localStorage.setItem('transactionId', transaction.transaction_id);
       this.transitionToRoute('banks.bank.accounts.account.transactions.transaction', transaction.acc_number, transaction.transaction_id)
         .then((newRoute) => {
           newRoute.controller.setProperties({
             bankId: this.get('bankId'),
             branchId: this.get('branchId'),
-            transaction: transaction
+            transactionId: transaction.transaction_id
           });
         })
         .catch((error) => {

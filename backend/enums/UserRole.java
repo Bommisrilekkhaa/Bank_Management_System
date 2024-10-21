@@ -7,7 +7,8 @@ public enum UserRole {
 	
 	ADMIN(0),
 	MANAGER(1),
-	CUSTOMER(2);
+	CUSTOMER(2),
+	SUPERADMIN(3);
 
 	
 	private int value;

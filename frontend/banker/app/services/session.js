@@ -5,16 +5,22 @@ export default Ember.Service.extend({
   ajax: Ember.inject.service(),
 
   login(credentials) {
-      const { username, password, selectedRole } = credentials;
+    let bankId=localStorage.getItem('bankId');
+      const { username, password, isSuperAdmin} = credentials;
 
       // console.log(credentials);
 
+      let url = `http://localhost:8080/banker/api/v1/auth?action=login`;
+      if(isSuperAdmin)
+      {
+        url=url+`&isSuperAdmin=true`;
+      }
       return $.ajax({
-        url: `http://localhost:8080/banker/api/v1/login?action=login`,
+        url: url,
         type: 'POST',
         credentials:'include',
         contentType: 'application/json',
-        data: JSON.stringify({ username, password, user_role: selectedRole }),
+        data: JSON.stringify({ username, password,bank_id:bankId}),
         xhrFields:{
           withCredentials:true
         },
@@ -35,7 +41,7 @@ export default Ember.Service.extend({
       // console.log(credentials+'signup');
      
       return $.ajax({
-        url: `http://localhost:8080/banker/api/v1/login?action=register`,
+        url: `http://localhost:8080/banker/api/v1/auth?action=register`,
         type: 'POST',
         contentType: 'application/json',
         data: JSON.stringify({ 
@@ -60,7 +66,7 @@ export default Ember.Service.extend({
   logout() {
      
       return $.ajax({
-        url: `http://localhost:8080/banker/api/v1/login?action=logout`,
+        url: `http://localhost:8080/banker/api/v1/auth?action=logout`,
         type: 'GET',
         credentials:'include',
         xhrFields:{

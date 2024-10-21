@@ -1,0 +1,87 @@
+.notification-top-right {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    padding: 20px;
+    border-radius: 5px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+    color: #000;
+    z-index: 1000;
+
+    &.success {
+      background-color: #C6F7D8;  
+      border: 1px solid #3E8E41;
+      color: #3E8E41;
+    }
+  
+    &.error {
+      background-color: #F7D8D8; 
+      border: 1px solid #8E3E3E;
+      color: #8E3E3E;
+    }
+}
+
+.branch-card {
+  
+  .branch-name {
+    font-size: 1.5em;
+    color: #0d1b2a;
+    margin-bottom: 10px;
+    text-align: center; 
+  }
+
+  
+}
+.branch-field {
+  display: flex;
+  justify-content: flex-start;
+  margin: 10px 0;
+
+  .field-label {
+    
+    font-weight: bold;
+    color: #134B70;
+    width: 50%; 
+  }
+
+ 
+}
+.card-container {
+  margin: 50px 200px;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center; 
+}
+
+.card-container {
+  margin: 50px 200px;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center; 
+  align-items: center;
+}
+
+.card {
+  background-color: #fff;
+  border-radius: 8px;
+  padding: 20px;
+  margin: 15px;
+  box-shadow: 0 4px 12px rgb(255, 255, 255);
+  font-family: 'Arial', sans-serif;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  flex: 1 1 calc(50% - 30px);
+  max-width: calc(40% - 30px);
+}
+
+.card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+}
+
+
+
+.branch-field {
+  margin: 10px 0;
+}
+
+

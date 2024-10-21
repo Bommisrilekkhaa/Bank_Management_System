@@ -14,14 +14,29 @@
       <span class="field-label">Bank Code:</span>
       <span class="field-value">{{bank.bank_code}}</span>
     </div>
+     <div class="bank-field">
+      <span class="field-label">Bank Admin:</span>
+      <span class="field-value">{{bank.admin_name}}</span>
+    </div>
     <div class="bank-field">
       <span class="field-label">Main Branch ID:</span>
       <span class="field-value">{{bank.main_branch_id}}</span>
     </div>
-    {{#if (eq role "ADMIN")}}
-     <div>
-        <button class="view-btn"  {{action "updateMainBranch" bank.bank_id bank}}>Update Main Branch</button>
+     <div class="bank-field">
+      <span class="field-label">Main Branch Name:</span>
+      <span class="field-value">{{branch.branch_name}}</span>
     </div>
+     <div class="bank-field">
+      <span class="field-label">Main Branch Address:</span>
+      <span class="field-value">{{branch.branch_address}}</span>
+    </div>
+    {{#if (eq role "ADMIN")}}
+    
+    
+      <div class="view-wrap">
+        <button class="view-btn"  {{action "updateMainBranch" bank}}>Update Main Branch</button>
+      </div>
+    
     {{/if}}
     {{/each}}
   </div>

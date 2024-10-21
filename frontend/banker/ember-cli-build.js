@@ -2,7 +2,6 @@
 'use strict';
 
 const EmberApp = require('ember-cli/lib/broccoli/ember-app');
-
 module.exports = function(defaults) {
   let app = new EmberApp(defaults, {
      proxy: 'http://localhost:8080',
@@ -11,9 +10,16 @@ module.exports = function(defaults) {
     //   // extension:"scss",
       // includePaths:['app/styles']
     // },
+// ember-cli-build.js
+
+
+ 
+
+
   });
+ 
 
-
+  // require('babel-polyfill');
   // Use `app.import` to add additional libraries to the generated
   // output files.
   //

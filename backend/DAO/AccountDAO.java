@@ -7,7 +7,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -16,6 +15,7 @@ import com.google.gson.JsonObject;
 
 import enums.AccountType;
 import enums.Status;
+import enums.TransactionType;
 import model.Account;
 import utility.DbConnection;
 import utility.QueryUtil;
@@ -31,13 +31,13 @@ public class AccountDAO {
         QueryUtil query = QueryUtil.create()
 			                .insert("account")
 			                .columns("acc_type", "acc_balance", "acc_status", "user_id", "branch_id")
-			                .values( account.getAccType(), 0, 0,
+			                .values( account.getAccType(), 0, account.getAccStatus(),
 			                		account.getUserId(), account.getBranchId());
 
         return query.executeUpdate(conn, db) > 0;
     }
     
-    public boolean checkAccount() throws SQLException, ServletException
+    public boolean checkAccount(Account account) throws SQLException, ServletException
     {
     	
     	Map<String,Object[]> conditions = new HashMap<>();
@@ -74,15 +74,21 @@ public class AccountDAO {
     	{
     		return "a."+key.substring(0,key.length()-2)+"_id";
     	}
-    	else if(key.equals("user_id"))
+    	else if(key.equals("users"))
     	{
-    		return "a."+key;
+    		return "a."+key.substring(0,key.length()-1)+"_id";
     	}
     	else if(key.equals("accounts"))
     	{
     		return "a."+key.substring(0,3)+"_number";
     	}
-    	return "b."+key.substring(0,key.length()-1)+"_id";
+    	else if(key.equals("banks"))
+    	{
+    		
+    		return "b."+key.substring(0,key.length()-1)+"_id";
+    	}
+    	else
+    		return key;
     }
     
    
@@ -105,54 +111,53 @@ public class AccountDAO {
         return accountList;
     }
 
-    public List<Account> applyFilters(List<Account> accounts, Map<String, String[]> parameterMap) 
-    {
-        return ( accounts.stream()
-                .filter(account -> 
-                    parameterMap.entrySet().stream()
-                    .allMatch(entry -> {
-                        String param = entry.getKey();
-                        String[] values = entry.getValue();
-                        
-                        switch (param) {
-                            case "acc_no":
-                            	int num = Integer.parseInt(values[0]);
-                                return account.getAccNo() == num;
-                            case "acc_type":
-                            	int type = Integer.parseInt(values[0]);
-                                return account.getAccType() == type;
-                            case "acc_balance":
-                            	double balance = Double.parseDouble(values[0]);
-                                return account.getAccBalance() == balance;
-                            case "acc_status":
-                                int status = Integer.parseInt(values[0]);
-                                return account.getAccStatus() == status;
-                            case "user_id":
-                                int userId = Integer.parseInt(values[0]);
-                                return account.getUserId() == userId;
-                            case "branch_id":
-                                int branchId = Integer.parseInt(values[0]);
-                                return account.getBranchId() == branchId;
-                            default:
-                                return true;
-                        }
-                    })
-                )).collect(Collectors.toList());
-    }
-
    
-
+   public ResultSet accountsAndLoans(Connection conn,HashMap<String, Integer> pathMap) throws SQLException
+   {
+		Map<String,Object[]> conditions = new HashMap<>();
+		for(String key:pathMap.keySet()) {
+    		conditions.put(changeName(key), new Object[] {"=",pathMap.get(key)});
+    	}
+	   
+	   QueryUtil query = QueryUtil.create()
+			   .select("a.acc_number AS accountNumber, "
+					   + "a.acc_balance AS accountBalance, "
+					   + "l.loan_id AS loanId, "
+					   + "l.loan_type AS loanType, "
+					   + "l.loan_amount AS loanAmount, "
+					   + "l.loan_duration AS loanDuration, "
+					   + "l.loan_availed_date AS loanAvailedDate, "
+					   +"l.loan_interest AS loanInterest, "
+					   + "t.transaction_id AS transactionId, "
+					   + "t.transaction_datetime AS transactionDateTime, "
+					   + "t.transaction_type AS transactionType ")
+			   .from("account a")
+			   .join("branch b", "b.branch_id=a.branch_id", "INNER")
+			   .join("loan l", "a.acc_number = l.acc_number","LEFT")
+			   .join("transaction t", "a.acc_number = t.acc_number","LEFT")
+			   .where(conditions)
+			   .append("ORDER BY a.acc_number, l.loan_id, t.transaction_id");
+	   return query.executeQuery(conn, new DbConnection());
+	   
+   }
+   
+   
+   
     public boolean updateAccount(Connection conn, Account account) throws SQLException 
     {
     	Map<String,Object[]> whereconditions = new HashMap<>();
     	whereconditions.put("acc_number", new Object[] {"=",account.getAccNo()});
     	
     	Map<String,Object> conditions = new HashMap<>();
-    	
+    	if(account.getAccStatus() == Status.INACTIVE.getValue())
+    	{
+    		if(!updateBalance(conn,TransactionType.DEBIT.getValue(),1000,account.getAccNo()))
+    		{
+    			return false;
+    		}
+    	}
     	conditions.put("acc_type",account.getAccType());
-    	conditions.put("acc_balance", account.getAccBalance());
     	conditions.put("acc_status", account.getAccStatus());
-    	conditions.put("user_id", account.getUserId());
     	conditions.put("branch_id", account.getBranchId());
     	
         QueryUtil query = QueryUtil.create()
@@ -162,7 +167,6 @@ public class AccountDAO {
 
         return query.executeUpdate(conn, db) > 0;
     }
-    
     
     
 
@@ -178,15 +182,22 @@ public class AccountDAO {
     	Map<String,Object[]> whereconditions = new HashMap<>();
     	whereconditions.put("acc_number", new Object[] {"=",acc_no});
     	
-    	if(type==0)
+    	if(type==TransactionType.CREDIT.getValue())
     	{
     		amount = account.getAccBalance() + amount;
     	}
-    	else if(type==1)
+    	else if(type==TransactionType.DEBIT.getValue())
     	{
-    		
-    		amount = account.getAccBalance() - amount;
+    		if(account.getAccBalance() >= amount)
+    		{
+    			amount = account.getAccBalance() - amount;
+    		}
+    		else
+    		{
+    			return false;
+    		}
     	}
+    	
     	Map<String,Object> conditions = new HashMap<>();
     	
     	conditions.put("acc_balance",amount);
@@ -204,8 +215,27 @@ public class AccountDAO {
     	if(!request.getSession(false).getAttribute("user_role").equals("CUSTOMER"))
     	account.setUserId(userQueryMap.getUserId(DbConnection.connect(), jsonRequest.get("username").getAsString()).getUser_id());
     	
+    	  
         account.setAccType((AccountType.valueOf(jsonRequest.get("acc_type").getAsString().toUpperCase())).getValue());
-        account.setAccStatus(Status.valueOf(jsonRequest.get("acc_status").getAsString().toUpperCase()).getValue());
+        
+        if(!jsonRequest.has("acc_status"))
+        {
+        	account.setAccStatus(Status.PENDING.getValue());
+
+        }
+        else
+        {
+        	if(jsonRequest.get("acc_status").getAsString().equals(""))
+        	{
+        		account.setAccStatus(Status.PENDING.getValue());
+        	}
+        	else
+        	{
+        		
+        		account.setAccStatus(Status.valueOf(jsonRequest.get("acc_status").getAsString().toUpperCase()).getValue());
+        	}
+        	
+        }
         return account;
     }
 }

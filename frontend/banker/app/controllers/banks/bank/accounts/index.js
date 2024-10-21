@@ -1,14 +1,19 @@
 import Ember from 'ember';
 
 export default Ember.Controller.extend({
+  branchSelection: Ember.inject.service('branch-select'),
   branchesService: Ember.inject.service('branches'),
   accountsService: Ember.inject.service('accounts'),
   bankId: localStorage.getItem('bankId'),
+
   init() {
-    // console.log("controller");
-    // this._super(...arguments);
-    // console.log(this.get('model.id'));
-    // this.loadAccounts();
+    this._super(...arguments);
+    
+    this.get('branchSelection').on('branchChanged', this, this.handleBranchChange);
+  },
+
+  handleBranchChange(newBranchId) {
+    this.loadAccounts();
   },
   accounts: [],
 
@@ -26,7 +31,6 @@ export default Ember.Controller.extend({
 
     viewaccount(account)
     {
-      this.get('branchesService').set('branchId',account.branch_id);
       localStorage.setItem('branchId',account.branch_id);
       localStorage.setItem('accNo',account.acc_no);
       // console.log("view...."+this.get('bankId'));
@@ -56,6 +60,8 @@ export default Ember.Controller.extend({
     },
 
     editAccount(isEdit,account,branchId) {
+      localStorage.setItem('branchId',branchId);
+      localStorage.setItem('accNo',account.acc_no);
       this.transitionToRoute('banks.bank.accounts.account.edit',this.get('bankId'),account.acc_no).then((newRoute)=>{
 
         newRoute.controller.setProperties({
@@ -68,12 +74,17 @@ export default Ember.Controller.extend({
           fullname: account.user_fullname,
           branch_name: account.branch_name,
           branch_Id:branchId,
-          bankId:this.get('bankId')
+          bankId:this.get('bankId'),
+          userId:account.user_id
         });
       }).catch((error) => {
         console.error("Transition failed", error);
       });
     },
    
+  },
+  willDestroy() {
+    this._super(...arguments);
+    this.get('branchSelection').off('branchChanged', this, this.handleBranchChange);
   }
 });

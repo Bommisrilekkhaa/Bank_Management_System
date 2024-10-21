@@ -8,12 +8,12 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 import javax.servlet.ServletException;
 
 import com.google.gson.JsonObject;
 
+import enums.TransactionStatus;
 import enums.TransactionType;
 import model.Transaction;
 import utility.DbConnection;
@@ -30,14 +30,13 @@ public class TransactionDAO {
 			                .insert("transaction")
 			                .columns("transaction_datetime", "transaction_type", "transaction_status", "transaction_amount", "acc_number")
 			                .values(transaction.getTransaction_datetime(), transaction.getTransaction_type(),
-			                        0, transaction.getTransaction_amount(),
+			                        TransactionStatus.SUCCESS.getValue(), transaction.getTransaction_amount(),
 			                        transaction.getAcc_number());
 
         return query.executeUpdate(conn, db) > 0;
     }
     
     public boolean updateBalance(int type,double amount) throws SQLException, ServletException
-    
     {
     	AccountDAO accountQueryMap = new AccountDAO();
     	return accountQueryMap.updateBalance(DbConnection.connect(), type, amount, transaction.getAcc_number());
@@ -100,31 +99,7 @@ public class TransactionDAO {
         return transactionList;
     }
 
-    public List<Transaction> applyFilters(List<Transaction> transactions, Map<String, String[]> parameterMap) 
-    {
-        return transactions.stream()
-                .filter(transaction -> parameterMap.entrySet().stream()
-                    .allMatch(entry -> {
-                        String param = entry.getKey();
-                        String[] values = entry.getValue();
-
-                        switch (param) {
-                            case "transaction_id":
-                                return transaction.getTransaction_id() == Integer.parseInt(values[0]);
-                            case "transaction_type":
-                                return transaction.getTransaction_type() == Integer.parseInt(values[0]);
-                            case "transaction_status":
-                                return transaction.getTransaction_status() == Integer.parseInt(values[0]);
-                            case "transaction_amount":
-                                return transaction.getTransaction_amount() == Double.parseDouble(values[0]);
-                            case "acc_number":
-                                return transaction.getAcc_number() == Integer.parseInt(values[0]);
-                            default:
-                                return true;
-                        }
-                    })
-                ).collect(Collectors.toList());
-    }
+    
 
     
     public Transaction extractTransactionDetails(JsonObject jsonRequest) throws SQLException, ServletException 

@@ -5,7 +5,7 @@ export default Ember.Controller.extend({
         toTransaction()
         {
             this.transitionToRoute("banks.bank.accounts.account.transactions",localStorage.getItem('accNo'));
-        }
+        },
       }
 
 });

@@ -43,11 +43,12 @@
       <select id="loan_duration" class="form-control" onchange={{action (mut loan_duration) value="target.value"}}>
         <option value="">Select duration</option>
         {{#each durations as |duration|}}
-          <option value={{duration}} selected={{if (eq duration loan_duration) "selected"}}>{{duration}}</option>
+          <option value={{duration}} selected={{if (eq duration loan_duration) "selected"}}>{{duration}} Months</option>
         {{/each}}
       </select>
     </div>
     {{#unless (eq role "CUSTOMER")}}
+    {{#unless isEdit}}
       <div class="form-group">
         <label for="loan_status">Loan Status</label>
         <select id="loan_status" class="form-control" onchange={{action (mut loan_status) value="target.value"}}>
@@ -58,6 +59,19 @@
         </select>
       </div>
     {{/unless}}
+    {{#if isEdit}}
+    <div class="form-group">
+      <label for="loan_status">Loan Status</label>
+      <select id="loan_status" class="form-control" onchange={{action (mut loan_status) value="target.value"}}>
+        <option value="">Select Status</option>
+        {{#each filteredStatuses as |status|}}
+          <option value={{status}} selected={{if (eq status loan_status) "selected"}}>{{status}}</option>
+        {{/each}}
+      </select>
+    </div>
+    {{/if}}
+    {{/unless}}
+
 
 
     <button type="submit" class="btn-primary">{{if isEdit "Update Loan" "Create Loan"}}</button>
@@ -78,4 +92,5 @@
     {{/if}}
   </form>
 </div>
+{{notify-box message=notification.message type=notification.type}}
 </body>

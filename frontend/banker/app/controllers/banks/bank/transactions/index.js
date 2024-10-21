@@ -1,10 +1,21 @@
 import Ember from 'ember';
 
 export default Ember.Controller.extend({
+  branchSelection: Ember.inject.service('branch-select'),
   transactionsService: Ember.inject.service('transactions'),
   transactions: [],
   bankId:localStorage.getItem('bankId'),
   accNo:localStorage.getItem('accNo'),
+  
+  init() {
+    this._super(...arguments);
+    this.get('branchSelection').on('branchChanged', this, this.handleBranchChange);
+  },
+
+  handleBranchChange(newBranchId) {
+    this.loadTransactions();
+  },
+
   loadTransactions() {
     console.log(this.get('accNo'));
     this.get('transactionsService').fetchTransactions(this.get('accNo'), this.get('bankId'))
@@ -20,18 +31,21 @@ export default Ember.Controller.extend({
 
   actions: {
     viewTransaction(transaction) {
-      this.transitionToRoute('banks.bank.accounts.account.transactions.transaction', this.get('bankId'),transaction.acc_number, transaction.transaction_id)
+      localStorage.setItem('transactionId',transaction.transaction_id);
+      this.transitionToRoute('banks.bank.transactions.transaction',this.get('bankId'),transaction.transaction_id)
         .then((newRoute) => {
           newRoute.controller.setProperties({
             bankId: this.get('bankId'),
             branchId: this.get('branchId'),
-            transaction: transaction
+            transactionId: transaction.transaction_id
           });
+          console.log("inner view transactions");
         })
         .catch((error) => {
           console.error("Transition failed", error);
         });
     },
+
 
     addNewTransaction(branchId) { 
       console.log(branchId);
@@ -47,5 +61,9 @@ export default Ember.Controller.extend({
           console.error("Transition to new transaction page failed", error);
         });
     }
+  },
+  willDestroy() {
+    this._super(...arguments);
+    this.get('branchSelection').off('branchChanged', this, this.handleBranchChange);
   }
 });

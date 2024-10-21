@@ -3,7 +3,7 @@
   <h2>Make new Payment</h2>
   
   <form {{action "submitForm" on="submit"}}>
-
+    {{#unless isEmi}}
     <div class="form-group">
       <label for="transaction_type">Transaction Type</label>
       <select id="transaction_type" class="form-control" onchange={{action (mut transaction_type) value="target.value"}}>
@@ -13,10 +13,16 @@
         {{/each}}
       </select>
     </div>
-
+    {{/unless}}
+    {{#if isEmi}}
+         <div class="form-group">
+      <label for="transaction_type">Transaction Type</label>
+      <input type="text" id="transaction_type" value={{transaction_type}} class="form-control"  disabled>
+    </div>
+    {{/if}}
     <div class="form-group">
       <label for="transaction_amount">Transaction Amount</label>
-      <input type="number" id="transaction_amount" value={{transaction_amount}} class="form-control" oninput={{action (mut transaction_amount) value="target.value" }} {{if (eq transaction_type "emi") disabled}}>
+      <input type="number" id="transaction_amount" value={{transaction_amount}} class="form-control" oninput={{action (mut transaction_amount) value="target.value" }} disabled={{isEmi}}>
     </div>
   {{#if isDirect}}
     <div class="form-group">
@@ -30,19 +36,21 @@
     </div>
     {{/if}}
     <button type="submit" class="btn-primary">Proceed</button>
-   {{#if isDirect}}
+      {{#unless isEmi}}
       {{#link-to "banks.bank.transactions" bankId}}
+          <button  class="btn-secondary">Cancel</button>
+      {{/link-to}}
+      {{/unless}}
+
+      {{#if isEmi}}
+      
           <button {{action "cancel"}} class="btn-secondary">Cancel</button>
-        {{/link-to}}
-    {{/if}}
-    {{#unless isDirect}}
-    {{#link-to "banks.bank.accounts.account.transactions" bankId accNo}}
-      <button {{action "cancel"}} class="btn-secondary">Cancel</button>
-    {{/link-to}}
-    {{/unless}}
+      
+      {{/if}}
     {{#if errorMessage}}
       <div class="error-message">* {{errorMessage}}</div>
     {{/if}}
   </form>
 </div>
+{{notify-box message=notification.message type=notification.type}}
 </body>

@@ -1,10 +1,23 @@
 import Ember from 'ember';
-
+import $ from 'jquery';
 export default Ember.Service.extend({
   ajax: Ember.inject.service(),
-    bankId: localStorage.getItem('bankId'),
-  fetchUsers(bankId) {
-    let url = `http://localhost:8080/banker/api/v1/banks/${bankId}/users`;
+  fetchUsers(bankid) {
+    let bankId=localStorage.getItem('bankId');
+    let userId=localStorage.getItem('userId');
+    let url = `http://localhost:8080/banker/api/v1`;
+    if(bankId!="*")
+    {
+      url=url +`/banks/${bankId}`;
+    }
+   
+    url=url+`/users`;
+    if(userId!="*")
+    {
+      url=url+`/${userId}`;
+    }
+
+   
     return $.ajax({
       url: url,
       type: 'GET',
@@ -28,10 +41,90 @@ export default Ember.Service.extend({
     });
   },
 
+  fetchManagers()
+  {
+    let bankId=localStorage.getItem('bankId');
+    let url = `http://localhost:8080/banker/api/v1`;
+    if(bankId!="*")
+    {
+      url=url +`/banks/${bankId}`;
+    }
+   
+    url=url+`/users?filter_manager=true`;
 
-  deleteUser(bankId,userId) {
+   
     return $.ajax({
-        url: `http://localhost:8080/banker/api/v1/banks/${bankId}/users/${userId}`,
+      url: url,
+      type: 'GET',
+      contentType: 'application/json',
+      credentials: 'include',
+      xhrFields: {
+        withCredentials: true 
+      },
+      success: (response) => {
+        return response;
+      },
+      error: (error) => {
+        console.error("Error fetching managers:", error);
+        if (error.responseJSON) {
+          alert(`Error: ${error.responseJSON.message}`);
+        } else {
+          alert("An error occurred while fetching managers.");
+        }
+        throw error.responseJSON || error;
+      }
+    });
+  },
+
+  fetchAdmins()
+  {
+    let bankId=localStorage.getItem('bankId');
+    let url = `http://localhost:8080/banker/api/v1`;
+    if(bankId!="*")
+    {
+      url=url +`/banks/${bankId}`;
+    }
+   
+    url=url+`/users?filter_admin=true`;
+
+   
+    return $.ajax({
+      url: url,
+      type: 'GET',
+      contentType: 'application/json',
+      credentials: 'include',
+      xhrFields: {
+        withCredentials: true 
+      },
+      success: (response) => {
+        return response;
+      },
+      error: (error) => {
+        console.error("Error fetching admins:", error);
+        if (error.responseJSON) {
+          alert(`Error: ${error.responseJSON.message}`);
+        } else {
+          alert("An error occurred while fetching admins.");
+        }
+        throw error.responseJSON || error;
+      }
+    });
+  },
+  deleteUser(userId) {
+    let bankId=localStorage.getItem('bankId');
+    let url = `http://localhost:8080/banker/api/v1`;
+    if(bankId!="*")
+    {
+      url=url +`/banks/${bankId}`;
+    }
+   if(userId!="*")
+   {
+     url=url+`/users/${userId}`;
+
+   }
+
+    return $.ajax({
+        url: url,
         type: 'DELETE',
         contentType: 'application/json',
         success: (response) => {
@@ -47,16 +140,24 @@ export default Ember.Service.extend({
 
 
   updateUser(userData) {
+    let userId = localStorage.getItem('userId');
+    let url = `http://localhost:8080/banker/api/v1`;
+    let bankId=localStorage.getItem('bankId');
+    if(bankId!="*")
+    {
+      url=url +`/banks/${bankId}`;
+    }
+   if(userId!="*")
+   {
+     url=url+`/users/${userId}`;
+
+   }
     return $.ajax({
-        url: `http://localhost:8080/banker/api/v1/banks/${this.get('bankId')}/users/${userData.user_id}`,
+        url: url,
         type: 'PUT',
         contentType: 'application/json',
       data: JSON.stringify({
-        full_name: userData.fullname,
-        username: userData.username,
-        user_role: userData.user_role,
-        user_phonenumber: userData.user_phonenumber,
-        user_address: userData.user_address,
+       
         user_status: userData.user_status
       }),
       success: (response) => {

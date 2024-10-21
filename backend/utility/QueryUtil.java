@@ -48,6 +48,12 @@ public class QueryUtil
 	        query.append(joinType).append(" JOIN ").append(table).append(" ON ").append(condition).append(" ");
 	        return this;
 	    }
+	    
+	    public QueryUtil append(String sql) {
+	        query.append(sql).append(" ");
+	        return this;
+	    }
+
 
 	    public QueryUtil where(Map<String, Object[]> conditions) 
 	    {
@@ -230,7 +236,6 @@ public class QueryUtil
 		            	
 		        
 	        }
-	        System.out.println(stmt.executeUpdate());
 	        return stmt.executeUpdate();
 	    }
 	

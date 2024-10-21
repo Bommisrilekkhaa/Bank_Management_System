@@ -4,7 +4,7 @@ export default Ember.Controller.extend({
     actions:{
         toTransaction()
         {
-            this.transitionToRoute("banks.bank.accounts.account.transactions",localStorage.getItem('accNo'));
+            this.transitionToRoute("banks.bank.transactions",localStorage.getItem('bankId'));
         }
       }
 

@@ -32,15 +32,10 @@
 
     <div class="form-group">
       <label for="username">Username</label>
-      <input type="text" id="username" value={{username}} class="form-control" oninput={{action (mut username) value="target.value"}}>
+      <input type="text" id="username" value={{username}} class="form-control" oninput={{action (mut username) value="target.value"}} disabled={{isEdit}}>
     </div>
     {{/unless}}
-    {{#if isEdit}}
-      <div class="form-group">
-        <label for="fullname">Fullname</label>
-        <input type="text" id="fullname" value={{fullname}} class="form-control" oninput={{action (mut fullname) value="target.value"}}>
-      </div>
-    {{/if}}
+   
     <div class="form-group">
       <label for="branch_name">Branch Name</label>
       <select id="branch_name" class="form-control" onchange={{action (mut branch_name) value="target.value"}}>
@@ -62,4 +57,6 @@
       {{/if}}
   </form>
 </div>
+{{notify-box message=notification.message type=notification.type}}
+
 </body>

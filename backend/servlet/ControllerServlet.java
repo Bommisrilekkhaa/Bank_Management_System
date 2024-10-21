@@ -13,96 +13,100 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import enums.UserRole;
+import redis.clients.jedis.JedisPool;
+import utility.JsonHandler;
 import utility.SessionHandler;
 
 public class ControllerServlet extends HttpServlet {
 	private static final long serialVersionUID = 1L;
-	public static List<String> resources = Arrays.asList("banks","branches","accounts","transactions","loans","emis","users");
+	public static List<String> resources = Arrays.asList("banks","branches","accounts","transactions","loans","emis","users","dashboard");
 	public static HashMap<String,Integer> pathMap ;
-       
+	public static JedisPool pool = null;
+	    
+	 
+	    public static void initializeCache() {
+	        pool = new JedisPool("localhost", 6379);
+	        System.out.println("redis....");
+	    }
+	    @Override
+	    public void destroy() {
+	    	
+	        if (pool != null) {
+	            pool.close();
+	        }
+	    }
     public ControllerServlet() {
         super();
     }
 
-	public void service(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+	public void service(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException{
+		
+		initializeCache();
+		
 		pathMap = new LinkedHashMap<>();
 		SessionHandler.doOptions(request,response);
 		String[] path = request.getRequestURI().split("/");
 		String method = request.getMethod();
 		String reqServlet ="";
 		System.out.println(request.getRequestURI());
-		if(!(path[4].contains("login")  || path[path.length-1].equals("banks")))
-		{
+		try {
 			
-			String role = (String) request.getSession(false).getAttribute("user_role");
-//			System.out.println(role+"session");
+			if(path.length >= 4)
+			{
 				
-				
-				if(roleValidation(role,method,path))
+				if(!(path[path.length-1].contains("auth")  || path[path.length-1].equals("banks")))
 				{
+					try {
+						
+						String role = (String) request.getSession(false).getAttribute("user_role");
+						if(roleValidation(role,method,path))
+						{
+							
+							try 
+							{
+								reqServlet= pathValidation(path);
+								
+								
+							}
+							catch(IllegalAccessException e)
+							{
+								e.printStackTrace();
+							}
+						}
+						else
+						{
+							
+							response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+							return;
+						}
+					}
+					catch(NullPointerException e)
+					{
+						JsonHandler.sendErrorResponse(response, "No Cookies Found! Login to Proceed");
+					}
+//			System.out.println(role+"session");
 					
-					try 
-					{
-						reqServlet= pathValidation(path);
-						
-						
-					}
-					catch(IllegalAccessException e)
-					{
-						e.printStackTrace();
-					}
+					
+					
 				}
 				else
 				{
-					
-					response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-					return;
+					reqServlet= path[4];
 				}
-
+			}
+			else
+			{
+				throw new IllegalAccessException("Invalid url");
+			}
+			
 		}
-		else
+		catch( IllegalAccessException e)
 		{
-			reqServlet= path[4];
+			e.printStackTrace();
 		}
-		
 		reflection(reqServlet,method,request,response);
 		pathMap = new LinkedHashMap<>();
-//		if(path[4].contains("login") || path[4] == "register" || path[4]=="banks")
-//		{
-//			reflection(path[4],method,request,response);
-//		}
-//		else
-//		{
-//			
-//			String role = (String) request.getSession(false).getAttribute("user_role");
-////		System.out.println(role+"session");
-//			
-//			
-//			if(roleValidation(role,method,path))
-//			{
-//				
-//				try 
-//				{
-//					String reqServlet= pathValidation(path);
-//					reflection(reqServlet,method,request,response);
-//					
-//				}
-//				catch(IllegalAccessException e)
-//				{
-//					e.printStackTrace();
-//				}
-//			}
-//			else
-//			{
-//				
-//				response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-//				return;
-//			}
-//				
-//					
-//		}
-//		
-		
+	
 		
 	}
 	
@@ -110,7 +114,7 @@ public class ControllerServlet extends HttpServlet {
 	{
 		if(role == UserRole.CUSTOMER.toString())
 		{
-			if(path[4] != "banks" && path[4] != "branches")
+			if((path[4] != "banks" && path[6] != "branches") || path[path.length-1]!="banks" || path[path.length-2]!="banks" )
 			{
 				if(method == "GET" || method == "POST")
 				{
@@ -135,7 +139,11 @@ public class ControllerServlet extends HttpServlet {
 		for(int i=4;i<n-1;i+=2)
 		{
 			System.out.println(path[i]);
-			pathMap.put(path[i],Integer.valueOf(path[i+1]));
+			if(path[i+1]!="*")
+			{
+				
+				pathMap.put(path[i],Integer.valueOf(path[i+1]));
+			}
 		}
 		if(n%2!=0)
 		{

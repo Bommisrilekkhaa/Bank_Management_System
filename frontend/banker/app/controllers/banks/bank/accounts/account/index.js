@@ -1,6 +1,17 @@
 import Ember from 'ember';
 
 export default Ember.Controller.extend({
+  acc:[],
+  accountsService: Ember.inject.service('accounts'),
+  loadAccount() {
+    this.get('accountsService').fetchAccount(this.get('bankId')).then((response) => {
+      console.log(response);
+      this.set('acc', response);
+      this.set('acc',this.get('acc')[0]);
+    }).catch((error) => {
+      console.error("Failed to load account:", error);
+    });
+  },
   actions:{
     toLoans()
     {

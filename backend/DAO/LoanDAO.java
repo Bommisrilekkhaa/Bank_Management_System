@@ -7,7 +7,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -31,7 +30,7 @@ public class LoanDAO {
 			                .insert("loan")
 			                .columns("loan_type", "loan_amount", "loan_interest", "loan_duration", "loan_status", "loan_availed_date", "acc_number")
 			                .values(loan.getLoan_type(), loan.getLoan_amount(), loan.getLoan_interest(),
-			                		loan.getLoan_duration(), 0, loan.getLoan_availed_date(),
+			                		loan.getLoan_duration(), loan.getLoan_status(), loan.getLoan_availed_date(),
 			                		loan.getAcc_no());
 
         return query.executeUpdate(conn, db) > 0;
@@ -69,11 +68,6 @@ public class LoanDAO {
 						        .join("account a", "l.acc_number = a.acc_number", "INNER")
 						        .join("branch b", "a.branch_id = b.branch_id", "INNER")
 						        .where(conditions);
-//        QueryUtil query = QueryUtil.create("SELECT * "
-//        		+ "FROM loan l "
-//        		+ "INNER JOIN account a ON l.acc_number = a.acc_number "
-//        		+ "INNER JOIN branch b ON a.branch_id = b.branch_id ")
-//    			 				.where(conditions);
 
         return query.executeQuery(conn, db);
     }
@@ -96,7 +90,12 @@ public class LoanDAO {
     	{
     		return "a."+key;
     	}
-    	return "b."+key.substring(0, key.length() - 1) + "_id";
+    	else if(key.equals("banks"))
+    	{
+    		
+    		return "b."+key.substring(0, key.length() - 1) + "_id";
+    	}
+    	return key;
     }
 
     public List<Loan> convertResultSetToList(ResultSet rs) throws SQLException 
@@ -119,36 +118,7 @@ public class LoanDAO {
         return loanList;
     }
 
-    public List<Loan> applyFilters(List<Loan> loans, Map<String, String[]> parameterMap) 
-    {
-        return loans.stream()
-                .filter(loan -> parameterMap.entrySet().stream()
-                    .allMatch(entry -> {
-                        String param = entry.getKey();
-                        String[] values = entry.getValue();
-
-                        switch (param) {
-                            case "loan_id":
-                                return loan.getLoan_id() == Integer.parseInt(values[0]);
-                            case "loan_type":
-                                return loan.getLoan_type() == Integer.parseInt(values[0]);
-                            case "loan_amount":
-                                return loan.getLoan_amount() == Double.parseDouble(values[0]);
-                            case "loan_interest":
-                                return loan.getLoan_interest() == Double.parseDouble(values[0]);
-                            case "loan_duration":
-                                return loan.getLoan_duration() == Integer.parseInt(values[0]);
-                            case "loan_status":
-                                return loan.getLoan_status() == Integer.parseInt(values[0]);
-                            case "acc_number":
-                                return loan.getAcc_no() == Integer.parseInt(values[0]);
-                            default:
-                                return true;
-                        }
-                    })
-                ).collect(Collectors.toList());
-    }
-
+   
     public boolean updateLoan(Connection conn, Loan loan) throws SQLException 
     {
     	Map<String,Object[]> whereconditions = new HashMap<>();
@@ -171,11 +141,16 @@ public class LoanDAO {
         return query.executeUpdate(conn, db) > 0;
     }
 
-    private boolean checkLoans() throws SQLException, ServletException
+    private boolean checkLoans(int accNo) throws SQLException, ServletException
     {
+    	Map<String,Object[]> whereconditions = new HashMap<>();
+    	whereconditions.put("acc_number", new Object[] {"=", accNo});
+    	
+    	
     	QueryUtil query = QueryUtil.create()
     						.select("*")
-    						.from("loan");
+    						.from("loan")
+    						.where(whereconditions);
     	ResultSet rs = query.executeQuery( DbConnection.connect(), new DbConnection());
     	
 		if(rs.next())
@@ -191,11 +166,27 @@ public class LoanDAO {
         loan.setLoan_type(LoanType.valueOf(jsonRequest.get("loan_type").getAsString().toUpperCase()).getValue());
         loan.setLoan_amount(jsonRequest.get("loan_amount").getAsDouble());
         loan.setLoan_duration(Integer.valueOf(jsonRequest.get("loan_duration").getAsString().substring(0,2)));
-        loan.setLoan_status(LoanStatus.valueOf(jsonRequest.get("loan_status").getAsString().toUpperCase()).getValue());
+        if(!jsonRequest.has("loan_status"))
+        {
+        	loan.setLoan_status(LoanStatus.PENDING.getValue());
+
+        }
+        else
+        {
+        	if(jsonRequest.get("loan_status").getAsString().equals(""))
+        	{
+        		loan.setLoan_status(LoanStatus.PENDING.getValue());
+        	}
+        	else
+        	{
+        		
+        		loan.setLoan_status(LoanStatus.valueOf(jsonRequest.get("loan_status").getAsString().toUpperCase()).getValue());
+        	}
+        }
         if(request.getMethod()!="PUT")
         {
         	
-        	if(checkLoans())
+        	if(checkLoans(loan.getAcc_no()))
         	{
         		loan.setLoan_interest(11.0);
         	}

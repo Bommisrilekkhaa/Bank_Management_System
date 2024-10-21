@@ -75,8 +75,8 @@ public class BankDAO {
 //    	System.out.println(banks.getBank_name());
         QueryUtil query = QueryUtil.create()
             .insert("banks")
-            .columns("bank_name", "bank_code","admin_id","main_branch_id")
-            .values(banks.getBank_name(), banks.getBank_code(),banks.getAdmin_id(),banks.getMain_branch_id());
+            .columns("bank_name", "bank_code","admin_id")
+            .values(banks.getBank_name(), banks.getBank_code(),banks.getAdmin_id());
         
        
         return query.executeUpdate(conn, db) > 0;
@@ -90,7 +90,6 @@ public class BankDAO {
 
         Map<String, Object> setConditions = new HashMap<>();
         setConditions.put("bank_name", bank.getBank_name());
-        setConditions.put("bank_code", bank.getBank_code());
         setConditions.put("admin_id", bank.getAdmin_id());
         setConditions.put("main_branch_id", bank.getMain_branch_id());
 
@@ -108,7 +107,11 @@ public class BankDAO {
         bank.setBank_name(jsonRequest.get("bank_name").getAsString());
         bank.setBank_code(jsonRequest.get("bank_code").getAsString());
         bank.setAdmin_id(jsonRequest.get("admin_id").getAsInt());
-        bank.setMain_branch_id(jsonRequest.get("main_branch_id").getAsInt());
+        if(jsonRequest.has("main_branch_id"))
+        {
+        	
+        	bank.setMain_branch_id(jsonRequest.get("main_branch_id").getAsInt());
+        }
         
         return bank;
     }

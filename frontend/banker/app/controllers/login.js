@@ -16,8 +16,8 @@ export default Ember.Controller.extend({
     let parts = value.split(`; ${'sessionData'}=`);
     if (parts.length === 2) {
         let cookieData = decodeURIComponent(parts.pop().split(';').shift());
-        let sessionData = JSON.parse(cookieData);  // Parse the JSON string
-        return sessionData.user_id;  // Extract user_id
+        let sessionData = JSON.parse(cookieData); 
+        return sessionData.user_id;
     }
   },
   actions: {
@@ -28,7 +28,7 @@ export default Ember.Controller.extend({
         .then(() => {
           this.set('userId',this.getUserIdFromCookie());
           if (this.get('userId')) {
-            // Transition to the dashboard route using the dynamic userId
+
             this.transitionToRoute('banks.bank.users.user.dashboard',localStorage.getItem('bankId'), this.get('userId')); 
           } else {
             this.set('errorMessage', 'User ID not found in cookies');
@@ -52,12 +52,6 @@ export default Ember.Controller.extend({
     },
 
    
-    logout() {
-      this.get('session').logout()
-        .then(() => {
-          this.transitionToRoute('login'); 
-        });
-    },
 
     toggleMode() {
       // console.log(isSignup);

@@ -1,7 +1,21 @@
 import Ember from 'ember';
 
 export default Ember.Controller.extend({
+  branchSelection: Ember.inject.service('branch-select'),
   loansService: Ember.inject.service('loans'),
+  
+
+  init() {
+    this._super(...arguments);
+   
+    this.get('branchSelection').on('branchChanged', this, this.handleBranchChange);
+    
+  },
+
+  handleBranchChange(newBranchId) {
+    this.loadLoans();
+  },
+
   loans: [],
   loadLoans() {
     console.log(this.get('accNo'));
@@ -12,20 +26,19 @@ export default Ember.Controller.extend({
       console.error("Failed to load loans:", error);
     });
   },
-  accNo:localStorage.getItem('accNo'),
   bankId:localStorage.getItem('bankId'),
   actions: {
 
     viewloan(loan)
     {
+      localStorage.setItem("accNo",loan.acc_number);
       // console.log("view...."+this.get('bankId'));
       localStorage.setItem("loanId",loan.loan_id);
         this.transitionToRoute('banks.bank.loans.loan',this.get('bankId'),loan.loan_id).then((newRoute)=>{
 
           newRoute.controller.setProperties({
             bankId:this.get('bankId'),
-            branchId:this.get('branchId'),
-            loan:loan
+            branchId:this.get('branchId')
           });
         }).catch((error) => {
           console.error("Transition failed", error);
@@ -46,6 +59,7 @@ export default Ember.Controller.extend({
     },
 
     editLoan(isEdit,loan,branchId) {
+      localStorage.setItem("accNo",loan.acc_number);
       this.transitionToRoute('banks.bank.loans.loan.edit',  loan.loan_id).then((newRoute) => {
         newRoute.controller.setProperties({
           isEdit: isEdit,
@@ -56,7 +70,7 @@ export default Ember.Controller.extend({
           loan_duration: loan.loan_duration,
           loan_status: loan.loan_status,
           loan_availed_date: loan.loan_availed_date,
-          accNo: this.get('accNo'),
+          accNo: loan.acc_number,
           bankId:this.get('bankId'),
           branchId:branchId
         });
@@ -64,8 +78,10 @@ export default Ember.Controller.extend({
         console.error("Transition to edit loan page failed", error);
       });
     }
+  },
+  willDestroy() {
+    this._super(...arguments);
+    this.get('branchSelection').off('branchChanged', this, this.handleBranchChange);
   }
 
-
-  
 });

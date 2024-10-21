@@ -22,8 +22,7 @@ export default Ember.Controller.extend({
           localStorage.setItem('loanId',loan.loan_id);  
           newRoute.controller.setProperties({
             bankId:this.get('bankId'),
-            branchId:this.get('branchId'),
-            loan:loan
+            branchId:this.get('branchId')
           });
         }).catch((error) => {
           console.error("Transition failed", error);

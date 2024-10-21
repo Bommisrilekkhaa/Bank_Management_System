@@ -1,32 +1,47 @@
 import Ember from 'ember';
 
 export default Ember.Component.extend({
-    transactionsService: Ember.inject.service('transactions'),
-    transactions: [],
-  accNo:localStorage.getItem('accNo'),
-  bankId:'',
-  role:Ember.computed(()=>{
+  transactionsService: Ember.inject.service('transactions'),
+  transactions: [],
+  branchId: localStorage.getItem('branchId'),
+
+  role: Ember.computed(function() {
     let value = `; ${document.cookie}`;
     let parts = value.split(`; ${'sessionData'}=`);
     if (parts.length === 2) {
-        let cookieData = decodeURIComponent(parts.pop().split(';').shift());
-        let sessionData = JSON.parse(cookieData);  
-        return sessionData.user_role;  
+      let cookieData = decodeURIComponent(parts.pop().split(';').shift());
+      let sessionData = JSON.parse(cookieData);  
+      return sessionData.user_role;  
     }
   }),
+
+  selectedTransactionType: '',
+  selectedTransactionStatus: '',
+
+  filteredTransactions: Ember.computed('transactions', 'selectedTransactionType', 'selectedTransactionStatus', function() {
+    let transactions = this.get('transactions');
+    let selectedTransactionType = this.get('selectedTransactionType');
+    let selectedTransactionStatus = this.get('selectedTransactionStatus');
+
+    if (selectedTransactionType) {
+      transactions = transactions.filter(transaction => transaction.transaction_type === selectedTransactionType);
+    }
+
+    if (selectedTransactionStatus) {
+      transactions = transactions.filter(transaction => transaction.transaction_status === selectedTransactionStatus);
+    }
+
+    return transactions;
+  }),
+
   actions: {
-    viewTransaction(transaction)
-    {
-      console.log(transaction);
-      this.sendAction('viewtransaction',transaction);
+    viewTransaction(transaction) {
+      this.sendAction('viewTransaction', transaction, this.get('branchId'));
     },
+
     addNewTransaction() {
-      console.log(this.get('accNo'));
-      this.sendAction('toaddNewTransaction',localStorage.getItem('branchId'));
-      
+      this.sendAction('toaddNewTransaction', this.get('branchId'));
     },
-
-   
+    
   }
-
 });

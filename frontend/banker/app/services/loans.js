@@ -6,23 +6,24 @@ export default Ember.Service.extend({
     ajax: Ember.inject.service(),
 
  
-    fetchLoans(accNo, bankId) { let url1 = `http://localhost:8080/banker/api/v1/banks/${bankId}`;
-    let url2=`/branches/${localStorage.getItem("branchId")}`;
-    let url3 = `/accounts/${localStorage.getItem("accNo")}`;
-    let url4 = `/loans`;
-    let url =``;
-    if(localStorage.getItem("branchId")!="*" && localStorage.getItem("accNo")!='*')
+    fetchLoans(accNo, bankid) { 
+    let url = `http://localhost:8080/banker/api/v1/`;
+    let bankId = localStorage.getItem("bankId");
+    let branchId = localStorage.getItem("branchId");
+    let accno = localStorage.getItem('accNo');
+    if(bankId!="*")
     {
-      url = url1+url2+url3+url4;
+      url=url +`banks/${bankId}`;
     }
-    else if(localStorage.getItem("branchId")!="*")
+    if(branchId!='*')
     {
-      url = url1+url2+url4;
+      url=url+`/branches/${branchId}`;
     }
-    else
+    if(accno!="*")
     {
-      url = url1+url4;
+      url = url+`/accounts/${accno}`;
     }
+    url=url+`/loans`;
     return $.ajax({
       url: url,
         type: 'GET',
@@ -46,14 +47,73 @@ export default Ember.Service.extend({
         }
       });
   },
-  
+  fetchLoan(accNo, bankid) { 
+    let bankId = localStorage.getItem("bankId");
+    let url = `http://localhost:8080/banker/api/v1/`;
+    let branchId = localStorage.getItem("branchId");
+    let accno = localStorage.getItem('accNo');
+    let loanId = localStorage.getItem('loanId');
+    if(bankId!="*")
+    {
+      url=url +`banks/${bankId}`;
+    }
+    if(branchId!='*')
+    {
+      url=url+`/branches/${branchId}`;
+    }
+    if(accno!="*")
+    {
+      url = url+`/accounts/${accno}`;
+    }
+    if(loanId!="*")
+      {
+        url = url+`/loans/${loanId}`;
+      }
+    return $.ajax({
+      url: url,
+        type: 'GET',
+        contentType: 'application/json',
+        credentials: 'include',
+        xhrFields: {
+          withCredentials: true 
+        },
+        success: (response) => {
+          return response;
+        },
+        error: (error) => {
+          console.error("Error fetching loan:", error);
+          if (error.responseJSON) {
+            alert(`Error: ${error.responseJSON.message}`);
+          } else {
+            alert("An error occurred while fetching loan.");
+          }
+          throw error.responseJSON || error;
+        }
+      });
+  },
     
     createLoan(Details) {
-      const {  accNo,bankId,branchId ,loan_type,loan_status,loan_duration,loan_amount} = Details;
-  
+      const { loan_type,loan_status,loan_duration,loan_amount} = Details;
+    let url = `http://localhost:8080/banker/api/v1/`;
+    let bankId = localStorage.getItem("bankId");
+    let branchid = localStorage.getItem("branchId");
+    let accno = Details.accNo
+    if(bankId!="*")
+    {
+      url=url +`banks/${bankId}`;
+    }
+    if(branchid!='*')
+    {
+      url=url+`/branches/${branchid}`;
+    }
+    if(accno!="*")
+    {
+      url = url+`/accounts/${accno}`;
+    }
+    url=url+`/loans`;
       console.log("insert...");
       return $.ajax({
-        url: `http://localhost:8080/banker/api/v1/banks/${bankId}/branches/${branchId}/accounts/${accNo}/loans`,
+        url: url,
         type: 'POST',
         contentType: 'application/json',
         data: JSON.stringify({
@@ -76,10 +136,30 @@ export default Ember.Service.extend({
     },
   
     updateLoan(loanDetails) {
-      const {  accNo,bankId,branchId ,loan_type,loan_status,loan_duration,loan_amount,loan_id} = loanDetails;
-  
+      const {  loan_type,loan_status,loan_duration,loan_amount,loan_id} = loanDetails;
+    let url = `http://localhost:8080/banker/api/v1/`;
+    let bankId = localStorage.getItem("bankId");
+    let branchid = localStorage.getItem("branchId");
+    let accno = localStorage.getItem('accNo');
+    if(bankId!="*")
+    {
+      url=url +`banks/${bankId}`;
+    }
+    if(branchid!='*')
+    {
+      url=url+`/branches/${branchid}`;
+    }
+    if(accno!="*")
+    {
+      url = url+`/accounts/${accno}`;
+    }
+    if(loan_id!="*")
+    {
+
+      url=url+`/loans/${loan_id}`;
+    }
       return $.ajax({
-        url: `http://localhost:8080/banker/api/v1/banks/${bankId}/branches/${branchId}/accounts/${accNo}/loans/${loan_id}`,
+        url: url,
         type: 'PUT',
         contentType: 'application/json',
         

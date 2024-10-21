@@ -1,0 +1,23 @@
+<div class="banks-list">
+  <button {{action "addNewBank"}} class="new-bank-btn">New Bank</button>
+  <table class="banks-table">
+    <thead>
+      <tr>
+        <th>Bank ID</th>
+        <th>Bank Name</th>
+        <th>Bank Code</th>
+        <th>Admin Name</th>
+      </tr>
+    </thead>
+    <tbody>
+      {{#each banks as |bank|}}
+        <tr {{action "viewBank" bank}}> 
+          <td>{{bank.bank_id}}</td>
+          <td>{{bank.bank_name}}</td>
+          <td>{{bank.bank_code}}</td>
+          <td>{{bank.admin_name}}</td>
+        </tr>
+      {{/each}}
+    </tbody>
+  </table>
+</div>

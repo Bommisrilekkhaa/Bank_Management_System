@@ -1,1 +1,18 @@
-<h1 style="color:white;">Dashboard</h1>
+{{#if (eq role "ADMIN")}}
+<div class="card-container">
+  {{#each branches as |branch|}}
+   {{admin-dashboard
+   }}
+  {{/each}}
+</div>
+{{/if}}
+
+{{#if (eq role "MANAGER")}}
+    {{manager-dashboard}}
+
+{{/if}}
+{{#if (eq role "CUSTOMER")}}
+    {{customer-dashboard}}
+
+{{/if}}
+

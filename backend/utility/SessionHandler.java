@@ -48,22 +48,8 @@ public class SessionHandler {
         response.addCookie(sessionCookie);
 
 
-//	    JsonHandler.sendSuccessResponse(response, "Login successful");
-	  
-    
 
-        System.out.println(session.getId());
-//        Cookie sessionCookie = new Cookie("authToken", session.getId());
-//        sessionCookie.setHttpOnly(false); 
-//	    sessionCookie.setMaxAge(COOKIE_MAX_AGE);
-//	    sessionCookie.setPath("/");
-	    
-	    
-//	    sessionCookie.setDomain("localhost");
-
-//	    response.addCookie(sessionCookie);
-//	    response.addHeader("Set-Cookie", sessionCookie.getName() + "=" + sessionCookie.getValue() + "; Path=" + sessionCookie.getPath() + 
-//                "; HttpOnly=" + sessionCookie.isHttpOnly() + "; SameSite=Lax");
+//        System.out.println(session.getId());
 
 	    JsonHandler.sendSuccessResponse(response, "Login successful");
 	  

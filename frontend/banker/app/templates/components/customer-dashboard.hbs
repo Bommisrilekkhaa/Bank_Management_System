@@ -1,0 +1,94 @@
+<div class="dashboard-container">
+    <div class="dashboard-section section-1">
+        <h2>Loans Overview</h2>
+        <div class="loan-card-container">
+            {{#each accountList as |item|}}
+                {{#if item.loan_details}}
+                    <div class="loan-card-dash">
+                        <h3>Loan ID: {{item.loan_details.loan_id}}</h3>
+                        <div class="loan-field">
+                            <span class="field-label-dash">Loan Type:</span>
+                            <span class="field-value-dash">{{item.loan_details.loan_type}}</span>
+                        </div>
+                        <div class="loan-field">
+                            <span class="field-label-dash">Loan Amount:</span>
+                            <span class="field-value-dash">Rs.{{item.loan_details.loan_amount}}</span>
+                        </div>
+                        <div class="loan-field">
+                            <span class="field-label-dash">Loan Duration:</span>
+                            <span class="field-value-dash">{{item.loan_details.loan_duration}} months</span>
+                        </div>
+                        <div class="loan-field">
+                            <span class="field-label-dash">Availed Date:</span>
+                            <span class="field-value-dash">{{item.loan_details.loan_availed_date}}</span>
+                        </div>
+                        <div class="view-wrap">
+                            <button class="view-btn" {{action "showEmiModal" item.loan_details.loan_id}}>Emi Schedule</button>
+                        </div>
+                    </div>
+                {{/if}}
+            {{/each}}
+        </div>
+    </div>
+
+    <div class="right-container">
+        <div class="dashboard-section section-2">
+            <h2>Transactions Overview</h2>
+            <div class="transaction-card-container">
+                {{#each accountList as |item|}}
+                    {{#each item.transactions as |transaction|}}
+                        <div class="transaction-card-dash">
+                            <h3>Transaction ID: {{transaction.transaction_id}}</h3>
+                            <div class="transaction-field">
+                                <span class="field-label-dash">Type:</span>
+                                <span class="field-value-dash">{{transaction.transaction_type}}</span>
+                            </div>
+                            <div class="transaction-field">
+                                <span class="field-label-dash">Date:</span>
+                                <span class="field-value-dash">{{transaction.transaction_datetime}}</span>
+                            </div>
+                        </div>
+                    {{/each}}
+                {{/each}}
+            </div>
+        </div>
+
+        <div class="dashboard-section section-3">
+            <h2>Accounts Overview</h2>
+            <div class="account-card-container">
+                {{#each accountList as |item|}}
+                    <div class="account-card-dash">
+                        <h3>Account Number: {{item.account.acc_no}}</h3>
+                        <div class="account-field">
+                            <span class="field-label-dash">Balance:</span>
+                            <span class="field-value-dash">Rs.{{item.account.acc_balance}}</span>
+                        </div>
+                    </div>
+                {{/each}}
+            </div>
+        </div>
+    </div>
+</div>
+<div class="emi-modal" id="emiModal">
+    <div class="emi-modal-content">
+        <span class="close-btn" {{action "closeEmiModal"}}>&times;</span>
+        <h3>EMI Schedule for Loan ID: Rs.{{selectedLoanId}}</h3><span>EMI Amount: Rs.{{emi.emiAmount}}</span>
+
+        <table class="emi-table">
+            <thead>
+                <tr>
+                    <th>EMI Number</th>
+                    <th>To-Be Paid Date</th>
+                </tr>
+            </thead>
+            <tbody>
+                {{#each emiSchedule as |emi|}}
+                    <tr>
+                        <td>{{emi.emiNumber}}</td>
+                        <td>{{format-date emi.toBePaidDate}}</td>
+                    </tr>
+                {{/each}}
+            </tbody>
+        </table>
+    </div>
+</div>

@@ -14,7 +14,7 @@ export default Ember.Controller.extend({
     }
   }),
   isAuthRoute: Ember.computed('currentRouteName', function() {
-    const authRoutes = ['login', 'register', 'index'];
+    const authRoutes = ['login', 'register', 'index','super-admin-login'];
     return authRoutes.includes(this.get('currentRouteName'));
   }),
   branchNames:[],
@@ -46,16 +46,20 @@ export default Ember.Controller.extend({
       this.get('session').logout()
         .then(() => {
           this.transitionToRoute('login'); 
+
         });
     },
     toUsers()
     {
-      console.log(this.get('bankId'));
-      this.transitionToRoute('banks.bank.users',this.get('bankId'));
+      this.transitionToRoute('users');
     },
     toBank()
     {
       this.transitionToRoute('banks.bank',this.get('bankId'));
+    },
+    toBanks()
+    {
+      this.transitionToRoute('banks');
     },
     toBranch()
     {

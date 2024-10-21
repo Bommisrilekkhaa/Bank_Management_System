@@ -12,14 +12,16 @@ export default Ember.Component.extend({
   pno: '',
   confirmPassword: '',
   errorMessage: '',
-  bank_name:'',
-  BankNames:[],
+  bank_name: '',
+  BankNames: [],
   isSignup: false,
-  BankId:'',
+  BankId: '',
   init() {
     this._super(...arguments);
     this.loadBanks();
-  }, 
+
+
+  },
 
   loadBanks() {
     this.get('banksService').fetchBanks().then((response) => {
@@ -29,95 +31,112 @@ export default Ember.Component.extend({
     });
   },
 
-  setBankId()
-  {
-    let array=this.get('bankNames');
+  setBankId() {
+    let array = this.get('bankNames');
     for (let i = 0; i < array.length; i++) {
       let item = array[i];
-      if(item['bank_name']==this.get('bank_name'))
-      {
+      if (item['bank_name'] == this.get('bank_name')) {
         this.BankId = item['bank_id'];
         break;
       }
     }
-    
-    
-    
+
+
+
   },
-  checkStorage()
-  {
-    if(localStorage.length!=0)
-    {
+  checkStorage() {
+    if (localStorage.length != 0) {
       localStorage.clear();
     }
 
     localStorage.setItem('bankId', this.get('BankId'));
-   
+
   },
   actions: {
     submitForm() {
+
+
       const username = this.get('username');
       const password = this.get('password');
       const selectedRole = this.get('selectedRole');
-      
+
       if (!username || !password) {
         this.set('errorMessage', 'Username and password are required.');
         return;
       }
-      
-      if (password.length < 8) {
-          this.set('errorMessage', 'Password must be at least 8 characters long.');
+
+      if (!this.get('isSuper')) {
+        if (!this.get('bank_name')) {
+          this.set('errorMessage', 'please select a bank');
           return;
         }
-        
-        if (this.get('isSignup')) {
-          const confirmPassword = this.get('confirmPassword');
-          if (password !== confirmPassword) {
-            this.set('errorMessage', 'Passwords do not match.');
-            return;
-          }
-          
-          if (!this.get('name') || !this.get('dob') || !this.get('addr') || !this.get('pno') || !selectedRole) {
-            this.set('errorMessage', 'All fields are required for signup.');
-            return;
-          }
-          
-          if (this.get('pno').length !== 10 || isNaN(this.get('pno'))) {
-            this.set('errorMessage', 'Please enter a valid 10-digit phone number.');
-            return;
-          }
-        }
-        
-        this.set('errorMessage', ''); 
-        
-        const action = this.get('isSignup') ? 'onSignup' : 'onLogin';
+      }
+      if (password.length < 8) {
+        this.set('errorMessage', 'Password must be at least 8 characters long.');
+        return;
+      }
 
-        // console.log('Submit button pressed'+action);  
-        
-        const credentials={ 
-          username: this.get('username'), 
-          password: this.get('password'), 
-          selectedRole: this.get('selectedRole'), 
-          name: this.get('name'), 
-          dob: this.get('dob'), 
-        addr: this.get('addr'), 
-        pno: this.get('pno')
+      if (this.get('isSignup')) {
+        const confirmPassword = this.get('confirmPassword');
+        if (password !== confirmPassword) {
+          this.set('errorMessage', 'Passwords do not match.');
+          return;
+        }
+
+        if (!this.get('name') || !this.get('dob') || !this.get('addr') || !this.get('pno') || !selectedRole) {
+          this.set('errorMessage', 'All fields are required for signup.');
+          return;
+        }
+
+        if (this.get('pno').length !== 10 || isNaN(this.get('pno'))) {
+          this.set('errorMessage', 'Please enter a valid 10-digit phone number.');
+          return;
+        }
+      }
+
+      this.set('errorMessage', '');
+
+      const action = this.get('isSignup') ? 'onSignup' : 'onLogin';
+
+      // console.log('Submit button pressed'+action);  
+
+      const credentials = {
+        username: this.get('username'),
+        password: this.get('password'),
+        selectedRole: this.get('selectedRole'),
+        name: this.get('name'),
+        dob: this.get('dob'),
+        addr: this.get('addr'),
+        pno: this.get('pno'),
+        bankId: this.get('BankId')
       }
 
       this.setBankId();
       this.checkStorage();
-        this.sendAction(action,credentials );
-      },
-      
-      toggleMode() {
-        const action = this.get('isSignup') ? 'toLogin' : 'toSignup';
-        if(action == 'toLogin')
-          this.set('isSignup',false);
-        else
-        this.set('isSignup',true);
+      this.sendAction(action, credentials);
+    },
+
+    toggleMode() {
+      const action = this.get('isSignup') ? 'toLogin' : 'toSignup';
+      if (action == 'toLogin')
+        this.set('isSignup', false);
+      else
+        this.set('isSignup', true);
 
       this.sendAction(action);
+    },
+
+    superAdminForm() {
+      if (!this.get('username') || !this.get('password')) {
+        this.set('errorMessage', 'Username and password are required.');
+        return;
+      }
+      const credentials = {
+        username: this.get('username'),
+        password: this.get('password')
+      }
+      this.sendAction("toSuperAdmin", credentials);
     }
-    
+
   }
 });

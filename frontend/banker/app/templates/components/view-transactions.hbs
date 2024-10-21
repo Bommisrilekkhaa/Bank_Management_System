@@ -1,6 +1,25 @@
 <div class="transactions-list">
   <button {{action "addNewTransaction"}} class="new-transaction-btn">New Transaction</button>
-  
+
+  <div class="filters">
+    <label for="transactionType">Type</label>
+    <select id="transactionType" onchange={{action (mut selectedTransactionType) value="target.value"}}>
+      <option value="">All</option>
+      <option value="emi">EMI</option>
+      <option value="debit">Debit</option>
+      <option value="credit">Credit</option>
+    </select>
+
+    <label for="transactionStatus">Status</label>
+    <select id="transactionStatus" onchange={{action (mut selectedTransactionStatus) value="target.value"}}>
+      <option value="">All</option>
+      <option value="success">Success</option>
+      <option value="pending">Pending</option>
+    </select>
+    
+    <button class="clear" {{action (mut selectedTransactionType) ''}} {{action (mut selectedTransactionStatus) ''}} >Clear</button>
+  </div>
+
   <table class="transactions-table">
     <thead>
       <tr>
@@ -14,7 +33,7 @@
       </tr>
     </thead>
     <tbody>
-      {{#each transactions as |transaction|}}
+      {{#each filteredTransactions as |transaction|}}
         <tr {{action "viewTransaction" transaction}}>
           <td>{{transaction.transaction_id}}</td>
           <td>{{transaction.transaction_type}}</td>
@@ -23,7 +42,6 @@
           {{/unless}}
           <td>Rs.{{transaction.transaction_amount}}</td>
           <td>{{transaction.transaction_datetime}}</td>
-         
         </tr>
       {{/each}}
     </tbody>

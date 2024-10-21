@@ -55,7 +55,7 @@ public class AuthFilter extends HttpFilter implements Filter {
 		
 		if (cookies == null) 
 		{
-			if (path[4].equals("login") || path[path.length-1].equals("banks")) 
+			if (path[path.length-1].equals("auth") || path[path.length-1].equals("banks")) 
 			{
 				System.out.println("Login request, skipping auth filter.");
 				

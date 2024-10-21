@@ -1,6 +1,7 @@
 import Ember from 'ember';
 
 export default Ember.Component.extend({
+  branchSelection: Ember.inject.service('branch-select'),
   branchesService: Ember.inject.service('branches'),
   session: Ember.inject.service(),
   bankId: localStorage.getItem('bankId'),
@@ -16,17 +17,21 @@ export default Ember.Component.extend({
   }),
   init() {
     this._super(...arguments);
-    console.log("init...");
-    this.loadBranches();
-    if(localStorage.key(2)==null)
+    // console.log("init...");
+    if(this.get('role')=='ADMIN' || this.get('role')=='CUSTOMER')
+    {
+      this.loadBranches();
+      
+    }
+    if(localStorage.getItem('branchId')==null)
     {
       localStorage.setItem('branchId', '*');
     }
-    if(!localStorage.key(3)==null)
+    if(localStorage.getItem('accNo')==null)
     {
       localStorage.setItem('accNo','*');  
     }
-    if(!localStorage.key(4)==null)
+    if(localStorage.getItem('loanId')==null)
     {
       localStorage.setItem('loanId','*');
     }
@@ -42,15 +47,20 @@ export default Ember.Component.extend({
     });
   },
 
+ 
+  changeBranch(branchId) {
+    
+    this.get('branchSelection').changeBranch(branchId);
+  },
   actions: {
     logout() {
       localStorage.clear();
       this.get('logout')();
     },
-    // toUsers()
-    // {
-    //   this.get('toUsers')();
-    // },
+    toUsers()
+    {
+      this.get('toUsers')();
+    },
     toBranch()
     {
       this.get('toBranch')();
@@ -58,6 +68,10 @@ export default Ember.Component.extend({
     todashboard()
     {
       this.get('todashboard')();
+    },
+    toBanks()
+    {
+      this.get('toBanks')();
     },
     toBank()
     {
@@ -100,7 +114,8 @@ export default Ember.Component.extend({
         if (selectedBranch) {
           localStorage.setItem('branchId', selectedBranch.branch_id);
           this.get('branchesService').set('branchId',selectedBranch.branch_id);
-          console.log('Branch ID set to:', selectedBranch.branch_id);
+          this.changeBranch(selectedBranch.branch_id);
+          // console.log('Branch ID set to:', selectedBranch.branch_id);
         } else {
           console.warn('Branch not found');
         }

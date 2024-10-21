@@ -1,6 +1,7 @@
 import Ember from 'ember';
 
 export default Ember.Component.extend({
+  notification: Ember.inject.service('notify'),
   accountsService: Ember.inject.service('accounts'),
   loansService: Ember.inject.service('loans'),
   errorMessage: '',
@@ -18,7 +19,7 @@ export default Ember.Component.extend({
   bankId:localStorage.getItem("bankId"),
   statuses: ['approved','closed', 'pending', 'rejected'],
   types: ['businessloan', 'homeloan', 'educationloan'], 
-  durations:['6 months','12 months','18 months','24 months'],
+  durations:[6,12,18,24],
   init() {
     this._super(...arguments);
     console.log("Loan form initialized...");
@@ -28,6 +29,23 @@ export default Ember.Component.extend({
 
     }
   }, 
+  role:Ember.computed(()=>{
+    let value = `; ${document.cookie}`;
+    let parts = value.split(`; ${'sessionData'}=`);
+    if (parts.length === 2) {
+        let cookieData = decodeURIComponent(parts.pop().split(';').shift());
+        let sessionData = JSON.parse(cookieData);  
+        return sessionData.user_role;  
+    }
+  }),
+
+  filteredStatuses: Ember.computed('loan_amount', function() {
+    if (this.get('loan_amount') > 3000000) {
+      return ['rejected']; 
+    } else {
+      return ['approved', 'closed', 'pending'];
+    }
+  }),
 
   userId: Ember.computed(() => {
     let value = `; ${document.cookie}`;
@@ -40,7 +58,7 @@ export default Ember.Component.extend({
   }),
   
   loadAccounts() {
-    this.get('accountsService').fetchAccounts(this.get('bankId')).then((response) => {
+    this.get('accountsService').fetchActiveAccounts(this.get('bankId')).then((response) => {
       console.log(response);
       this.set('accounts', response);
     }).catch((error) => {
@@ -55,9 +73,13 @@ export default Ember.Component.extend({
         return;
       }
 
-      if (!this.get('statuses').includes(this.get('loan_status'))) {
-        this.set("errorMessage", "Please select a valid loan status.");
-        return;
+      if(this.get('role')!='CUSTOMER')
+      {
+        if (!this.get('statuses').includes(this.get('loan_status'))) {
+          this.set("errorMessage", "Please select a valid loan status.");
+          return;
+        }
+
       }
 
       if (!this.get('loan_amount') || this.get('loan_amount') <= 0) {
@@ -89,7 +111,11 @@ export default Ember.Component.extend({
         this.get('loansService').updateLoan(loanData).then(() => {
           console.log('Loan updated successfully!');
           this.resetForm();
-          this.sendAction("toLoan");
+          this.get('notification').showNotification('Loan Edited successfully!', 'success');
+
+          Ember.run.later(() => {
+           this.sendAction("toLoan");
+           }, 2000);
         }).catch((error) => {
           console.error('Error updating loan:', error);
         });
@@ -98,7 +124,11 @@ export default Ember.Component.extend({
         this.get('loansService').createLoan(loanData).then(() => {
           console.log('Loan created successfully!');
           this.resetForm();
-          this.sendAction("toLoan");
+          this.get('notification').showNotification('Loan Created successfully!', 'success');
+
+          Ember.run.later(() => {
+           this.sendAction("toLoan");
+           }, 2000);
         }).catch((error) => {
           console.error('Error creating loan:', error);
         });
@@ -107,6 +137,7 @@ export default Ember.Component.extend({
 
     cancel() {
       this.resetForm();
+      this.sendAction('toLoan');
     }
   },
 

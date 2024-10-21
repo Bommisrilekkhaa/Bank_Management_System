@@ -68208,6 +68208,353 @@ createDeprecatedModule('resolver');
     return str.indexOf(suffix, str.length - suffix.length) !== -1;
   }
 });
+;define("ember-notify/components/ember-notify", ["exports", "ember-notify/templates/components/ember-notify", "ember-notify/message"], function (_exports, _emberNotify, _message) {
+  "use strict";
+
+  Object.defineProperty(_exports, "__esModule", {
+    value: true
+  });
+  _exports.default = _exports.UIkitTheme = _exports.Theme = _exports.SemanticUiTheme = _exports.RefillsTheme = _exports.FoundationTheme = _exports.Foundation5Theme = _exports.BootstrapTheme = void 0;
+  var _default = _exports.default = Ember.Component.extend({
+    layout: _emberNotify.default,
+    notify: Ember.inject.service(),
+    classNames: ['ember-notify-cn'],
+    classNameBindings: ['classPrefix'],
+    messageStyle: 'foundation',
+    closeAfter: 2500,
+    messages: null,
+    source: Ember.computed.oneWay('notify'),
+    classPrefix: Ember.computed('defaultClass', function () {
+      return this.defaultClass || 'ember-notify-default';
+    }),
+    init: function init() {
+      this._super.apply(this, arguments);
+      this.set('messages', Ember.A());
+      this.source.setTarget(this);
+      var theme;
+      switch (this.messageStyle) {
+        case 'foundation':
+          theme = FoundationTheme;
+          break;
+        case 'uikit':
+          theme = UIkitTheme;
+          break;
+        case 'foundation-5':
+          theme = Foundation5Theme;
+          break;
+        case 'bootstrap':
+          theme = BootstrapTheme;
+          break;
+        case 'refills':
+          theme = RefillsTheme;
+          break;
+        case 'semantic-ui':
+          theme = SemanticUiTheme;
+          break;
+        default:
+          throw new Error("Unknown messageStyle ".concat(this.messageStyle, ".\n          Options are 'foundation', 'foundation-5', 'uikit', 'refills', 'bootstrap', and 'semantic-ui'."));
+      }
+      this.set('theme', theme);
+    },
+    willDestroyElement: function willDestroyElement() {
+      this._super.apply(this, arguments);
+      this.source.setTarget(null);
+    },
+    show: function show(message) {
+      if (this.isDestroyed) {
+        return;
+      }
+      var id = message.id;
+      if (id && this.messages.find(function (x) {
+        return x.id === id;
+      })) {
+        return;
+      }
+      if (!(message instanceof _message.default)) {
+        message = _message.default.create(message);
+      }
+      this.messages.pushObject(message);
+      return message;
+    }
+  });
+  var Theme = _exports.Theme = {
+    classNamesFor: function classNamesFor(message) {
+      return message.type;
+    }
+  };
+  var FoundationTheme = _exports.FoundationTheme = {
+    classNamesFor: function classNamesFor(message) {
+      var classNames = ['callout', message.type];
+      if (message.type === 'error') {
+        classNames.push('alert');
+      }
+      return classNames.join(' ');
+    }
+  };
+  var Foundation5Theme = _exports.Foundation5Theme = {
+    classNamesFor: function classNamesFor(message) {
+      var classNames = ['alert-box', message.type];
+      if (message.type === 'error') {
+        classNames.push('alert');
+      }
+      return classNames.join(' ');
+    }
+  };
+  var BootstrapTheme = _exports.BootstrapTheme = {
+    classNamesFor: function classNamesFor(message) {
+      var type = message.type;
+      if (type === 'alert' || type === 'error') {
+        type = 'danger';
+      }
+      var classNames = ['alert', "alert-".concat(type)];
+      return classNames.join(' ');
+    }
+  };
+  var RefillsTheme = _exports.RefillsTheme = {
+    classNamesFor: function classNamesFor(message) {
+      var typeMapping = {
+        success: 'success',
+        alert: 'error',
+        error: 'error',
+        info: 'notice',
+        warning: 'alert'
+      };
+      return "flash-".concat(typeMapping[message.type]);
+    }
+  };
+  var SemanticUiTheme = _exports.SemanticUiTheme = {
+    classNamesFor: function classNamesFor(message) {
+      var typeMapping = {
+        success: 'success',
+        alert: 'error',
+        error: 'error',
+        info: 'info',
+        warning: 'warning'
+      };
+      return "ui message ".concat(typeMapping[message.type]);
+    }
+  };
+  var UIkitTheme = _exports.UIkitTheme = {
+    classNamesFor: function classNamesFor(message) {
+      var typeMapping = {
+        success: 'success',
+        alert: 'warning',
+        error: 'danger',
+        info: 'info',
+        warning: 'warning'
+      };
+      return "uk-notify-message uk-notify-message-".concat(typeMapping[message.type]);
+    }
+  };
+});
+;define("ember-notify/components/ember-notify/message", ["exports", "ember-notify/templates/components/ember-notify/message"], function (_exports, _message) {
+  "use strict";
+
+  Object.defineProperty(_exports, "__esModule", {
+    value: true
+  });
+  _exports.default = void 0;
+  var DEFAULT_MESSAGE = {};
+  var _default = _exports.default = Ember.Component.extend({
+    layout: _message.default,
+    message: DEFAULT_MESSAGE,
+    closeAfter: null,
+    run: null,
+    classNameBindings: ['message.visible:ember-notify-show:ember-notify-hide', 'radius::', 'themeClassNames', 'message.classNames'],
+    attributeBindings: ['data-alert'],
+    'data-alert': '',
+    init: function init() {
+      this._super.apply(this, arguments);
+
+      // Indicate that the message is now being displayed
+      if (this.message.visible === undefined) {
+        // Should really be in didInsertElement but Glimmer doesn't allow this
+        this.set('message.visible', true);
+      }
+      this.set('message.container', this);
+    },
+    didInsertElement: function didInsertElement() {
+      var _this = this;
+      this._super.apply(this, arguments);
+      var _this$message = this.message,
+        _this$message$closeAf = _this$message.closeAfter,
+        closeAfter = _this$message$closeAf === void 0 ? this.closeAfter : _this$message$closeAf,
+        element = _this$message.element;
+      if (element) {
+        var parent = this.element.querySelector('.message');
+        if (Ember.isArray(element)) {
+          element.map(parent.appendElement);
+        } else {
+          parent.appendChild(element);
+        }
+      }
+      if (closeAfter) {
+        Ember.run.later(function () {
+          return _this.selfClose();
+        }, closeAfter);
+      }
+    },
+    themeClassNames: Ember.computed('theme', 'message.type', function () {
+      return this.theme ? this.theme.classNamesFor(this.message) : '';
+    }),
+    actions: {
+      close: function close() {
+        if (this.message.closed) {
+          return;
+        }
+        this.set('message.closed', true);
+        this.set('message.visible', false);
+        var removeAfter = this.message.removeAfter || this.constructor.removeAfter;
+        if (removeAfter) {
+          Ember.run.later(this, remove, removeAfter);
+        } else {
+          remove();
+        }
+        function remove() {
+          if (this.isDestroyed || !this.parentView || !this.parentView.messages) {
+            return;
+          }
+          this.parentView.messages.removeObject(this.message);
+          this.set('message.visible', null);
+        }
+      }
+    },
+    isHovering: function isHovering() {
+      return this.element.matches ? this.element.matches(':hover') : this.element.msMatchesSelector(':hover');
+    },
+    selfClose: function selfClose() {
+      var _this2 = this;
+      if (this.isDestroyed) {
+        return;
+      }
+      if (this.isHovering()) {
+        return Ember.run.later(function () {
+          return _this2.selfClose();
+        }, 100);
+      }
+
+      // When :hover no longer applies, close as normal
+      this.send('close');
+    }
+  }).reopenClass({
+    removeAfter: 250 // Allow time for the close animation to finish
+  });
+});
+;define("ember-notify/index", ["exports", "ember-notify/message"], function (_exports, _message) {
+  "use strict";
+
+  Object.defineProperty(_exports, "__esModule", {
+    value: true
+  });
+  _exports.default = void 0;
+  function _typeof(o) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (o) { return typeof o; } : function (o) { return o && "function" == typeof Symbol && o.constructor === Symbol && o !== Symbol.prototype ? "symbol" : typeof o; }, _typeof(o); }
+  function aliasToShow(type) {
+    return function (message, options) {
+      return this.show(type, message, options);
+    };
+  }
+  var Notify = Ember.Service.extend({
+    info: aliasToShow('info'),
+    success: aliasToShow('success'),
+    warning: aliasToShow('warning'),
+    alert: aliasToShow('alert'),
+    error: aliasToShow('error'),
+    init: function init() {
+      this._super.apply(this, arguments);
+      this.pending = [];
+    },
+    show: function show(type, text, options) {
+      // If the text passed is `SafeString`, convert it
+      if (Ember.String.isHTMLSafe(text)) {
+        text = text.toString();
+      }
+      if (_typeof(text) === 'object') {
+        options = text;
+        text = null;
+      }
+      var message = _message.default.create(Object.assign({
+        text: text,
+        type: type
+      }, options));
+      if (this.target) {
+        this.target.show(message);
+      } else {
+        this.pending.push(message);
+      }
+      return message;
+    },
+    setTarget: function setTarget(target) {
+      this.set('target', target);
+      if (target) {
+        this.pending.map(function (message) {
+          return target.show(message);
+        });
+        this.pending = [];
+      }
+    }
+  });
+  var _default = _exports.default = Notify.reopenClass({
+    property: function property() {
+      return Ember.computed(function () {
+        return Notify.create();
+      });
+    }
+  });
+});
+;define("ember-notify/initializer", ["exports"], function (_exports) {
+  "use strict";
+
+  Object.defineProperty(_exports, "__esModule", {
+    value: true
+  });
+  _exports.default = void 0;
+  _exports.initialize = initialize;
+  function initialize() {
+    var application = arguments[1] || arguments[0];
+    application.inject('route', 'notify', 'service:notify');
+    application.inject('controller', 'notify', 'service:notify');
+  }
+  var _default = _exports.default = {
+    name: 'inject-notify-service',
+    initialize: initialize
+  };
+});
+;define("ember-notify/message", ["exports"], function (_exports) {
+  "use strict";
+
+  Object.defineProperty(_exports, "__esModule", {
+    value: true
+  });
+  _exports.default = void 0;
+  var EMPTY_ARRAY = [];
+  var _default = _exports.default = Ember.Object.extend({
+    text: null,
+    html: '',
+    type: 'info',
+    closeAfter: undefined,
+    visible: undefined,
+    classNames: EMPTY_ARRAY,
+    // will be set to the component rendering this message
+    container: undefined,
+    close: function close() {
+      if (this.container) {
+        this.container.selfClose();
+      }
+    }
+  });
+});
+;define("ember-notify/templates/components/ember-notify", ["exports"], function (exports) {
+  "use strict";
+
+  exports.__esModule = true;
+  exports.default = Ember.HTMLBars.template({ "id": "lWFKIpGb", "block": "{\"statements\":[[6,[\"each\"],[[28,[null,\"messages\"]]],null,{\"statements\":[[6,[\"if\"],[[29,\"default\"]],null,{\"statements\":[[0,\"    \"],[11,\"emberNotify::Message\",[\"message\",\"close\"]],[22,\"message\",[28,[\"message\"]]],[22,\"theme\",[28,[null,\"theme\"]]],[22,\"closeAfter\",[28,[null,\"closeAfter\"]]],[15,\"class\",\"ember-notify clearfix\"],[13],[0,\"\\n      \"],[18,\"default\",[[28,[\"message\"]],[28,[\"close\"]]]],[0,\"\\n    \"],[14],[0,\"\\n\"]],\"locals\":[]},{\"statements\":[[0,\"    \"],[11,\"emberNotify::Message\",[]],[22,\"message\",[28,[\"message\"]]],[22,\"theme\",[28,[null,\"theme\"]]],[22,\"closeAfter\",[28,[null,\"closeAfter\"]]],[15,\"class\",\"ember-notify clearfix\"],[13],[14],[0,\"\\n\"]],\"locals\":[]}]],\"locals\":[\"message\"]},null]],\"locals\":[],\"named\":[],\"yields\":[\"default\"],\"hasPartials\":false}", "meta": { "moduleName": "ember-notify/templates/components/ember-notify.hbs" } });
+});
+;define("ember-notify/templates/components/ember-notify/message", ["exports"], function (exports) {
+  "use strict";
+
+  exports.__esModule = true;
+  exports.default = Ember.HTMLBars.template({ "id": "lO+W2ljP", "block": "{\"statements\":[[6,[\"if\"],[[29,\"default\"]],null,{\"statements\":[[0,\"  \"],[18,\"default\",[[28,[null,\"message\"]],[33,[\"action\"],[[28,[null]],\"close\"],null]]],[0,\"\\n\"]],\"locals\":[]},{\"statements\":[[0,\"  \"],[11,\"a\",[]],[15,\"href\",\"\"],[15,\"class\",\"close\"],[15,\"role\",\"button\"],[5,[\"action\"],[[28,[null]],\"close\"]],[13],[0,\"×\"],[14],[0,\"\\n\"],[0,\"  \"],[11,\"span\",[]],[15,\"class\",\"message\"],[13],[1,[28,[null,\"message\",\"text\"]],false],[1,[28,[null,\"message\",\"html\"]],true],[14],[0,\"\\n\"]],\"locals\":[]}]],\"locals\":[],\"named\":[],\"yields\":[\"default\"],\"hasPartials\":false}", "meta": { "moduleName": "ember-notify/templates/components/ember-notify/message.hbs" } });
+});
 ;/*
  * This is a stub file, it must be on disk b/c babel-plugin-debug-macros
  * does not strip the module require when the transpiled variable usage is

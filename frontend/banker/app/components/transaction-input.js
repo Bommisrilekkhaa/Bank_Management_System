@@ -1,6 +1,7 @@
 import Ember from 'ember';
 
 export default Ember.Component.extend({
+  notification: Ember.inject.service('notify'),
   accountsService: Ember.inject.service('accounts'),
   transactionsService: Ember.inject.service('transactions'),
   errorMessage: '',
@@ -9,6 +10,9 @@ export default Ember.Component.extend({
   isDirect:false,
   accounts:[],
   bankId:localStorage.getItem('bankId'),
+  isEmi: Ember.computed('transaction_type', function() {
+    return this.get('transaction_type') == 'emi';
+  }),
   init() {
     this._super(...arguments);
     console.log("Transaction form initialized...");
@@ -18,9 +22,18 @@ export default Ember.Component.extend({
 
     }
   }, 
-
+  role:Ember.computed(()=>{
+    let value = `; ${document.cookie}`;
+    let parts = value.split(`; ${'sessionData'}=`);
+    if (parts.length === 2) {
+        let cookieData = decodeURIComponent(parts.pop().split(';').shift());
+        let sessionData = JSON.parse(cookieData);  
+        return sessionData.user_role;  
+    }
+  }),
+  
   loadAccounts() {
-    this.get('accountsService').fetchAccounts(this.get('bankId')).then((response) => {
+    this.get('accountsService').fetchActiveAccounts(this.get('bankId')).then((response) => {
       console.log(response);
       this.set('accounts', response);
     }).catch((error) => {
@@ -47,13 +60,7 @@ export default Ember.Component.extend({
 
   actions: {
     submitForm() {
-      if (!this.get('types').includes(this.get('transaction_type'))) {
-        this.set("errorMessage", 'Please select a valid transaction type.');
-        return;
-      }
-
       
-
       if (!this.get('transaction_amount') || this.get('transaction_amount') <= 0) {
         this.set("errorMessage", 'Transaction amount must be a positive number.');
         return;
@@ -75,7 +82,12 @@ export default Ember.Component.extend({
         this.get('transactionsService').createTransaction(transactionData).then(() => {
           console.log('Transaction created successfully!');
           this.resetForm();
-          this.sendAction("toTransaction");
+          this.get('notification').showNotification('Transaction Created successfully!', 'success');
+
+          Ember.run.later(() => {
+           this.sendAction("toTransaction");
+           }, 2000);
+        
         }).catch((error) => {
           console.error('Error creating transaction:', error);
         });
@@ -84,6 +96,7 @@ export default Ember.Component.extend({
 
     cancel() {
       this.resetForm();
+      this.sendAction('toTransaction');
     }
   },
 
