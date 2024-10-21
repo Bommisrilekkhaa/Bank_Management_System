@@ -82,8 +82,8 @@
 .branch-card {
   background-color: white;
   border-radius: 8px;
-  padding: 40px;
-  width: 500px;
+  padding: 30px;
+  width: 400px;
   margin: 15px;
   box-shadow: 0 4px 12px rgb(255, 255, 255);
   font-family: "Arial", sans-serif;
@@ -105,20 +105,22 @@
 .branch-field {
   display: flex;
   justify-content: space-between;
-  margin-bottom: 15px;
+  margin: 20px;
 
   .field-label,
   .field-value {
-    width: 45%;
+    width: 50%;
     display: inline-block;
   }
 
   .field-label {
     font-weight: bold;
     color: #134b70;
+    padding-left: 0px;
   }
 
   .field-value {
+    padding-left: 0px;
     color: #222;
   }
 

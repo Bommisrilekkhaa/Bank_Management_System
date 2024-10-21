@@ -657,7 +657,7 @@ define('banker/tests/app.lint-test', [], function () {
 
   QUnit.test('services/banks.js', function (assert) {
     assert.expect(1);
-    assert.ok(true, 'services/banks.js should pass ESLint\n\n');
+    assert.ok(false, 'services/banks.js should pass ESLint\n\n31:17 - \'bankid\' is defined but never used. (no-unused-vars)');
   });
 
   QUnit.test('services/branch-select.js', function (assert) {
@@ -667,7 +667,7 @@ define('banker/tests/app.lint-test', [], function () {
 
   QUnit.test('services/branches.js', function (assert) {
     assert.expect(1);
-    assert.ok(false, 'services/branches.js should pass ESLint\n\n9:17 - \'bankId\' is defined but never used. (no-unused-vars)\n44:15 - \'bankId\' is defined but never used. (no-unused-vars)\n81:40 - \'bankId\' is assigned a value but never used. (no-unused-vars)\n111:50 - \'bankId\' is assigned a value but never used. (no-unused-vars)');
+    assert.ok(false, 'services/branches.js should pass ESLint\n\n8:17 - \'bankid\' is defined but never used. (no-unused-vars)\n44:15 - \'bankid\' is defined but never used. (no-unused-vars)');
   });
 
   QUnit.test('services/dashboard.js', function (assert) {
@@ -702,7 +702,7 @@ define('banker/tests/app.lint-test', [], function () {
 
   QUnit.test('services/users.js', function (assert) {
     assert.expect(1);
-    assert.ok(false, 'services/users.js should pass ESLint\n\n6:14 - \'bankid\' is defined but never used. (no-unused-vars)');
+    assert.ok(false, 'services/users.js should pass ESLint\n\n5:14 - \'bankid\' is defined but never used. (no-unused-vars)');
   });
 });
 define('banker/tests/helpers/destroy-app', ['exports'], function (exports) {

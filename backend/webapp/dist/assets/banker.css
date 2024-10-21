@@ -8,7 +8,6 @@
 
 h2 {
   text-align: center;
-  margin-bottom: 40px;
   font-size: 24px;
   color: #201E43; }
 
@@ -304,9 +303,9 @@ select.form-control {
 .accounts-table td button:hover {
   background-color: #ED8936; }
 
-.loan-card h3,
-.transaction-card h3,
-.account-card h3 {
+.loan-card-dash h3,
+.transaction-card-dash h3,
+.account-card-dash h3 {
   text-align: center;
   margin-top: 0; }
 
@@ -324,7 +323,8 @@ select.form-control {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 10px; }
+  margin: 20px;
+  margin-left: 15%; }
 
 .field-label {
   font-weight: bold;
@@ -337,8 +337,8 @@ select.form-control {
 .loan-field,
 .transaction-field {
   display: flex;
-  justify-content: space-between;
-  margin-bottom: 8px; }
+  margin-bottom: 8px;
+  margin: 20px; }
 
 .field-label {
   font-weight: bold;
@@ -641,7 +641,8 @@ select.form-control {
 
 .transaction-field {
   display: flex;
-  margin-bottom: 15px; }
+  margin-bottom: 15px;
+  margin-left: 60px; }
 
 .field-label,
 .field-value {
@@ -911,8 +912,8 @@ select.form-control {
 .branch-card {
   background-color: white;
   border-radius: 8px;
-  padding: 40px;
-  width: 500px;
+  padding: 30px;
+  width: 400px;
   margin: 15px;
   box-shadow: 0 4px 12px white;
   font-family: "Arial", sans-serif;
@@ -929,15 +930,17 @@ select.form-control {
 .branch-field {
   display: flex;
   justify-content: space-between;
-  margin-bottom: 15px; }
+  margin: 20px; }
   .branch-field .field-label,
   .branch-field .field-value {
-    width: 45%;
+    width: 50%;
     display: inline-block; }
   .branch-field .field-label {
     font-weight: bold;
-    color: #134b70; }
+    color: #134b70;
+    padding-left: 0px; }
   .branch-field .field-value {
+    padding-left: 0px;
     color: #222; }
   .branch-field:last-child {
     margin-bottom: 0; }
@@ -1007,8 +1010,6 @@ select.form-control {
   display: flex;
   flex-direction: row;
   justify-content: space-around;
-  margin-left: -40px;
-  margin-right: 40px;
   margin-top: 15px; }
 
 .view-btn:hover {
@@ -1037,7 +1038,7 @@ select.form-control {
 
 .field-label,
 .field-value {
-  width: 45%;
+  width: 50%;
   display: inline-block; }
 
 .field-label {
@@ -1045,6 +1046,7 @@ select.form-control {
   color: #134B70; }
 
 .field-value {
+  margin-left: 20px;
   color: #222; }
 
 .user-card-wrapper .user-card .user-field:last-child {
@@ -1097,6 +1099,55 @@ select.form-control {
 .users-table td button:hover {
   background-color: #ED8936; }
 
+.loan-card-dash {
+  margin-top: 60px;
+  background-color: white;
+  border-radius: 8px;
+  padding: 40px;
+  width: 500px;
+  box-shadow: 0 4px 12px white;
+  font-family: 'Arial', sans-serif; }
+
+.account-card-dash {
+  margin-top: 60px;
+  background-color: white;
+  border-radius: 8px;
+  padding: 20px;
+  width: 400px;
+  box-shadow: 0 4px 12px white;
+  font-family: 'Arial', sans-serif; }
+
+.transaction-card-dash {
+  margin-top: 60px;
+  background-color: white;
+  border-radius: 8px;
+  padding: 20px;
+  width: 400px;
+  box-shadow: 0 4px 12px white;
+  font-family: 'Arial', sans-serif; }
+
+.transaction-card-dash .transaction-field {
+  margin-left: 0px; }
+
+.field-label-dash {
+  width: 50%;
+  padding-left: 50px;
+  font-weight: bold;
+  color: #134B70; }
+
+.field-value-dash {
+  width: 50%;
+  padding-left: 20px; }
+
+.account-card-dash .field-label-dash {
+  padding-left: 40px; }
+
+.account-card-dash .field-value-dash {
+  padding-left: 0px; }
+
+.transaction-card-dash .field-label-dash {
+  padding-left: 100px; }
+
 .notification-top-right {
   position: fixed;
   top: 20px;
@@ -1121,17 +1172,10 @@ select.form-control {
   margin-bottom: 10px;
   text-align: center; }
 
-.branch-field {
-  display: flex;
-  justify-content: flex-start;
-  margin: 10px 0; }
-  .branch-field .field-label {
-    font-weight: bold;
-    color: #134B70;
-    width: 50%; }
-  .branch-field .field-value {
-    color: #333;
-    width: 50%; }
+.branch-field .field-label {
+  font-weight: bold;
+  color: #134B70;
+  width: 50%; }
 
 .card-container {
   margin: 50px 200px;
@@ -1150,29 +1194,18 @@ select.form-control {
   background-color: #fff;
   border-radius: 8px;
   padding: 20px;
-  margin: 15px;
+  margin: 25px;
   box-shadow: 0 4px 12px white;
   font-family: 'Arial', sans-serif;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
-  flex: 1 1 calc(50% - 30px);
-  max-width: calc(40% - 30px); }
+  width: 400px; }
 
 .card:hover {
   transform: translateY(-5px);
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2); }
 
-.branch-field {
-  margin: 10px 0; }
-
-.field-label {
-  font-weight: bold; }
-
-.field-value {
-  margin-left: 5px; }
-
 * {
   margin: 0;
-  padding: 0;
   box-sizing: border-box; }
 
 body {

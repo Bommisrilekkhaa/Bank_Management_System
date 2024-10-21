@@ -32,20 +32,16 @@
 
   
 }
-.branch-field {
-  display: flex;
-  justify-content: flex-start;
-  margin: 10px 0;
 
+.branch-field {
   .field-label {
     
     font-weight: bold;
     color: #134B70;
     width: 50%; 
   }
-
- 
 }
+
 .card-container {
   margin: 50px 200px;
   display: flex;
@@ -65,12 +61,11 @@
   background-color: #fff;
   border-radius: 8px;
   padding: 20px;
-  margin: 15px;
+  margin: 25px;
   box-shadow: 0 4px 12px rgb(255, 255, 255);
   font-family: 'Arial', sans-serif;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
-  flex: 1 1 calc(50% - 30px);
-  max-width: calc(40% - 30px);
+  width: 400px;
 }
 
 .card:hover {
@@ -78,10 +73,5 @@
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
 }
 
-
-
-.branch-field {
-  margin: 10px 0;
-}
 
 

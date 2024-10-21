@@ -2,6 +2,10 @@
 <div class="card-container">
   {{#each branches as |branch|}}
    {{admin-dashboard
+      branchName=branch.branchName
+      accountCount=branch.accountCount
+      loansAvailed=branch.loansAvailed
+      totalDeposits=branch.totalDeposits
    }}
   {{/each}}
 </div>
