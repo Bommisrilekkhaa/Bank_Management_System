@@ -20,14 +20,16 @@
     </ul>
   {{#unless (eq role "SUPERADMIN")}}
     {{#unless (eq role "MANAGER")}}
+    {{!-- {{#if isRoute}} --}}
       <div class="branch-dropdown">
-        <select id="branch" onchange={{action "setbranch" value="target.value"}} >
+        <select id="branch" value={{branch_name}} onchange={{action "setbranch" value="target.value"}} >
           <option value="all">All Branches</option>
           {{#each branches as |branch|}}
             <option value={{branch.branch_name}}>{{branch.branch_name}}</option>
           {{/each}}
         </select>
       </div>
+    {{!-- {{/if}} --}}
     {{/unless}}
   {{/unless}}
   <button class="logout" {{action "logout"}}>Logout</button>

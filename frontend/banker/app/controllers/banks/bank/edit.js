@@ -7,12 +7,7 @@ export default Ember.Controller.extend({
     branchesService: Ember.inject.service('branches'),
     branches:[],
     bankId:localStorage.getItem('bankId'),
-    init() {
-        this._super(...arguments);
-        console.log("Loan form initialized...");
-        this.loadBranches();
-    
-      }, 
+ 
       loadBranches() {
         this.get('branchesService').fetchBranches(this.get('bankId')).then((response) => {
           console.log(response);

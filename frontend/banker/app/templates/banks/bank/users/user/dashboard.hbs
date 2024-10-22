@@ -1,4 +1,4 @@
-{{#if (eq role "ADMIN")}}
+{{#if (eq sessionData.user_role "ADMIN")}}
 <div class="card-container">
   {{#each branches as |branch|}}
    {{admin-dashboard
@@ -11,12 +11,14 @@
 </div>
 {{/if}}
 
-{{#if (eq role "MANAGER")}}
-    {{manager-dashboard}}
+{{#if (eq sessionData.user_role "MANAGER")}}
+    {{manager-dashboard
+    branch=branch}}
 
 {{/if}}
-{{#if (eq role "CUSTOMER")}}
-    {{customer-dashboard}}
+{{#if (eq sessionData.user_role "CUSTOMER")}}
+    {{customer-dashboard
+    accountList = accountList}}
 
 {{/if}}
 

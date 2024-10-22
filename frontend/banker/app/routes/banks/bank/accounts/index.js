@@ -1,7 +1,7 @@
 import Ember from 'ember';
 
 export default Ember.Route.extend({
-
+  branchSelection: Ember.inject.service('branch-select'),
   beforeModel() {
 
     let getSessionData = () => {
@@ -40,5 +40,4 @@ export default Ember.Route.extend({
     this._super(controller, model);
     controller.loadAccounts();
   }
-
 });

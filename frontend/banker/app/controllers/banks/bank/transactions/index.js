@@ -12,8 +12,11 @@ export default Ember.Controller.extend({
     this.get('branchSelection').on('branchChanged', this, this.handleBranchChange);
   },
 
-  handleBranchChange(newBranchId) {
-    this.loadTransactions();
+  handleBranchChange(newBranchId,currentRouteName) {
+    if(currentRouteName=='banks.bank.transactions.index')
+    {
+      this.loadTransactions();
+    }
   },
 
   loadTransactions() {
@@ -25,6 +28,7 @@ export default Ember.Controller.extend({
       })
       .catch((error) => {
         console.error("Failed to load transactions:", error);
+        this.set('transactions', []);
         alert("Could not load transactions. Please try again later.");
       });
   },

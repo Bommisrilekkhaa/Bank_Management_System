@@ -35,5 +35,8 @@ export default Ember.Route.extend({
             return;
         }
 
-    }
+    },
+    setupController(controller, model) {
+        controller.loadBranches();
+      }
 });

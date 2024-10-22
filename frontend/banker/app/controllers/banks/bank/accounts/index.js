@@ -12,17 +12,21 @@ export default Ember.Controller.extend({
     this.get('branchSelection').on('branchChanged', this, this.handleBranchChange);
   },
 
-  handleBranchChange(newBranchId) {
-    this.loadAccounts();
+  handleBranchChange(newBranchId,currentRouteName) {
+    console.log(currentRouteName);
+    if(currentRouteName=='banks.bank.accounts.index')
+    {
+      this.loadAccounts();
+    }
   },
   accounts: [],
 
   loadAccounts() {
-    console.log(this.get('bankId'));
-    this.get('accountsService').fetchAccounts(this.get('bankId')).then((response) => {
+    this.get('accountsService').fetchAccounts(localStorage.getItem('bankId')).then((response) => {
       console.log(response);
       this.set('accounts', response);
     }).catch((error) => {
+      this.set('accounts', []);
       console.error("Failed to load accounts:", error);
     });
   },

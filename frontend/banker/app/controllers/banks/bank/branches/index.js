@@ -3,8 +3,6 @@ import Ember from 'ember';
 export default Ember.Controller.extend({
   branchesService: Ember.inject.service('branches'),
   bankId: localStorage.getItem("bankId"),
-  init() {
-  },
   branches: [],
 
   loadBranches() {

@@ -6,6 +6,21 @@ export default Ember.Component.extend({
   session: Ember.inject.service(),
   bankId: localStorage.getItem('bankId'),
   branches: [],
+  // getCurrentRoute()
+  // {
+  //   let currentRouteName=Ember.getOwner(this).lookup('router:main').get('currentRouteName');
+  //   this.set('currentRouteName',currentRouteName);
+  // },
+  // isRoute: Ember.computed(function() {
+    
+  //   const bankRoutes = [
+  //     'banks.bank.accounts.index',
+  //     'banks.bank.loans.index',
+  //     'banks.bank.transactions.index'
+  //   ];
+  //   console.log(this.get('currentRouteName'));
+  //   return bankRoutes.includes(this.get('currentRouteName'));
+  // }),
   role:Ember.computed(()=>{
     let value = `; ${document.cookie}`;
     let parts = value.split(`; ${'sessionData'}=`);
@@ -17,6 +32,7 @@ export default Ember.Component.extend({
   }),
   init() {
     this._super(...arguments);
+    // this.getCurrentRoute();
     // console.log("init...");
     if(this.get('role')=='ADMIN' || this.get('role')=='CUSTOMER')
     {
@@ -67,6 +83,7 @@ export default Ember.Component.extend({
     },
     todashboard()
     {
+      this.set('branch_name','all');
       this.get('todashboard')();
     },
     toBanks()
@@ -106,6 +123,7 @@ export default Ember.Component.extend({
       {
         localStorage.setItem('branchId', '*');
         this.get('branchesService').set('branchId','*');
+        this.changeBranch("*");
       }
       else
       {

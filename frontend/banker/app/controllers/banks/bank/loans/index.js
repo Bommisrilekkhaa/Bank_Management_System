@@ -12,8 +12,11 @@ export default Ember.Controller.extend({
     
   },
 
-  handleBranchChange(newBranchId) {
-    this.loadLoans();
+  handleBranchChange(newBranchId,currentRouteName) {
+    if(currentRouteName=='banks.bank.loans.index')
+    {
+      this.loadLoans();
+    }
   },
 
   loans: [],
@@ -24,6 +27,7 @@ export default Ember.Controller.extend({
       this.set('loans', response);
     }).catch((error) => {
       console.error("Failed to load loans:", error);
+      this.set('loans', []);
     });
   },
   bankId:localStorage.getItem('bankId'),

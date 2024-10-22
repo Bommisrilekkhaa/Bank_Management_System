@@ -5,9 +5,6 @@
     </welcome-file-list>
     
     
-    
-    
-    
      <filter>
         <filter-name>Auth</filter-name>
         <filter-class>filter.AuthFilter</filter-class>

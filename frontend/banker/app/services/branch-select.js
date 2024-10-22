@@ -11,8 +11,10 @@ export default Ember.Service.extend(Ember.Evented, {
   changeBranch(branchId) {
     this.set('selectedBranchId', branchId);
     localStorage.setItem('branchId', branchId);
-
-    this.trigger('branchChanged', branchId);
+    const router = Ember.getOwner(this).lookup('router:main');
+    const currentRouteName = router.get('currentRouteName');
+    // console.log(currentRouteName);
+    this.trigger('branchChanged', branchId,currentRouteName);
   },
   getDefaultBranchId() {
     return '-1'; 

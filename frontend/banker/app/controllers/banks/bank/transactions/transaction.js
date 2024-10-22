@@ -5,10 +5,7 @@ export default Ember.Controller.extend({
     transactionsService: Ember.inject.service('transactions'),
     transaction: [],
     bankId:localStorage.getItem('bankId'),
-    init()
-    {
-
-    },
+   
     loadTransaction() {
       this.get('transactionsService').fetchTransaction()
         .then((response) => {
