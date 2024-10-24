@@ -17,12 +17,12 @@ import enums.AccountType;
 import enums.Status;
 import enums.TransactionType;
 import model.Account;
-import utility.DbConnection;
+import utility.DbUtil;
 import utility.QueryUtil;
 
 public class AccountDAO {
 
-    private DbConnection db = new DbConnection();
+    private DbUtil dbUtil = new DbUtil();
     private Account account = new Account();
     private UserDAO userDAO = new UserDAO();
 
@@ -34,10 +34,10 @@ public class AccountDAO {
 			                .values( account.getAccType(), 0, account.getAccStatus(),
 			                		account.getUserId(), account.getBranchId());
 
-        return query.executeUpdate(conn, db) > 0;
+        return query.executeUpdate(conn, dbUtil) > 0;
     }
     
-    public boolean checkAccount(Account account) throws SQLException, ServletException
+    public boolean checkAccount(Account account) throws  ServletException
     {
     	
     	Map<String,Object[]> conditions = new HashMap<>();
@@ -49,8 +49,14 @@ public class AccountDAO {
     			.select("*")
     			.from("account")
     			.where(conditions);
-    	ResultSet rs= query.executeQuery(DbConnection.connect(), new DbConnection());
-    	return rs.next();
+    	ResultSet rs;
+		try {
+			rs = query.executeQuery(dbUtil.connect(), dbUtil);
+			return rs.next();
+		} catch (SQLException | ServletException e) {
+			e.printStackTrace();
+		}
+		return false;
     }
     public ResultSet selectAllAccounts(Connection conn,HashMap<String, Integer> pathMap) throws SQLException 
     {
@@ -64,12 +70,12 @@ public class AccountDAO {
     			 					.from("branch b")
     			 					.join("account a","b.branch_id=a.branch_id", "INNER")
     			 					.where(conditions);
-        return query.executeQuery(conn, new DbConnection());
+        return query.executeQuery(conn, new DbUtil());
     }
     
     public String changeName(String key)
     {
-    	System.out.println(key);
+//    	System.out.println(key);
     	if(key.equals("branches"))
     	{
     		return "a."+key.substring(0,key.length()-2)+"_id";
@@ -137,7 +143,7 @@ public class AccountDAO {
 			   .join("transaction t", "a.acc_number = t.acc_number","LEFT")
 			   .where(conditions)
 			   .append("ORDER BY a.acc_number, l.loan_id, t.transaction_id");
-	   return query.executeQuery(conn, new DbConnection());
+	   return query.executeQuery(conn, new DbUtil());
 	   
    }
    
@@ -165,20 +171,28 @@ public class AccountDAO {
                 .set(conditions)
                 .where(whereconditions);
 
-        return query.executeUpdate(conn, db) > 0;
+        return query.executeUpdate(conn, dbUtil) > 0;
     }
     
     
 
-    public boolean updateBalance(Connection conn, int type,double amount,int acc_no) throws SQLException 
+    public boolean updateBalance(Connection conn, int type,double amount,int acc_no) throws SQLException
     {
     	HashMap<String, Integer> pathMap = new HashMap<>();
     	pathMap.put("accounts", acc_no);
-    	ResultSet rs = selectAllAccounts(conn,pathMap);
-    	if(rs.next())
-    	{
-    		account.setAccBalance(rs.getDouble("acc_balance"));
-    	}
+    	ResultSet rs=null;
+		try {
+			rs = selectAllAccounts(conn,pathMap);
+			if(rs.next())
+			{
+				account.setAccBalance(rs.getDouble("acc_balance"));
+			}
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		finally {
+			dbUtil.close(null, null, rs);
+		}
     	Map<String,Object[]> whereconditions = new HashMap<>();
     	whereconditions.put("acc_number", new Object[] {"=",acc_no});
     	
@@ -206,14 +220,14 @@ public class AccountDAO {
                 .set(conditions)
                 .where(whereconditions);
 
-        return query.executeUpdate(conn, db) > 0;
+        return query.executeUpdate(conn, dbUtil) > 0;
     }
     
     
     public Account extractAccountDetails(JsonObject jsonRequest,HttpServletRequest request) throws SQLException, ServletException 
     {
     	if(!request.getSession(false).getAttribute("user_role").equals("CUSTOMER"))
-    	account.setUserId(userDAO.getUserId(DbConnection.connect(), jsonRequest.get("username").getAsString()).getUser_id());
+    	account.setUserId(userDAO.getUserId(dbUtil.connect(), jsonRequest.get("username").getAsString()).getUser_id());
     	
     	  
         account.setAccType((AccountType.valueOf(jsonRequest.get("acc_type").getAsString().toUpperCase())).getValue());

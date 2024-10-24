@@ -9,12 +9,12 @@ import java.util.Map;
 import com.google.gson.JsonObject;
 
 import model.Bank;
-import utility.DbConnection;
+import utility.DbUtil;
 import utility.QueryUtil;
 
 public class BankDAO {
 
-    private DbConnection db = new DbConnection();
+    private DbUtil dbUtil = new DbUtil();
     private Bank bank = new Bank();
     
     public ResultSet getBanks(Connection conn, HashMap<String, Integer> pathMap) throws SQLException 
@@ -37,7 +37,7 @@ public class BankDAO {
     				.where(conditions);
     	}
         
-       return query.executeQuery(conn, db);
+       return query.executeQuery(conn, dbUtil);
         
     }
 
@@ -51,9 +51,10 @@ public class BankDAO {
             .select("*")
             .from("banks")
             .where(conditions);
-        
-        try (ResultSet rs = query.executeQuery(conn, db)) 
+        ResultSet rs=null;
+        try 
         {
+        	rs = query.executeQuery(conn, dbUtil);
             if (rs.next()) 
             {
                 bank.setBank_id(rs.getInt("bank_id"));
@@ -67,6 +68,9 @@ public class BankDAO {
             	System.out.println("Bank not found");
             }
         }
+        finally {
+        	dbUtil.close(null, null, rs);
+        }
         return bank;
     }
 
@@ -79,7 +83,7 @@ public class BankDAO {
             .values(banks.getBank_name(), banks.getBank_code(),banks.getAdmin_id());
         
        
-        return query.executeUpdate(conn, db) > 0;
+        return query.executeUpdate(conn, dbUtil) > 0;
     }
 
   
@@ -98,7 +102,7 @@ public class BankDAO {
                 .set(setConditions)
                 .where(whereConditions);
 
-        return query.executeUpdate(conn, db) > 0;
+        return query.executeUpdate(conn, dbUtil) > 0;
     }
     
    

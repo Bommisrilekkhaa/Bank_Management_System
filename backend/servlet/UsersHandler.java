@@ -24,21 +24,23 @@ import enums.Status;
 import enums.UserRole;
 import model.User;
 import redis.clients.jedis.Jedis;
-import utility.DbConnection;
-import utility.JsonHandler;
+import utility.DbUtil;
+import utility.JsonUtil;
 import utility.LoggerConfig;
-import utility.SessionHandler;
+import utility.SessionUtil;
 
 @SuppressWarnings("serial")
-public class Users extends HttpServlet {
+public class UsersHandler extends HttpServlet {
     private Logger logger = LoggerConfig.initializeLogger();
     private UserDAO userDAO = new UserDAO();
     private User user = new User();
     private Jedis jedis = null;
+    private Connection conn = null;
+    private DbUtil dbUtil = new DbUtil();
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        SessionHandler.doOptions(request, response);
+        SessionUtil.doOptions(request, response);
         String adminParam = request.getParameter("filter_admin");
         String managerParam = request.getParameter("filter_manager");
 
@@ -58,14 +60,16 @@ public class Users extends HttpServlet {
             logger.info("Cache hit for key: " + cacheKey);
             JsonArray jsonArray = JsonParser.parseString(cachedData).getAsJsonArray();
             response.setContentType("application/json");
-            JsonHandler.sendJsonResponse(response, jsonArray);
+            JsonUtil.sendJsonResponse(response, jsonArray);
         } else {
             logger.info("Cache miss for key: " + cacheKey);
-            try (Connection conn = DbConnection.connect()) {
+            ResultSet rs=null;
+            try {
+            	conn = dbUtil.connect();
                 JsonArray jsonArray = new JsonArray();
                 if (managerParam != null) {
                     logger.info("Fetching unassigned managers from the database.");
-                    ResultSet rs = userDAO.getUnassignedManagers(conn);
+                   rs = userDAO.getUnassignedManagers(conn);
 
                     while (rs.next()) {
                         JsonObject jsonResponse = new JsonObject();
@@ -75,7 +79,7 @@ public class Users extends HttpServlet {
                     }
                 } else if (adminParam != null) {
                     logger.info("Fetching unassigned admins from the database.");
-                    ResultSet rs = userDAO.getUnassignedAdmins(conn);
+                    rs = userDAO.getUnassignedAdmins(conn);
 
                     while (rs.next()) {
                         JsonObject jsonResponse = new JsonObject();
@@ -85,7 +89,7 @@ public class Users extends HttpServlet {
                     }
                 } else {
                     logger.info("Fetching all users from the database.");
-                    ResultSet rs = userDAO.selectAllUsers(conn);
+                    rs = userDAO.selectAllUsers(conn);
                     List<User> users = userDAO.convertResultSetToList(rs);
 
                     if (!users.isEmpty()) {
@@ -105,20 +109,25 @@ public class Users extends HttpServlet {
                         }
                     } else {
                         logger.info("No matching users found.");
-                        JsonHandler.sendSuccessResponse(response, "No matching users found.");
+                        JsonUtil.sendSuccessResponse(response, "No matching users found.");
                         return;
                     }
                 }
                 jedis.set(cacheKey, jsonArray.toString());
                 response.setContentType("application/json");
-                JsonHandler.sendJsonResponse(response, jsonArray);
+                JsonUtil.sendJsonResponse(response, jsonArray);
                 logger.info("Data fetched from the database and cached with key: " + cacheKey);
             } catch (SQLException e) {
                 logger.log(Level.SEVERE, "Error fetching users data", e);
-                JsonHandler.sendErrorResponse(response, "Error fetching users data: " + e.getMessage());
+                JsonUtil.sendErrorResponse(response, "Error fetching users data: " + e.getMessage());
+            }
+            finally {
+            	dbUtil.close(conn, null, rs);
             }
         }
-        jedis.close();
+        if (jedis != null) {
+            jedis.close();
+        }
     }
 
     @Override
@@ -128,10 +137,11 @@ public class Users extends HttpServlet {
 
     @Override
     protected void doPut(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        SessionHandler.doOptions(request, response);
-        JsonObject jsonRequest = JsonHandler.parseJsonRequest(request);
+        SessionUtil.doOptions(request, response);
+        JsonObject jsonRequest = JsonUtil.parseJsonRequest(request);
 
-        try (Connection conn = DbConnection.connect()) {
+        try  {
+        	conn = dbUtil.connect();
             userDAO.extractUserDetails(jsonRequest, user);
             user.setUser_id(ControllerServlet.pathMap.get("users"));
 
@@ -142,25 +152,27 @@ public class Users extends HttpServlet {
                     jedis.del(keys.toArray(new String[0]));
                     logger.info("Deleted cache keys after user update: " + keys);
                 }
-                JsonHandler.sendSuccessResponse(response, "User updated successfully");
+                JsonUtil.sendSuccessResponse(response, "User updated successfully");
                 logger.info("User updated successfully: " + user.getUser_id());
             } else {
-                JsonHandler.sendErrorResponse(response, "Error updating user");
+                JsonUtil.sendErrorResponse(response, "Error updating user");
                 logger.warning("Failed to update user: " + user.getUser_id());
             }
         } catch (SQLException | ParseException e) {
             logger.log(Level.SEVERE, "Error updating user", e);
-            JsonHandler.sendErrorResponse(response, "Error updating user: " + e.getMessage());
+            JsonUtil.sendErrorResponse(response, "Error updating user: " + e.getMessage());
         } finally {
             if (jedis != null) jedis.close();
+            dbUtil.close(conn, null, null);
         }
     }
 
     @Override
     protected void doDelete(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        SessionHandler.doOptions(request, response);
+        SessionUtil.doOptions(request, response);
 
-        try (Connection conn = DbConnection.connect()) {
+        try {
+        	conn = dbUtil.connect();
             user.setUser_id(ControllerServlet.pathMap.get("users"));
 
             if (userDAO.deleteUser(conn, user.getUser_id())) {
@@ -170,17 +182,18 @@ public class Users extends HttpServlet {
                     jedis.del(keys.toArray(new String[0]));
                     logger.info("Deleted cache keys after user deletion: " + keys);
                 }
-                JsonHandler.sendSuccessResponse(response, "User deleted successfully");
+                JsonUtil.sendSuccessResponse(response, "User deleted successfully");
                 logger.info("User deleted successfully: " + user.getUser_id());
             } else {
-                JsonHandler.sendErrorResponse(response, "Error deleting user");
+                JsonUtil.sendErrorResponse(response, "Error deleting user");
                 logger.warning("Failed to delete user: " + user.getUser_id());
             }
         } catch (SQLException e) {
             logger.log(Level.SEVERE, "Error deleting user", e);
-            JsonHandler.sendErrorResponse(response, "Error deleting user: " + e.getMessage());
+            JsonUtil.sendErrorResponse(response, "Error deleting user: " + e.getMessage());
         } finally {
             if (jedis != null) jedis.close();
+            dbUtil.close(conn, null, null);
         }
     }
 }

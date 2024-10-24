@@ -20,29 +20,32 @@ import DAO.BranchDAO;
 import enums.LoanType;
 import enums.TransactionType;
 import enums.UserRole;
-import utility.DbConnection;
-import utility.JsonHandler;
+import utility.DbUtil;
+import utility.JsonUtil;
 import utility.LoggerConfig;
 
-public class Dashboard extends HttpServlet {
-    private static final long serialVersionUID = 1L;
+@SuppressWarnings("serial")
+public class DashboardHandler extends HttpServlet {
 	private Logger logger=LoggerConfig.initializeLogger(); 
     private AccountDAO accountDAO = new AccountDAO();
     private BranchDAO branchDAO = new BranchDAO();
+    private Connection conn = null;
+    private DbUtil dbUtil = new DbUtil();
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         String role = (String) request.getSession(false).getAttribute("user_role");
         
         logger.info("Dashboard request initiated for role: " + role);
-
-        try (Connection conn = DbConnection.connect()) {
+        ResultSet resultSet=null;
+        try{
+        	conn = dbUtil.connect();
             JsonArray jsonArray = new JsonArray();
             
             if (role.equals(UserRole.CUSTOMER.toString())) {
                 logger.info("Fetching account and loan details for customer.");
                 
-                ResultSet resultSet = accountDAO.accountsAndLoans(conn, ControllerServlet.pathMap);
+                resultSet = accountDAO.accountsAndLoans(conn, ControllerServlet.pathMap);
                 
                 while (resultSet.next()) {
                     JsonObject accountJson = new JsonObject();
@@ -76,49 +79,52 @@ public class Dashboard extends HttpServlet {
             } else if (role.equals(UserRole.MANAGER.toString())) {
                 logger.info("Fetching branch and account details for manager.");
 
-                ControllerServlet.pathMap.put("b.manager_id", ControllerServlet.pathMap.get("users"));
-                ControllerServlet.pathMap.remove("users");
+                ControllerServlet.pathMap.put("b.manager_id", ControllerServlet.pathMap.get("useresultSet"));
+                ControllerServlet.pathMap.remove("useresultSet");
                 
-                ResultSet rs = branchDAO.selectBranchAndAccounts(conn, ControllerServlet.pathMap);
+                resultSet = branchDAO.selectBranchAndAccounts(conn, ControllerServlet.pathMap);
                 
-                if (rs.next()) {
+                if (resultSet.next()) {
                     JsonObject jsonResponse = new JsonObject();
-                    jsonResponse.addProperty("branchName", rs.getString("branchName"));
-                    jsonResponse.addProperty("branch_id", rs.getString("branch_id"));
-                    jsonResponse.addProperty("manager_id", rs.getString("manager_id"));
-                    jsonResponse.addProperty("savingsAccountCount", rs.getInt("savingsAccountCount"));
-                    jsonResponse.addProperty("businessAccountCount", rs.getInt("businessAccountCount"));
-                    jsonResponse.addProperty("totalSavingsDeposits", rs.getInt("totalSavingsDeposits"));
-                    jsonResponse.addProperty("totalBusinessDeposits", rs.getInt("totalBusinessDeposits"));
-                    jsonResponse.addProperty("homeLoanCount", rs.getInt("homeLoanCount"));
-                    jsonResponse.addProperty("educationLoanCount", rs.getInt("educationLoanCount"));
-                    jsonResponse.addProperty("businessLoanCount", rs.getInt("businessLoanCount"));
+                    jsonResponse.addProperty("branchName", resultSet.getString("branchName"));
+                    jsonResponse.addProperty("branch_id", resultSet.getString("branch_id"));
+                    jsonResponse.addProperty("manager_id", resultSet.getString("manager_id"));
+                    jsonResponse.addProperty("savingsAccountCount", resultSet.getInt("savingsAccountCount"));
+                    jsonResponse.addProperty("businessAccountCount", resultSet.getInt("businessAccountCount"));
+                    jsonResponse.addProperty("totalSavingsDeposits", resultSet.getInt("totalSavingsDeposits"));
+                    jsonResponse.addProperty("totalBusinessDeposits", resultSet.getInt("totalBusinessDeposits"));
+                    jsonResponse.addProperty("homeLoanCount", resultSet.getInt("homeLoanCount"));
+                    jsonResponse.addProperty("educationLoanCount", resultSet.getInt("educationLoanCount"));
+                    jsonResponse.addProperty("businessLoanCount", resultSet.getInt("businessLoanCount"));
                     jsonArray.add(jsonResponse);
                 }
 
             } else if (role.equals(UserRole.ADMIN.toString())) {
                 logger.info("Fetching branches and account details for admin.");
                 
-                ControllerServlet.pathMap.remove("users");
-                ResultSet rs = branchDAO.selectBranchesAndAccounts(conn, ControllerServlet.pathMap);
+                ControllerServlet.pathMap.remove("useresultSet");
+                resultSet = branchDAO.selectBranchesAndAccounts(conn, ControllerServlet.pathMap);
                 
-                while (rs.next()) {
+                while (resultSet.next()) {
                     JsonObject jsonResponse = new JsonObject();
-                    jsonResponse.addProperty("branchName", rs.getString("branchName"));
-                    jsonResponse.addProperty("manager_id", rs.getString("manager_id"));
-                    jsonResponse.addProperty("accountCount", rs.getInt("accountCount"));
-                    jsonResponse.addProperty("totalDeposits", rs.getInt("totalDeposits"));
-                    jsonResponse.addProperty("loansAvailed", rs.getInt("loansAvailed"));
+                    jsonResponse.addProperty("branchName", resultSet.getString("branchName"));
+                    jsonResponse.addProperty("manager_id", resultSet.getString("manager_id"));
+                    jsonResponse.addProperty("accountCount", resultSet.getInt("accountCount"));
+                    jsonResponse.addProperty("totalDeposits", resultSet.getInt("totalDeposits"));
+                    jsonResponse.addProperty("loansAvailed", resultSet.getInt("loansAvailed"));
                     jsonArray.add(jsonResponse);
                 }
             }
 
-            JsonHandler.sendJsonResponse(response, jsonArray);
+            JsonUtil.sendJsonResponse(response, jsonArray);
             logger.info("Dashboard data sent successfully.");
 
         } catch (SQLException e) {
             logger.log(Level.SEVERE, "Error fetching dashboard data", e);
-            JsonHandler.sendErrorResponse(response, "Error fetching dashboard data: " + e.getMessage());
+            JsonUtil.sendErrorResponse(response, "Error fetching dashboard data: " + e.getMessage());
+        }
+        finally {
+        	dbUtil.close(conn, null, resultSet);
         }
     }
 }

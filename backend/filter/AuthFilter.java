@@ -14,7 +14,7 @@ import javax.servlet.http.HttpFilter;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import utility.JsonHandler;
+import utility.JsonUtil;
 
 @SuppressWarnings("serial")
 public class AuthFilter extends HttpFilter implements Filter {
@@ -63,7 +63,7 @@ public class AuthFilter extends HttpFilter implements Filter {
 				return;
 			}
 			res.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-			JsonHandler.sendErrorResponse(res, "No cookies present, user is not logged in.");
+			JsonUtil.sendErrorResponse(res, "No cookies present, user is not logged in.");
 			return;
 		}
 	    
@@ -82,7 +82,7 @@ public class AuthFilter extends HttpFilter implements Filter {
                     }
                     else
         	        {
-                    	 JsonHandler.sendErrorResponse((HttpServletResponse)response, "Invalid session");
+                    	 JsonUtil.sendErrorResponse((HttpServletResponse)response, "Invalid session");
                     	 return;
         	        }
                 }

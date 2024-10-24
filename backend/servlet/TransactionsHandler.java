@@ -33,24 +33,26 @@ import enums.TransactionType;
 import model.Emi;
 import model.Transaction;
 import redis.clients.jedis.Jedis;
-import utility.DbConnection;
-import utility.JsonHandler;
+import utility.DbUtil;
+import utility.JsonUtil;
 import utility.LoggerConfig;
-import utility.SessionHandler;
+import utility.SessionUtil;
 
 @SuppressWarnings("serial")
-public class Transactions extends HttpServlet {
+public class TransactionsHandler extends HttpServlet {
     
     private Logger logger = LoggerConfig.initializeLogger();
     private TransactionDAO transactionDAO = new TransactionDAO();
     private LoanDAO loanDao = new LoanDAO();
     private EmiDAO emiDao = new EmiDAO();
     private AccountDAO accountDao = new AccountDAO();
-    Jedis jedis = null;
+    private Jedis jedis = null;
+    private Connection conn = null;
+    private DbUtil dbUtil = new DbUtil();
     
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        SessionHandler.doOptions(request, response);
+        SessionUtil.doOptions(request, response);
         String path = request.getRequestURI();
         String cacheKey = path.substring(path.indexOf("/banks"));
         jedis = ControllerServlet.pool.getResource();
@@ -66,11 +68,13 @@ public class Transactions extends HttpServlet {
         if (cachedData != null) {
             JsonArray jsonArray = JsonParser.parseString(cachedData).getAsJsonArray();
             response.setContentType("application/json");
-            JsonHandler.sendJsonResponse(response, jsonArray);
+            JsonUtil.sendJsonResponse(response, jsonArray);
             logger.info("Data fetched from Redis cache for key: " + cacheKey);
         } else {
-            try (Connection conn = DbConnection.connect()) {
-                ResultSet rs = transactionDAO.selectAllTransactions(conn, ControllerServlet.pathMap);
+        	 ResultSet rs=null;
+            try  {
+            	conn = dbUtil.connect();
+                rs = transactionDAO.selectAllTransactions(conn, ControllerServlet.pathMap);
                 List<Transaction> transactions = transactionDAO.convertResultSetToList(rs);
 
                 JsonArray jsonArray = new JsonArray();
@@ -87,32 +91,38 @@ public class Transactions extends HttpServlet {
                     }
                 } else {
                     logger.warning("No matching transactions found for path: " + path);
-                    JsonHandler.sendErrorResponse(response, "No matching transactions found.");
+                    JsonUtil.sendErrorResponse(response, "No matching transactions found.");
                     return;
                 }
                 
                 jedis.set(cacheKey, jsonArray.toString());
                 response.setContentType("application/json");
-                JsonHandler.sendJsonResponse(response, jsonArray);
+                JsonUtil.sendJsonResponse(response, jsonArray);
                 logger.info("Transaction data fetched from DB and stored in Redis for key: " + cacheKey);
             } catch (SQLException e) {
                 logger.log(Level.SEVERE, "Error fetching transaction details", e);
-                JsonHandler.sendErrorResponse(response, "Error fetching transaction details: " + e.getMessage());
+                JsonUtil.sendErrorResponse(response, "Error fetching transaction details: " + e.getMessage());
+            }
+            finally {
+            	dbUtil.close(conn, null, rs);
             }
         }
-        jedis.close();
+        if (jedis != null) {
+            jedis.close();
+        }
     }
 
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        SessionHandler.doOptions(request, response);
+        SessionUtil.doOptions(request, response);
         String[] path = request.getRequestURI().substring(request.getRequestURI().indexOf("banks")).split("/");
         String cacheKey = "/" + path[0] + "/" + path[1] + "*/" + path[path.length - 1];
 
         logger.info("POST request received for path: " + String.join("/", path));
 
-        try (Connection conn = DbConnection.connect()) {
-            JsonObject jsonRequest = JsonHandler.parseJsonRequest(request);
+        try  {
+        	conn = dbUtil.connect();
+            JsonObject jsonRequest = JsonUtil.parseJsonRequest(request);
             Transaction newTransaction = transactionDAO.extractTransactionDetails(jsonRequest);
             newTransaction.setAcc_number(ControllerServlet.pathMap.get("accounts"));
             
@@ -130,7 +140,7 @@ public class Transactions extends HttpServlet {
                     } else {
                         if (transactionDAO.updateBalance(newTransaction.getTransaction_type(), newTransaction.getTransaction_amount())) {
                             clearAccountCache();
-                            JsonHandler.sendSuccessResponse(response, "Transaction inserted successfully");
+                            JsonUtil.sendSuccessResponse(response, "Transaction inserted successfully");
                             logger.info("Transaction inserted successfully: " + newTransaction.getTransaction_id());
                         } else {
                             handleTransactionFailure(newTransaction, response);
@@ -138,48 +148,66 @@ public class Transactions extends HttpServlet {
                     }
                 } else {
                     logger.warning("Error inserting transaction for request: " + jsonRequest);
-                    JsonHandler.sendErrorResponse(response, "Error inserting transaction");
+                    JsonUtil.sendErrorResponse(response, "Error inserting transaction");
                 }
             } else {
                 logger.warning("Unauthorized account access attempt for account: " + newTransaction.getAcc_number());
-                JsonHandler.sendErrorResponse(response, "Unauthorized Account");
+                JsonUtil.sendErrorResponse(response, "Unauthorized Account");
             }
         } catch (SQLException e) {
             logger.log(Level.SEVERE, "Error processing transaction request", e);
-            JsonHandler.sendErrorResponse(response, "Error processing request: " + e.getMessage());
+            JsonUtil.sendErrorResponse(response, "Error processing request: " + e.getMessage());
         } finally {
             if (jedis != null) {
                 jedis.close();
             }
+            dbUtil.close(conn, null, null);
         }
     }
 
-    private boolean checkAccountStatus(Connection conn, Transaction newTransaction) throws SQLException {
+    private boolean checkAccountStatus(Connection conn, Transaction newTransaction)  {
         HashMap<String, Integer> accountMap = new HashMap<>();
         accountMap.put("accounts", newTransaction.getAcc_number());
         accountMap.put("a.acc_status", Status.ACTIVE.getValue());
-        ResultSet rs = accountDao.selectAllAccounts(conn, accountMap);
-        boolean status = rs.next();
+        boolean status=false;
+        ResultSet rs=null;
+		try {
+			rs = accountDao.selectAllAccounts(conn, accountMap);
+			status= rs.next();
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		finally {
+			dbUtil.close(null, null, rs);
+		}
         logger.info("Account status check for account " + newTransaction.getAcc_number() + ": " + (status ? "Active" : "Inactive"));
         return status;
     }
 
-    private void processEmiTransaction(Connection conn, Transaction newTransaction) throws SQLException {
+    private void processEmiTransaction(Connection conn, Transaction newTransaction) throws SQLException  {
         logger.info("Processing EMI transaction for account: " + newTransaction.getAcc_number());
         HashMap<String, Integer> pathMap = new HashMap<>();
         pathMap.put("accounts", newTransaction.getAcc_number());
-        ResultSet rs = loanDao.selectAllLoans(conn, pathMap);
-
+        ResultSet rs=null;
+        
         int loanId = -1;
         Date loanAvailedDate = null;
+		try {
+			rs = loanDao.selectAllLoans(conn, pathMap);
+			while (rs.next()) {
+				if (rs.getInt("loan_status") == LoanStatus.APPROVED.getValue()) {
+					loanId = rs.getInt("loan_id");
+					loanAvailedDate = rs.getDate("loan_availed_date");
+					break;
+				}
+			}
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		finally {
+			dbUtil.close(null, null, rs);
+		}
 
-        while (rs.next()) {
-            if (rs.getInt("loan_status") == LoanStatus.APPROVED.getValue()) {
-                loanId = rs.getInt("loan_id");
-                loanAvailedDate = rs.getDate("loan_availed_date");
-                break;
-            }
-        }
 
         LocalDate loanAvailed = loanAvailedDate.toLocalDate();
         LocalDate currentDate = LocalDate.now();
@@ -209,10 +237,10 @@ public class Transactions extends HttpServlet {
 
     private void handleTransactionFailure(Transaction newTransaction, HttpServletResponse response) throws IOException {
         if (newTransaction.getTransaction_type() == TransactionType.DEBIT.getValue()) {
-            JsonHandler.sendErrorResponse(response, "Insufficient Balance.");
+            JsonUtil.sendErrorResponse(response, "Insufficient Balance.");
             logger.warning("Insufficient balance for debit transaction: " + newTransaction.getTransaction_id());
         } else {
-            JsonHandler.sendErrorResponse(response, "Error inserting transaction");
+            JsonUtil.sendErrorResponse(response, "Error inserting transaction");
             logger.warning("Error inserting transaction: " + newTransaction.getTransaction_id());
         }
     }

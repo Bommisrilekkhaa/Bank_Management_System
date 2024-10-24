@@ -26,22 +26,24 @@ import enums.LoanType;
 import enums.Status;
 import model.Loan;
 import redis.clients.jedis.Jedis;
-import utility.DbConnection;
-import utility.JsonHandler;
+import utility.DbUtil;
+import utility.JsonUtil;
 import utility.LoggerConfig;
-import utility.SessionHandler;
+import utility.SessionUtil;
 
 @SuppressWarnings("serial")
-public class Loans extends HttpServlet {
+public class LoansHandler extends HttpServlet {
     private Logger logger = LoggerConfig.initializeLogger();
     private LoanDAO loanDAO = new LoanDAO();
     private AccountDAO accountDao = new AccountDAO();
-    Jedis jedis = null;
+    private Jedis jedis = null;
+    private Connection conn = null;
+    private DbUtil dbUtil = new DbUtil();
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         logger.info("GET request received for LoansServlet");
-        SessionHandler.doOptions(request, response);
+        SessionUtil.doOptions(request, response);
         String path = request.getRequestURI();
         String cacheKey = path.substring(path.indexOf("/banks")); 
         
@@ -57,11 +59,13 @@ public class Loans extends HttpServlet {
             logger.info("Fetching data from Redis cache for key: " + cacheKey);
             JsonArray jsonArray = JsonParser.parseString(cachedData).getAsJsonArray();
             response.setContentType("application/json");
-            JsonHandler.sendJsonResponse(response, jsonArray);
+            JsonUtil.sendJsonResponse(response, jsonArray);
         } else {
             logger.info("No cache found, querying database.");
-            try (Connection conn = DbConnection.connect()) {
-                ResultSet rs = loanDAO.selectAllLoans(conn, ControllerServlet.pathMap);
+            ResultSet rs=null;
+            try {
+            	conn = dbUtil.connect();
+                rs = loanDAO.selectAllLoans(conn, ControllerServlet.pathMap);
                 List<Loan> loans = loanDAO.convertResultSetToList(rs);
                 JsonArray jsonArray = new JsonArray();
 
@@ -81,28 +85,35 @@ public class Loans extends HttpServlet {
                     jedis.set(cacheKey, jsonArray.toString());
                     logger.info("Data cached with key: " + cacheKey);
                     response.setContentType("application/json");
-                    JsonHandler.sendJsonResponse(response, jsonArray);
+                    JsonUtil.sendJsonResponse(response, jsonArray);
                 } else {
                     logger.warning("No matching loans found.");
-                    JsonHandler.sendErrorResponse(response, "No matching loans found.");
+                    JsonUtil.sendErrorResponse(response, "No matching loans found.");
                 }
             } catch (SQLException e) {
                 logger.log(Level.SEVERE, "Error fetching loan details: " + e.getMessage(), e);
-                JsonHandler.sendErrorResponse(response, "Error fetching loan details: " + e.getMessage());
+                JsonUtil.sendErrorResponse(response, "Error fetching loan details: " + e.getMessage());
+            }
+            finally {
+            	dbUtil.close(conn, null, rs);
             }
         }
-        jedis.close();
+        
+        if (jedis != null) {
+            jedis.close();
+        }
     }
     
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         logger.info("POST request received for LoansServlet");
-        SessionHandler.doOptions(request, response);
+        SessionUtil.doOptions(request, response);
         String[] path = request.getRequestURI().substring(request.getRequestURI().indexOf("banks")).split("/");
         String cacheKey = "/" + path[0] + "/" + path[1] + "*/" + path[path.length - 1];
 
-        try (Connection conn = DbConnection.connect()) {
-            JsonObject jsonRequest = JsonHandler.parseJsonRequest(request);
+        try {
+        	conn = dbUtil.connect();
+            JsonObject jsonRequest = JsonUtil.parseJsonRequest(request);
             Loan newLoan = loanDAO.extractLoanDetails(jsonRequest, request);
             newLoan.setAcc_no(ControllerServlet.pathMap.get("accounts"));
             if (checkAccountStatus(conn, newLoan)) {
@@ -114,38 +125,40 @@ public class Loans extends HttpServlet {
                             jedis.del(keys.toArray(new String[0]));
                             logger.info("Deleted cache keys: " + keys);
                         }
-                        JsonHandler.sendSuccessResponse(response, "Loan inserted successfully");
+                        JsonUtil.sendSuccessResponse(response, "Loan inserted successfully");
                     } else {
                         logger.warning("Error inserting loan.");
-                        JsonHandler.sendErrorResponse(response, "Error inserting loan");
+                        JsonUtil.sendErrorResponse(response, "Error inserting loan");
                     }
                 } else {
                     logger.warning("Loan already exists.");
-                    JsonHandler.sendErrorResponse(response, "Loan already exists");
+                    JsonUtil.sendErrorResponse(response, "Loan already exists");
                 }
             } else {
                 logger.warning("Unauthorized account access.");
-                JsonHandler.sendErrorResponse(response, "Unauthorized Account");
+                JsonUtil.sendErrorResponse(response, "Unauthorized Account");
             }
         } catch (SQLException e) {
             logger.log(Level.SEVERE, "Error processing loan insertion: " + e.getMessage(), e);
-            JsonHandler.sendErrorResponse(response, "Error processing request: " + e.getMessage());
+            JsonUtil.sendErrorResponse(response, "Error processing request: " + e.getMessage());
         } finally {
             if (jedis != null) jedis.close();
+            dbUtil.close(conn, null, null);
         }
     }
     
     @Override
     protected void doPut(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         logger.info("PUT request received for LoansServlet");
-        SessionHandler.doOptions(request, response);
+        SessionUtil.doOptions(request, response);
         String[] path = request.getRequestURI().substring(request.getRequestURI().indexOf("banks")).split("/");
         String cacheKey1 = "/" + path[0] + "/" + path[1] + "*/" + path[path.length - 2] + "/" + path[path.length - 1];
         String cacheKey2 = "/" + path[0] + "/" + path[1] + "*/" + path[path.length - 2];
 
-        JsonObject jsonRequest = JsonHandler.parseJsonRequest(request);
+        JsonObject jsonRequest = JsonUtil.parseJsonRequest(request);
 
-        try (Connection conn = DbConnection.connect()) {
+        try  {
+        	conn = dbUtil.connect();
             Loan updatedLoan = loanDAO.extractLoanDetails(jsonRequest, request);
             updatedLoan.setAcc_no(ControllerServlet.pathMap.get("accounts"));
             updatedLoan.setLoan_id(ControllerServlet.pathMap.get("loans"));
@@ -153,7 +166,7 @@ public class Loans extends HttpServlet {
                 if (updatedLoan.getLoan_amount() > 3000000 && 
                     updatedLoan.getLoan_status() != LoanStatus.REJECTED.getValue()) {
                     logger.warning("Loan amount exceeds limit, updating status to REJECTED.");
-                    JsonHandler.sendErrorResponse(response, "Error updating loan, Loan amount is greater than Limit");
+                    JsonUtil.sendErrorResponse(response, "Error updating loan, Loan amount is greater than Limit");
                 }
 
                 if (loanDAO.updateLoan(conn, updatedLoan)) {
@@ -168,29 +181,39 @@ public class Loans extends HttpServlet {
                         jedis.del(keys.toArray(new String[0]));
                         logger.info("Deleted cache keys: " + keys);
                     }
-                    JsonHandler.sendSuccessResponse(response, "Loan updated successfully");
+                    JsonUtil.sendSuccessResponse(response, "Loan updated successfully");
                 } else {
                     logger.warning("Error updating loan.");
-                    JsonHandler.sendErrorResponse(response, "Error updating loan");
+                    JsonUtil.sendErrorResponse(response, "Error updating loan");
                 }
             } else {
                 logger.warning("Unauthorized account access.");
-                JsonHandler.sendErrorResponse(response, "Unauthorized Account");
+                JsonUtil.sendErrorResponse(response, "Unauthorized Account");
             }
         } catch (SQLException e) {
             logger.log(Level.SEVERE, "Error updating loan: " + e.getMessage(), e);
-            JsonHandler.sendErrorResponse(response, "Error updating loan: " + e.getMessage());
+            JsonUtil.sendErrorResponse(response, "Error updating loan: " + e.getMessage());
         } finally {
             if (jedis != null) jedis.close();
+            dbUtil.close(conn, null, null);
         }
     }
 
-    private boolean checkAccountStatus(Connection conn, Loan loan) throws SQLException {
+    private boolean checkAccountStatus(Connection conn, Loan loan) {
         HashMap<String, Integer> accountMap = new HashMap<>();
         accountMap.put("accounts", loan.getAcc_no());
         accountMap.put("a.acc_status", Status.ACTIVE.getValue());
-        ResultSet rs = accountDao.selectAllAccounts(conn, accountMap);
-        boolean isActive = rs.next();
+        boolean isActive=false;
+        ResultSet rs=null;
+		try {
+			rs = accountDao.selectAllAccounts(conn, accountMap);
+			isActive= rs.next();
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		finally {
+			dbUtil.close(null, null, rs);
+		}
         logger.info("Account status check for acc_no " + loan.getAcc_no() + ": " + (isActive ? "Active" : "Inactive"));
         return isActive;
     }

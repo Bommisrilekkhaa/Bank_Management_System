@@ -11,12 +11,12 @@ import com.google.gson.JsonObject;
 import model.Account;
 import model.Branch;
 import servlet.ControllerServlet;
-import utility.DbConnection;
+import utility.DbUtil;
 import utility.QueryUtil;
 
 public class BranchDAO {
 
-    private DbConnection db = new DbConnection();
+    private DbUtil dbUtil = new DbUtil();
     
 
     public boolean insertBranch(Connection conn, Branch branch) throws SQLException 
@@ -27,7 +27,7 @@ public class BranchDAO {
                 .values(branch.getName(), branch.getAddress(), branch.getBank_id(),
                          branch.getManager_id());
 
-        return query.executeUpdate(conn, db) > 0;
+        return query.executeUpdate(conn, dbUtil) > 0;
     }
 
     public ResultSet selectBranches(Connection conn,Branch branch) throws SQLException 
@@ -40,7 +40,7 @@ public class BranchDAO {
                 .from("branch")
                 .where(conditions);
 
-       return query.executeQuery(conn, db); 
+       return query.executeQuery(conn, dbUtil); 
     }
     
     public ResultSet selectBranchById(Connection conn ,int branchId) throws SQLException 
@@ -53,7 +53,7 @@ public class BranchDAO {
                 .from("branch")
                 .where(conditions);
 
-        return query.executeQuery(conn, db);
+        return query.executeQuery(conn, dbUtil);
     }
     
     public ResultSet selectBranchByManager(Connection conn ,int managerId) throws SQLException 
@@ -66,7 +66,7 @@ public class BranchDAO {
                 .from("branch")
                 .where(conditions);
 
-        return query.executeQuery(conn, db);
+        return query.executeQuery(conn, dbUtil);
     }
 
     public ResultSet selectBranchesAndAccounts(Connection conn,HashMap<String, Integer> pathMap) throws SQLException 
@@ -86,7 +86,7 @@ public class BranchDAO {
     		    .append("GROUP BY b.branch_id, b.branch_name");
 
 
-        return query.executeQuery(conn, db);
+        return query.executeQuery(conn,dbUtil);
     }
     public ResultSet selectBranchAndAccounts(Connection conn,HashMap<String, Integer> pathMap) throws SQLException 
     {
@@ -111,7 +111,7 @@ public class BranchDAO {
 	    	    .join("loan l", "l.acc_number = a.acc_number", "LEFT")
 	    	    .where(conditions)
 	    	    .append("GROUP BY b.branch_id, b.branch_name");
-	    return query.executeQuery(conn, db);
+	    return query.executeQuery(conn, dbUtil);
 
     }
     
@@ -150,12 +150,16 @@ public class BranchDAO {
                 .select("*")
                 .from("branch")
                 .where(conditions);
-
-        try (ResultSet rs = query.executeQuery(conn, db)) {
+        ResultSet rs=null;
+        try  {
+        	rs = query.executeQuery(conn, dbUtil);
             if (rs.next()) {
                 
                 return rs.getInt("branch_id");
             }
+        }
+        finally {
+        	dbUtil.close(null, null, rs);
         }
         return -1;
     }
@@ -175,7 +179,7 @@ public class BranchDAO {
                 .set(setconditions)
                 .where(whereconditions);
 
-        return query.executeUpdate(conn, db) > 0;
+        return query.executeUpdate(conn, dbUtil) > 0;
     }
 
     public boolean deleteBranch(Connection conn, int branchId) throws SQLException 
@@ -188,10 +192,10 @@ public class BranchDAO {
                 .deleteFrom("branch")
                 .where(conditions);
 
-        return query.executeUpdate(conn, db) > 0;
+        return query.executeUpdate(conn,  dbUtil) > 0;
     }
     
-    private void moveAccounts(Connection conn,int branchId) throws SQLException
+    private void moveAccounts(Connection conn,int branchId)
     {
     	BankDAO bankDAO = new BankDAO();
     	HashMap<String, Integer> branchMap = new HashMap<>();
@@ -199,23 +203,33 @@ public class BranchDAO {
     	branchMap.put("branches", branchId);
     	bankMap.put("banks", ControllerServlet.pathMap.get("banks"));
     	AccountDAO accountDAO = new AccountDAO();
-    	ResultSet rs = accountDAO.selectAllAccounts(conn, branchMap);
-    	ResultSet rsBank = bankDAO.getBanks(conn, bankMap);
-    	while(rs.next())
-    	{
-    		Account account = new Account();
-            account.setAccNo(rs.getInt("acc_number"));
-            account.setAccType(rs.getInt("acc_type"));
-            account.setAccStatus(rs.getInt("acc_status"));
-            account.setAccBalance(rs.getDouble("acc_balance"));
-            account.setUserId(rs.getInt("user_id"));
-            if(rsBank.next())
-            {
-            	account.setBranchId(rsBank.getInt("main_branch_id"));
-            }
-            
-            accountDAO.updateAccount(conn, account);
-    	}
+    	ResultSet rs=null;
+    	ResultSet rsBank=null;
+		try {
+			rs = accountDAO.selectAllAccounts(conn, branchMap);
+			rsBank = bankDAO.getBanks(conn, bankMap);
+			while(rs.next())
+			{
+				Account account = new Account();
+				account.setAccNo(rs.getInt("acc_number"));
+				account.setAccType(rs.getInt("acc_type"));
+				account.setAccStatus(rs.getInt("acc_status"));
+				account.setAccBalance(rs.getDouble("acc_balance"));
+				account.setUserId(rs.getInt("user_id"));
+				if(rsBank.next())
+				{
+					account.setBranchId(rsBank.getInt("main_branch_id"));
+				}
+				
+				accountDAO.updateAccount(conn, account);
+			}
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		finally{
+			dbUtil.close(null, null, rsBank);
+			dbUtil.close(null, null, rs);
+		}
     	
     }
     

@@ -23,22 +23,24 @@ import DAO.LoanDAO;
 import enums.LoanStatus;
 import model.Emi;
 import redis.clients.jedis.Jedis;
-import utility.DbConnection;
-import utility.JsonHandler;
+import utility.DbUtil;
+import utility.JsonUtil;
 import utility.LoggerConfig;
-import utility.SessionHandler;
+import utility.SessionUtil;
 
 @SuppressWarnings("serial")
-public class Emis extends HttpServlet {
+public class EmisHandler extends HttpServlet {
 
     private Logger logger = LoggerConfig.initializeLogger();
     private EmiDAO emiDAO = new EmiDAO();
     private LoanDAO loanDao = new LoanDAO();
-    private Jedis jedis;
+    private Jedis jedis=null;
+    private Connection conn = null;
+    private DbUtil dbUtil = new DbUtil();
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        SessionHandler.doOptions(request, response);
+        SessionUtil.doOptions(request, response);
 
         String path = request.getRequestURI();
         String cacheKey = path.substring(path.indexOf("/banks"));
@@ -53,18 +55,20 @@ public class Emis extends HttpServlet {
             JsonArray jsonArray = JsonParser.parseString(cachedData).getAsJsonArray();
             
             response.setContentType("application/json");
-            JsonHandler.sendJsonResponse(response, jsonArray);
+            JsonUtil.sendJsonResponse(response, jsonArray);
             logger.info("Data fetched from Redis cache and sent as response.");
         } else {
             logger.info("Cache miss for key: " + cacheKey + ". Fetching data from database.");
-            try (Connection conn = DbConnection.connect()) {
+            ResultSet rs=null;
+            try {
+            	conn = dbUtil.connect();
                 Emi newEmi = new Emi();
                 newEmi.setLoan_id(ControllerServlet.pathMap.get("loans"));
 
                 if (checkLoanStatus(conn, newEmi)) {
                     logger.info("Loan status is approved. Fetching EMI details.");
                     
-                    ResultSet rs = emiDAO.selectAllEmis(conn, ControllerServlet.pathMap);
+                   rs = emiDAO.selectAllEmis(conn, ControllerServlet.pathMap);
                     List<Emi> emis = emiDAO.convertResultSetToList(rs);
                     
                     JsonArray jsonArray = new JsonArray();
@@ -85,37 +89,46 @@ public class Emis extends HttpServlet {
                         logger.info("EMI data cached with key: " + cacheKey);
                         
                         response.setContentType("application/json");
-                        JsonHandler.sendJsonResponse(response, jsonArray);
+                        JsonUtil.sendJsonResponse(response, jsonArray);
                         logger.info("EMI data sent as response.");
                     } else {
                         logger.info("No matching EMIs found for loan ID: " + newEmi.getLoan_id());
-                        JsonHandler.sendErrorResponse(response, "No matching EMIs found.");
+                        JsonUtil.sendErrorResponse(response, "No matching EMIs found.");
                     }
                 } else {
                     logger.warning("Loan ID: " + newEmi.getLoan_id() + " is not in approved status.");
-                    JsonHandler.sendErrorResponse(response, "Loan status is not approved.");
+                    JsonUtil.sendErrorResponse(response, "Loan status is not approved.");
                 }
             } catch (SQLException e) {
                 logger.log(Level.SEVERE, "Error fetching EMI details", e);
-                JsonHandler.sendErrorResponse(response, "Error fetching EMI details: " + e.getMessage());
+                JsonUtil.sendErrorResponse(response, "Error fetching EMI details: " + e.getMessage());
             } finally {
                 if (jedis != null) {
                     jedis.close();
                     logger.info("Jedis connection closed.");
                 }
+                dbUtil.close(conn, null, rs);
             }
         }
     }
 
-    private boolean checkLoanStatus(Connection conn, Emi emi) throws SQLException {
+    private boolean checkLoanStatus(Connection conn, Emi emi){
         HashMap<String, Integer> loanMap = new HashMap<>();
         loanMap.put("loans", emi.getLoan_id());
         loanMap.put("l.loan_status", LoanStatus.APPROVED.getValue());
-        
+        boolean isApproved = false;
         logger.info("Checking loan status for loan ID: " + emi.getLoan_id());
-        ResultSet rs = loanDao.selectAllLoans(conn, loanMap);
-        boolean isApproved = rs.next();
+        ResultSet rs=null;
+		try {
+			rs = loanDao.selectAllLoans(conn, loanMap);
+			isApproved= rs.next();
         
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		finally {
+			dbUtil.close(null, null, rs);
+		}
         logger.info("Loan ID: " + emi.getLoan_id() + " is approved: " + isApproved);
         return isApproved;
     }

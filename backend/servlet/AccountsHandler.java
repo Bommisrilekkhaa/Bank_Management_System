@@ -28,22 +28,24 @@ import enums.Status;
 import model.Account;
 import model.User;
 import redis.clients.jedis.Jedis;
-import utility.DbConnection;
-import utility.JsonHandler;
+import utility.DbUtil;
+import utility.JsonUtil;
 import utility.LoggerConfig;
-import utility.SessionHandler;
+import utility.SessionUtil;
 
 @SuppressWarnings("serial")
-public class Accounts extends HttpServlet {
+public class AccountsHandler extends HttpServlet {
     private Logger logger = LoggerConfig.initializeLogger();
     private AccountDAO accountDAO = new AccountDAO();
     private UserDAO userDAO = new UserDAO();
     private BranchDAO branchDAO = new BranchDAO();
     private Jedis jedis = null;
+    private Connection conn = null;
+    private DbUtil dbUtil = new DbUtil();
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        SessionHandler.doOptions(request, response);
+        SessionUtil.doOptions(request, response);
         String path = request.getRequestURI();
         String cacheKey = path.substring(path.indexOf("/banks"));
 
@@ -58,12 +60,15 @@ public class Accounts extends HttpServlet {
         if (cachedData != null) {
             JsonArray jsonArray = JsonParser.parseString(cachedData).getAsJsonArray();
             response.setContentType("application/json");
-            JsonHandler.sendJsonResponse(response, jsonArray);
+            JsonUtil.sendJsonResponse(response, jsonArray);
             logger.info("Data fetched from Redis cache for path: " + cacheKey);
         } else {
-            try (Connection conn = DbConnection.connect()) {
+        	ResultSet rs=null;
+        	ResultSet rsBranch=null;
+            try{
+            	conn = dbUtil.connect();
                 JsonArray jsonArray = new JsonArray();
-                ResultSet rs = accountDAO.selectAllAccounts(conn, ControllerServlet.pathMap);
+                rs = accountDAO.selectAllAccounts(conn, ControllerServlet.pathMap);
                 List<Account> accounts = accountDAO.convertResultSetToList(rs);
 
                 if (!accounts.isEmpty()) {
@@ -78,7 +83,7 @@ public class Accounts extends HttpServlet {
                         accountJson.addProperty("username", user.getUsername());
                         accountJson.addProperty("user_id", account.getUserId());
                         accountJson.addProperty("branch_id", account.getBranchId());
-                        ResultSet rsBranch = branchDAO.selectBranchById(conn, account.getBranchId());
+                        rsBranch = branchDAO.selectBranchById(conn, account.getBranchId());
                         if (rsBranch.next()) {
                             accountJson.addProperty("branch_name", rsBranch.getString("branch_name"));
                         }
@@ -87,30 +92,37 @@ public class Accounts extends HttpServlet {
                     jedis.set(cacheKey, jsonArray.toString());
                     logger.info("Data cached in Redis for path: " + cacheKey);
                 } else {
-                    JsonHandler.sendErrorResponse(response, "No matching accounts found.");
+                    JsonUtil.sendErrorResponse(response, "No matching accounts found.");
                     logger.warning("No accounts found for path: " + cacheKey);
                     return;
                 }
 
                 response.setContentType("application/json");
-                JsonHandler.sendJsonResponse(response, jsonArray);
+                JsonUtil.sendJsonResponse(response, jsonArray);
                 logger.info("Data fetched from database for path: " + cacheKey);
             } catch (SQLException e) {
                 logger.log(Level.SEVERE, "Error fetching account details: " + e.getMessage(), e);
-                JsonHandler.sendErrorResponse(response, "Error fetching account details: " + e.getMessage());
+                JsonUtil.sendErrorResponse(response, "Error fetching account details: " + e.getMessage());
+            }
+            finally {
+            	dbUtil.close(conn, null, rs);
+            	dbUtil.close(null, null, rsBranch);
             }
         }
-        jedis.close();
+        if (jedis != null) {
+            jedis.close();
+        }
     }
 
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        SessionHandler.doOptions(request, response);
+        SessionUtil.doOptions(request, response);
         String[] path = request.getRequestURI().substring(request.getRequestURI().indexOf("banks")).split("/");
         String cacheKey = "/" + path[0] + "/" + path[1] + "*/" + path[path.length - 1];
 
-        try (Connection conn = DbConnection.connect()) {
-            JsonObject jsonRequest = JsonHandler.parseJsonRequest(request);
+        try {
+           	conn = dbUtil.connect();
+            JsonObject jsonRequest = JsonUtil.parseJsonRequest(request);
             Account newAccount = accountDAO.extractAccountDetails(jsonRequest, request);
             newAccount.setBranchId(ControllerServlet.pathMap.get("branches"));
 
@@ -126,32 +138,35 @@ public class Accounts extends HttpServlet {
                         jedis.del(keys.toArray(new String[0]));
                         logger.info("Deleted cache keys: " + keys);
                     }
-                    JsonHandler.sendSuccessResponse(response, "Account inserted successfully");
+                    JsonUtil.sendSuccessResponse(response, "Account inserted successfully");
                     logger.info("Account inserted successfully for path: " + cacheKey);
                 } else {
-                    JsonHandler.sendErrorResponse(response, "Error inserting account");
+                    JsonUtil.sendErrorResponse(response, "Error inserting account");
                     logger.warning("Failed to insert account for path: " + cacheKey);
                 }
             } else {
-                JsonHandler.sendErrorResponse(response, "Account already exists");
+                JsonUtil.sendErrorResponse(response, "Account already exists");
                 logger.warning("Account already exists for path: " + cacheKey);
             }
         } catch (SQLException e) {
             logger.log(Level.SEVERE, "Error processing request: " + e.getMessage(), e);
-            JsonHandler.sendErrorResponse(response, "Error processing request: " + e.getMessage());
+            JsonUtil.sendErrorResponse(response, "Error processing request: " + e.getMessage());
         } finally {
             if (jedis != null) {
                 jedis.close();
             }
+           dbUtil.close(conn, null, null);
+            
         }
     }
 
     @Override
     protected void doPut(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        SessionHandler.doOptions(request, response);
-        JsonObject jsonRequest = JsonHandler.parseJsonRequest(request);
+        SessionUtil.doOptions(request, response);
+        JsonObject jsonRequest = JsonUtil.parseJsonRequest(request);
 
-        try (Connection conn = DbConnection.connect()) {
+        try {
+           	conn = dbUtil.connect();
             Account newAccount = accountDAO.extractAccountDetails(jsonRequest, request);
             newAccount.setBranchId(ControllerServlet.pathMap.get("branches"));
             newAccount.setAccNo(ControllerServlet.pathMap.get("accounts"));
@@ -168,11 +183,13 @@ public class Accounts extends HttpServlet {
             }
         } catch (SQLException e) {
             logger.log(Level.SEVERE, "Error updating account: " + e.getMessage(), e);
-            JsonHandler.sendErrorResponse(response, "Error updating account: " + e.getMessage());
+            JsonUtil.sendErrorResponse(response, "Error updating account: " + e.getMessage());
         } finally {
             if (jedis != null) {
                 jedis.close();
             }
+            dbUtil.close(conn, null, null);
+            
         }
     }
 
@@ -193,12 +210,14 @@ public class Accounts extends HttpServlet {
                 jedis.del(keys.toArray(new String[0]));
                 logger.info("Deleted cache keys: " + keys);
             }
-            JsonHandler.sendSuccessResponse(response, "Account updated successfully");
+            JsonUtil.sendSuccessResponse(response, "Account updated successfully");
             logger.info("Account updated successfully for path: " + cacheKey1);
         } else {
-            JsonHandler.sendErrorResponse(response, "Error updating account");
+            JsonUtil.sendErrorResponse(response, "Error updating account");
             logger.warning("Failed to update account for path: " + cacheKey1);
         }
-        jedis.close();
+        if (jedis != null) {
+            jedis.close();
+        }
     }
 }

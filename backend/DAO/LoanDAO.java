@@ -16,12 +16,12 @@ import com.google.gson.JsonObject;
 import enums.LoanStatus;
 import enums.LoanType;
 import model.Loan;
-import utility.DbConnection;
+import utility.DbUtil;
 import utility.QueryUtil;
 
 public class LoanDAO {
 
-    private DbConnection db = new DbConnection();
+    private DbUtil dbUtil = new DbUtil();
     private Loan loan = new Loan();
 
     public boolean insertLoan(Connection conn, Loan loan) throws SQLException 
@@ -33,10 +33,10 @@ public class LoanDAO {
 			                		loan.getLoan_duration(), loan.getLoan_status(), loan.getLoan_availed_date(),
 			                		loan.getAcc_no());
 
-        return query.executeUpdate(conn, db) > 0;
+        return query.executeUpdate(conn, dbUtil) > 0;
     }
     
-    public boolean isLoanExists() throws SQLException, ServletException
+    public boolean isLoanExists() throws ServletException
     {
     	 Map<String,Object[]> conditions = new HashMap<>();
      	
@@ -47,9 +47,18 @@ public class LoanDAO {
     			 .select("*")
     			 .from("loan")
     			 .where(conditions);
-    	 ResultSet rs =query.executeQuery(DbConnection.connect(), db); 
+    	 ResultSet rs=null;
+		try {
+			rs = query.executeQuery(dbUtil.connect(),dbUtil);
+			return rs.next();
+		} catch (SQLException | ServletException e) {
+			e.printStackTrace();
+		} 
+		finally {
+			dbUtil.close(null, null, rs);
+		}
+		return false;
     	 
-    	 return rs.next();
     	 
     }
 
@@ -69,7 +78,7 @@ public class LoanDAO {
 						        .join("branch b", "a.branch_id = b.branch_id", "INNER")
 						        .where(conditions);
 
-        return query.executeQuery(conn, db);
+        return query.executeQuery(conn, dbUtil);
     }
     
     public String changeName(String key) 
@@ -138,10 +147,10 @@ public class LoanDAO {
                 .set(conditions)
                 .where(whereconditions);
 
-        return query.executeUpdate(conn, db) > 0;
+        return query.executeUpdate(conn,dbUtil) > 0;
     }
 
-    private boolean checkLoans(int accNo) throws SQLException, ServletException
+    private boolean checkLoans(int accNo) throws ServletException
     {
     	Map<String,Object[]> whereconditions = new HashMap<>();
     	whereconditions.put("acc_number", new Object[] {"=", accNo});
@@ -151,15 +160,22 @@ public class LoanDAO {
     						.select("*")
     						.from("loan")
     						.where(whereconditions);
-    	ResultSet rs = query.executeQuery( DbConnection.connect(), new DbConnection());
-    	
-		if(rs.next())
-		{
-			return true;
+    	ResultSet rs=null;
+		try {
+			rs = query.executeQuery( dbUtil.connect(), dbUtil);
+			return rs.next();
+		} catch (SQLException | ServletException e) {
+			e.printStackTrace();
 		}
-    						
+		finally {
+			dbUtil.close(null, null, rs);
+		}
 		return false;
     }
+    	
+
+    						
+    
 
     public Loan extractLoanDetails(JsonObject jsonRequest,HttpServletRequest request) throws SQLException, ServletException 
     {

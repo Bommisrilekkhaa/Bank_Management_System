@@ -16,12 +16,12 @@ import com.google.gson.JsonObject;
 import enums.TransactionStatus;
 import enums.TransactionType;
 import model.Transaction;
-import utility.DbConnection;
+import utility.DbUtil;
 import utility.QueryUtil;
 
 public class TransactionDAO {
 
-    private DbConnection db = new DbConnection();
+    private DbUtil db = new DbUtil();
     private Transaction transaction = new Transaction();
 
     public boolean insertTransaction(Connection conn, Transaction transaction) throws SQLException 
@@ -39,7 +39,7 @@ public class TransactionDAO {
     public boolean updateBalance(int type,double amount) throws SQLException, ServletException
     {
     	AccountDAO accountDAO = new AccountDAO();
-    	return accountDAO.updateBalance(DbConnection.connect(), type, amount, transaction.getAcc_number());
+    	return accountDAO.updateBalance(db.connect(), type, amount, transaction.getAcc_number());
     }
 
     public ResultSet selectAllTransactions(Connection conn, HashMap<String, Integer> pathMap) throws SQLException 

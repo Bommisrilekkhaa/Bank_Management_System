@@ -157,7 +157,7 @@ public class QueryUtil
 	    }
 
 
-	    public ResultSet executeQuery(Connection conn, DbConnection dbConn) throws SQLException 
+	    public ResultSet executeQuery(Connection conn, DbUtil dbConn) throws SQLException 
 	    {
 	        PreparedStatement stmt = conn.prepareStatement(query.toString());
 	        
@@ -200,7 +200,7 @@ public class QueryUtil
 	        return stmt.executeQuery();
 	    }
 
-	    public int executeUpdate(Connection conn, DbConnection dbConn) throws SQLException 
+	    public int executeUpdate(Connection conn, DbUtil dbConn) throws SQLException 
 	    {
 	    	
 	        PreparedStatement stmt = conn.prepareStatement(query.toString());

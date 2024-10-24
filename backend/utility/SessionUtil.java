@@ -19,7 +19,7 @@ import com.google.gson.JsonObject;
 import enums.UserRole;
 import model.User;
 
-public class SessionHandler {
+public class SessionUtil {
 
     private static final int COOKIE_MAX_AGE = 24*60*60;
     
@@ -51,7 +51,7 @@ public class SessionHandler {
 
 //        System.out.println(session.getId());
 
-	    JsonHandler.sendSuccessResponse(response, "Login successful");
+	    JsonUtil.sendSuccessResponse(response, "Login successful");
 	  
     }
 
@@ -61,9 +61,9 @@ public class SessionHandler {
         
         if (session != null && session.getId() != null) {  
             clearSessionCookie(request, response);
-            JsonHandler.sendSuccessResponse(response, "Logout successful");
+            JsonUtil.sendSuccessResponse(response, "Logout successful");
         } else {
-            JsonHandler.sendErrorResponse(response, "No active session found");
+            JsonUtil.sendErrorResponse(response, "No active session found");
         }
     
 

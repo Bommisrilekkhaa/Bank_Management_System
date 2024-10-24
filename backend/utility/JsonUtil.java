@@ -8,7 +8,7 @@ import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 
-public class JsonHandler {
+public class JsonUtil {
 
 	private static Gson gson = new Gson(); 
 	

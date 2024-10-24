@@ -11,9 +11,9 @@ import enums.UserRole;
 import model.Bank;
 import model.User;
 import servlet.ControllerServlet;
-import utility.DbConnection;
+import utility.DbUtil;
 import utility.QueryUtil;
-import utility.SessionHandler;
+import utility.SessionUtil;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -24,7 +24,7 @@ import java.util.Map;
 
 public class UserDAO {
 
-	    private DbConnection db = new DbConnection();
+	    private DbUtil db = new DbUtil();
 	    private BankDAO bankDao = new BankDAO();
 	    private BranchDAO branchDao = new BranchDAO();
 
@@ -32,16 +32,17 @@ public class UserDAO {
 	    {
 	    	Map<String,Object[]> conditions = new HashMap<>();
 	    	conditions.put("username", new Object[] {"=",user.getUsername()});
-	    	conditions.put("password", new Object[] {"=",SessionHandler.hashPassword(user.getPassword())});
+	    	conditions.put("password", new Object[] {"=",SessionUtil.hashPassword(user.getPassword())});
 	    	
 	    	
 	        QueryUtil query = QueryUtil.create()
 	                			.select("*")
 				                .from("users")
 				                .where(conditions);
-	        
-	        try (ResultSet rs = query.executeQuery(conn, db)) 
+	        ResultSet rs=null;
+	        try 
 	        {
+	        	rs = query.executeQuery(conn, db);
 	        	if(rs.next())
 	        	{
 	        		user.setUser_id(rs.getInt("user_id"));
@@ -80,6 +81,9 @@ public class UserDAO {
 	        	return false;
 	        	
 	        }
+	        finally {
+	        	db.close(null, null, rs);
+	        }
 	    }
 
 	    public boolean registerUser(Connection conn, User user) throws SQLException 
@@ -92,7 +96,7 @@ public class UserDAO {
 		             user.getUser_address(),
 		             user.getUser_role(),
 		             user.getUsername(),
-		             SessionHandler.hashPassword(user.getPassword()),
+		             SessionUtil.hashPassword(user.getPassword()),
 		            (Integer) Status.PENDING.getValue());
 	        
 //	        for(String i:userDetails)
@@ -184,10 +188,14 @@ public class UserDAO {
 	                .select("*")
 	                .from("users")
 	                .where(conditions);
-	        
-	        try (ResultSet rs = query.executeQuery(conn, db)) 
+	        ResultSet rs=null;
+	        try 
 	        {
+	        	rs = query.executeQuery(conn, db);
 	            return rs.next();
+	        }
+	        finally {
+	        	db.close(null, null, rs);
 	        }
 	    }
 	    
@@ -290,8 +298,10 @@ public class UserDAO {
 		                .select("full_name,username")
 		                .from("users")
 		                .where(conditions);
-		        try (ResultSet rs = query.executeQuery(conn, db)) 
+		        ResultSet rs=null;
+		        try 
 		        {
+		        	rs = query.executeQuery(conn, db);
 		        	
 		        	if(rs.next())
 		            {
@@ -299,6 +309,9 @@ public class UserDAO {
 		        		user.setFullname(rs.getString("full_name"));
 		        		return user;
 		            }
+		        }
+		        finally {
+		        	db.close(null, null, rs);
 		        }
 		        return null;
 		  }
@@ -314,14 +327,18 @@ public class UserDAO {
 		                .select("user_id")
 		                .from("users")
 		                .where(conditions);
-		        try (ResultSet rs = query.executeQuery(conn, db)) 
+		        ResultSet rs=null;
+		        try 
 		        {
-		        	
+		        	rs = query.executeQuery(conn, db);
 		        	if(rs.next())
 		            {
 		        		user.setUser_id(rs.getInt("user_id"));
 		        		return user;
 		            }
+		        }
+		        finally {
+		        	db.close(null, null, rs);
 		        }
 		        return null;
 		  }

@@ -9,12 +9,12 @@ import java.util.List;
 import java.util.Map;
 
 import model.Emi;
-import utility.DbConnection;
+import utility.DbUtil;
 import utility.QueryUtil;
 
 public class EmiDAO {
 
-    private DbConnection db = new DbConnection();
+    private DbUtil db = new DbUtil();
     
     public boolean insertEmi(Connection conn, Emi emi) throws SQLException {
         QueryUtil query = QueryUtil.create()

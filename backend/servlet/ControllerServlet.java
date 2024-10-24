@@ -16,9 +16,9 @@ import javax.servlet.http.HttpServletResponse;
 
 import enums.UserRole;
 import redis.clients.jedis.JedisPool;
-import utility.JsonHandler;
+import utility.JsonUtil;
 import utility.LoggerConfig;
-import utility.SessionHandler;
+import utility.SessionUtil;
 
 public class ControllerServlet extends HttpServlet {
     private static final long serialVersionUID = 1L;
@@ -48,7 +48,7 @@ public class ControllerServlet extends HttpServlet {
     	
         initializeCache(logger);
         pathMap = new LinkedHashMap<>();
-        SessionHandler.doOptions(request, response);
+        SessionUtil.doOptions(request, response);
         String[] path = request.getRequestURI().split("/");
         System.out.println(request.getRequestURI());
         String method = request.getMethod();
@@ -77,7 +77,7 @@ public class ControllerServlet extends HttpServlet {
                         }
                     } catch (NullPointerException e) {
                         logger.log(Level.WARNING, "No session found: User not logged in.", e);
-                        JsonHandler.sendErrorResponse(response, "No Cookies Found! Login to Proceed");
+                        JsonUtil.sendErrorResponse(response, "No Cookies Found! Login to Proceed");
                     }
                 } else {
                     reqServlet = path[4];
@@ -207,7 +207,7 @@ public class ControllerServlet extends HttpServlet {
 
     private void reflection(String reqServlet, String method, HttpServletRequest request, HttpServletResponse response) {
         try {
-            Class<?> servlets = Class.forName("servlet." + buildClassName(reqServlet));
+            Class<?> servlets = Class.forName("servlet." + buildClassName(reqServlet)+"Handler");
             HttpServlet servlet = (HttpServlet) servlets.getDeclaredConstructor().newInstance();
 
             switch (method) {
