@@ -9,11 +9,10 @@ public class LoggerConfig {
 	
 
     static {
-        // Load the logging.properties file programmatically
         try (InputStream configFile = LoggerConfig.class.getClassLoader().getResourceAsStream("logging.properties")) {
             if (configFile != null) {
                 LogManager.getLogManager().readConfiguration(configFile);
-                System.out.println("Logger configuration loaded from logging.properties");
+//                System.out.println("Logger configuration loaded from logging.properties");
             } else {
                 System.err.println("Could not find logging.properties file.");
             }
@@ -22,9 +21,7 @@ public class LoggerConfig {
         }
     }
 
-    // Static method to initialize and return the logger
     public static Logger initializeLogger() {
-        // Get the logger for the application (this will use the configuration in logging.properties)
         return Logger.getLogger("BankApplicationLogger");
     }
 }

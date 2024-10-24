@@ -193,14 +193,14 @@ public class BranchDAO {
     
     private void moveAccounts(Connection conn,int branchId) throws SQLException
     {
-    	BankDAO bankQueryMap = new BankDAO();
+    	BankDAO bankDAO = new BankDAO();
     	HashMap<String, Integer> branchMap = new HashMap<>();
     	HashMap<String, Integer> bankMap = new HashMap<>();
     	branchMap.put("branches", branchId);
     	bankMap.put("banks", ControllerServlet.pathMap.get("banks"));
-    	AccountDAO accountQueryMap = new AccountDAO();
-    	ResultSet rs = accountQueryMap.selectAllAccounts(conn, branchMap);
-    	ResultSet rsBank = bankQueryMap.getBanks(conn, bankMap);
+    	AccountDAO accountDAO = new AccountDAO();
+    	ResultSet rs = accountDAO.selectAllAccounts(conn, branchMap);
+    	ResultSet rsBank = bankDAO.getBanks(conn, bankMap);
     	while(rs.next())
     	{
     		Account account = new Account();
@@ -214,7 +214,7 @@ public class BranchDAO {
             	account.setBranchId(rsBank.getInt("main_branch_id"));
             }
             
-            accountQueryMap.updateAccount(conn, account);
+            accountDAO.updateAccount(conn, account);
     	}
     	
     }

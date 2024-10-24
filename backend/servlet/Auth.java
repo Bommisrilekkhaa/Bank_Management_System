@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.text.ParseException;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -17,18 +18,19 @@ import com.google.gson.JsonObject;
 import DAO.UserDAO;
 import model.Bank;
 import model.User;
+import redis.clients.jedis.Jedis;
 import utility.DbConnection;
 import utility.JsonHandler;
 import utility.LoggerConfig;
 import utility.SessionHandler;
 
-public class AuthServlet extends HttpServlet {
+public class Auth extends HttpServlet {
 
     private static final long serialVersionUID = 1L;
     private Logger logger=LoggerConfig.initializeLogger();
-    
+    private Jedis jedis = null;
     private SessionHandler sessionHandler = new SessionHandler();
-    private UserDAO userQueryMap = new UserDAO();
+    private UserDAO userDAO = new UserDAO();
     private User user = new User();
     
     
@@ -83,7 +85,7 @@ public class AuthServlet extends HttpServlet {
                 bank.setBank_id(jsonRequest.get("bank_id").getAsInt());
             }
 
-            if (userQueryMap.authenticateUser(conn, user, bank)) {
+            if (userDAO.authenticateUser(conn, user, bank)) {
                 logger.info("User authenticated successfully: " + user.getUsername());
                 sessionHandler.createSession(conn, user, response, request);
                 logger.info("Session created for user: " + user.getUsername());
@@ -99,22 +101,28 @@ public class AuthServlet extends HttpServlet {
 
     private void handleRegister(HttpServletRequest request, HttpServletResponse response, Connection conn) throws IOException, SQLException, ParseException {
         JsonObject jsonRequest = JsonHandler.parseJsonRequest(request);
-        userQueryMap.extractUserDetails(jsonRequest, user);
+        userDAO.extractUserDetails(jsonRequest, user);
 
-        if (userQueryMap.isUsernameTaken(conn, user)) {
+        if (userDAO.isUsernameTaken(conn, user)) {
             logger.warning("Username already exists: " + user.getUsername());
             JsonHandler.sendErrorResponse(response, "Username already exists");
             return;
         }
 
-        boolean success = userQueryMap.registerUser(conn, user);
+        boolean success = userDAO.registerUser(conn, user);
 
         if (success) {
+        	jedis = ControllerServlet.pool.getResource();
+            Set<String> keys = jedis.keys("*users*");
+            if (!keys.isEmpty()) {
+                jedis.del(keys.toArray(new String[0]));
+            }
             logger.info("User registered successfully: " + user.getUsername());
             JsonHandler.sendSuccessResponse(response, "User registered successfully");
         } else {
             logger.warning("Registration failed for user: " + user.getUsername());
             JsonHandler.sendErrorResponse(response, "Registration failed");
         }
+        jedis.close();
     }
 }

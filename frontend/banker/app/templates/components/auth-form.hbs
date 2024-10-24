@@ -1,10 +1,10 @@
-<body>
+<body class="auth-body">
   <div class="auth-form">
     <h2>{{if isSignup "Register" "Login"}}</h2>
     <form {{action (if isSuper "superAdminForm" "submitForm") on="submit"}}>
       {{#if isSignup}}
         <div class="form-group">
-          <label for="name">Name</label>
+          <label for="name">Name<span style="color:rgb(237, 69, 69);">*</span></label>
           <input
             id="name"
             type="text"
@@ -12,20 +12,30 @@
             class="form-control"
             placeholder="Enter your full name"
             oninput={{action (mut name) value="target.value"}}
+            onblur={{action "validateName"}}
           />
+          {{#if nameError}}
+            <div class="error-message">{{nameError}}</div>
+          {{/if}}
         </div>
+
         <div class="form-group">
-          <label for="dob">Date of Birth</label>
+          <label for="dob">Date of Birth<span style="color:rgb(237, 69, 69);">*</span></label>
           <input
             id="dob"
             type="date"
             value={{dob}}
             class="form-control"
             oninput={{action (mut dob) value="target.value"}}
+            onblur={{action "validateDob"}}
           />
+          {{#if dobError}}
+            <div class="error-message">{{dobError}}</div>
+          {{/if}}
         </div>
+
         <div class="form-group">
-          <label for="pno">Phone Number</label>
+          <label for="pno">Phone Number<span style="color:rgb(237, 69, 69);">*</span></label>
           <input
             id="pno"
             type="number"
@@ -33,22 +43,31 @@
             class="form-control"
             placeholder="Enter your phone number"
             oninput={{action (mut pno) value="target.value"}}
+            onblur={{action "validatePno"}}
           />
+          {{#if pnoError}}
+            <div class="error-message">{{pnoError}}</div>
+          {{/if}}
         </div>
+
         <div class="form-group">
-          <label for="addr">Address</label>
+          <label for="addr">Address<span style="color:rgb(237, 69, 69);">*</span></label>
           <textarea
             id="addr"
             value={{addr}}
             class="form-control"
             placeholder="Enter your address"
             oninput={{action (mut addr) value="target.value"}}
+            onblur={{action "validateAddr"}}
           ></textarea>
+          {{#if addrError}}
+            <div class="error-message">{{addrError}}</div>
+          {{/if}}
         </div>
       {{/if}}
 
       <div class="form-group">
-        <label for="username">Username</label>
+        <label for="username">Username<span style="color:rgb(237, 69, 69);">*</span></label>
         <input
           id="username"
           type="text"
@@ -56,11 +75,15 @@
           class="form-control"
           placeholder="Enter your username"
           oninput={{action (mut username) value="target.value"}}
+          onblur={{action "validateUsername"}}
         />
+        {{#if usernameError}}
+          <div class="error-message">{{usernameError}}</div>
+        {{/if}}
       </div>
 
       <div class="form-group">
-        <label for="password">Password</label>
+        <label for="password">Password<span style="color:rgb(237, 69, 69);">*</span></label>
         <input
           id="password"
           type="password"
@@ -68,12 +91,16 @@
           class="form-control"
           placeholder="Enter your password"
           oninput={{action (mut password) value="target.value"}}
+          onblur={{action (if isSignup "validatePassword" "validatePass")}}
         />
+        {{#if passwordError}}
+          <div class="error-message">{{passwordError}}</div>
+        {{/if}}
       </div>
 
       {{#if isSignup}}
         <div class="form-group">
-          <label for="confirmPassword">Confirm Password</label>
+          <label for="confirmPassword">Confirm Password<span style="color:rgb(237, 69, 69);">*</span></label>
           <input
             id="confirmPassword"
             type="password"
@@ -81,63 +108,63 @@
             class="form-control"
             placeholder="Confirm your password"
             oninput={{action (mut confirmPassword) value="target.value"}}
+            onblur={{action "validateConfirmPassword"}}
           />
+          {{#if confirmPasswordError}}
+            <div class="error-message">{{confirmPasswordError}}</div>
+          {{/if}}
         </div>
-      {{/if}}
 
-      {{#if isSignup}}
         <div class="form-group">
-          <label for="role">Role</label>
+          <label for="role">Register as<span style="color:rgb(237, 69, 69);">*</span></label>
           <select
             id="role"
             onchange={{action (mut selectedRole) value="target.value"}}
             class="form-control"
+            onblur={{action "validateRole"}}
           >
             <option value="" disabled selected>Select a role</option>
             <option value="manager">Manager</option>
             <option value="customer">Customer</option>
             <option value="admin">Admin</option>
           </select>
+          {{#if roleError}}
+            <div class="error-message">{{roleError}}</div>
+          {{/if}}
         </div>
       {{/if}}
+
       {{#unless isSignup}}
         {{#unless isSuper}}
           <div class="form-group">
-            <label for="bank_name">Bank Name</label>
+            <label for="bank_name">Bank Name<span style="color:rgb(237, 69, 69);">*</span></label>
             <select
               id="bank_name"
               class="form-control"
               onchange={{action (mut bank_name) value="target.value"}}
+              onblur={{action "validateBankName"}}
             >
               <option value="">Select bank</option>
               {{#each bankNames as |bank|}}
                 <option value={{bank.bank_name}}>{{bank.bank_name}}</option>
               {{/each}}
             </select>
+            {{#if bankNameError}}
+              <div class="error-message">{{bankNameError}}</div>
+            {{/if}}
           </div>
         {{/unless}}
       {{/unless}}
-      <div class="form-group">
-        <button type="submit" class="btn-primary">{{if
-            isSignup
-            "Register"
-            "Login"
-          }}</button>
-      </div>
 
+      <div class="form-group">
+        <button type="submit" class="btn-primary">{{if isSignup "Register" "Login"}}</button>
+      </div>
     </form>
     {{#unless isSuper}}
-    <div class="form-group">
-      <button class="switch" {{action "toggleMode"}}>{{if
-          isSignup
-          "Switch to Login"
-          "Switch to Register"
-        }}
-        
-      </button>
-    </div>
+      <div class="form-group">
+        <button class="switch" {{action "toggleMode"}}>{{if isSignup "Switch to Login" "Switch to Register"}}</button>
+      </div>
     {{/unless}}
-
     {{#if errorMessage}}
       <div class="error-message">* {{errorMessage}}</div>
     {{/if}}

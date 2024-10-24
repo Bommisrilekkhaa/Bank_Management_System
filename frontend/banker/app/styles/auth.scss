@@ -1,7 +1,13 @@
 
+// .auth-body
+// {
+//   display: flex;
+//   flex-direction: row;
+// }
 
 .auth-form,.account-form,.branch-form ,.bank-form,.user-form{
- 
+  // position:absolute;
+ z-index: 10;
   width: 25%;
   margin-top: 70px;
   background-color: rgb(235, 234, 234);

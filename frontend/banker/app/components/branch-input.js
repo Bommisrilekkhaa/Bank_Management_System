@@ -3,6 +3,7 @@ import Ember from 'ember';
 export default Ember.Component.extend({
   notification: Ember.inject.service('notify'),
   usersService: Ember.inject.service('users'),
+  branchesService: Ember.inject.service('branches'),
   errorMessage: '',
   branchId: '',
   name: '',

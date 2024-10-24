@@ -34,15 +34,15 @@ export default Ember.Component.extend({
 
   actions: {
     viewAccount(account) {
-      this.sendAction('viewaccount', account, this.get('branchId'));
+      this.sendAction('viewaccount', account);
     },
 
     addNewAccount() {
-      this.sendAction('toaddNewAccount', this.get('branchId'));
+      this.sendAction('toaddNewAccount');
     },
 
     editAccount(account) {
-      this.sendAction('toeditAccount', true, account, this.get('branchId'));
+      this.sendAction('toeditAccount', true, account, account.branch_id);
     }
   }
 });

@@ -7,6 +7,8 @@
 @import "./branches.scss";
 @import "./users.scss";
 @import "./notify.scss";
+@import url('https://fonts.googleapis.com/css2?family=Neonderthaw&family=Splash&display=swap');
+@import url('https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.10.5/font/bootstrap-icons.min.css');
 * {
     margin: 0;
     box-sizing: border-box;
@@ -31,6 +33,20 @@
 html,body{
   height: 100%;
     margin: 0;
+}
+.appname{
+  font-family: "Neonderthaw", cursive;
+  font-weight: 400;
+  font-style: normal;
+  font-size:15em;
+  z-index: 100;
+  margin-top: 120px;
+  color: #508C9B;
+  text-shadow: ivory;
+
+  i{
+    margin-left: 340px;
+  }
 }
 
 

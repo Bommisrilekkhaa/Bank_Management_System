@@ -34,11 +34,11 @@ import utility.LoggerConfig;
 import utility.SessionHandler;
 
 @SuppressWarnings("serial")
-public class AccountsServlet extends HttpServlet {
+public class Accounts extends HttpServlet {
     private Logger logger = LoggerConfig.initializeLogger();
-    private AccountDAO accountQueryMap = new AccountDAO();
-    private UserDAO userQueryMap = new UserDAO();
-    private BranchDAO branchQueryMap = new BranchDAO();
+    private AccountDAO accountDAO = new AccountDAO();
+    private UserDAO userDAO = new UserDAO();
+    private BranchDAO branchDAO = new BranchDAO();
     private Jedis jedis = null;
 
     @Override
@@ -63,8 +63,8 @@ public class AccountsServlet extends HttpServlet {
         } else {
             try (Connection conn = DbConnection.connect()) {
                 JsonArray jsonArray = new JsonArray();
-                ResultSet rs = accountQueryMap.selectAllAccounts(conn, ControllerServlet.pathMap);
-                List<Account> accounts = accountQueryMap.convertResultSetToList(rs);
+                ResultSet rs = accountDAO.selectAllAccounts(conn, ControllerServlet.pathMap);
+                List<Account> accounts = accountDAO.convertResultSetToList(rs);
 
                 if (!accounts.isEmpty()) {
                     for (Account account : accounts) {
@@ -73,12 +73,12 @@ public class AccountsServlet extends HttpServlet {
                         accountJson.addProperty("acc_type", ("" + AccountType.valueOf(account.getAccType())).toLowerCase());
                         accountJson.addProperty("acc_balance", account.getAccBalance());
                         accountJson.addProperty("acc_status", ("" + Status.valueOf(account.getAccStatus())).toLowerCase());
-                        User user = userQueryMap.getUsername(conn, account.getUserId());
+                        User user = userDAO.getUsername(conn, account.getUserId());
                         accountJson.addProperty("user_fullname", user.getFullname());
                         accountJson.addProperty("username", user.getUsername());
                         accountJson.addProperty("user_id", account.getUserId());
                         accountJson.addProperty("branch_id", account.getBranchId());
-                        ResultSet rsBranch = branchQueryMap.selectBranchById(conn, account.getBranchId());
+                        ResultSet rsBranch = branchDAO.selectBranchById(conn, account.getBranchId());
                         if (rsBranch.next()) {
                             accountJson.addProperty("branch_name", rsBranch.getString("branch_name"));
                         }
@@ -111,15 +111,15 @@ public class AccountsServlet extends HttpServlet {
 
         try (Connection conn = DbConnection.connect()) {
             JsonObject jsonRequest = JsonHandler.parseJsonRequest(request);
-            Account newAccount = accountQueryMap.extractAccountDetails(jsonRequest, request);
+            Account newAccount = accountDAO.extractAccountDetails(jsonRequest, request);
             newAccount.setBranchId(ControllerServlet.pathMap.get("branches"));
 
             if (request.getSession(false).getAttribute("user_role").equals("CUSTOMER")) {
                 newAccount.setUserId((Integer) request.getSession(false).getAttribute("user_id"));
             }
 
-            if (!accountQueryMap.checkAccount(newAccount)) {
-                if (accountQueryMap.insertAccount(conn, newAccount)) {
+            if (!accountDAO.checkAccount(newAccount)) {
+                if (accountDAO.insertAccount(conn, newAccount)) {
                     jedis = ControllerServlet.pool.getResource();
                     Set<String> keys = jedis.keys(cacheKey);
                     if (!keys.isEmpty()) {
@@ -152,17 +152,17 @@ public class AccountsServlet extends HttpServlet {
         JsonObject jsonRequest = JsonHandler.parseJsonRequest(request);
 
         try (Connection conn = DbConnection.connect()) {
-            Account newAccount = accountQueryMap.extractAccountDetails(jsonRequest, request);
+            Account newAccount = accountDAO.extractAccountDetails(jsonRequest, request);
             newAccount.setBranchId(ControllerServlet.pathMap.get("branches"));
             newAccount.setAccNo(ControllerServlet.pathMap.get("accounts"));
 
-            BankDAO bankQueryMap = new BankDAO();
+            BankDAO bankDAO = new BankDAO();
             HashMap<String, Integer> bankMap = new HashMap<>();
             bankMap.put("banks", ControllerServlet.pathMap.get("banks"));
-            ResultSet rsBank = bankQueryMap.getBanks(conn, bankMap);
+            ResultSet rsBank = bankDAO.getBanks(conn, bankMap);
             if (rsBank.next()) {
                 if (newAccount.getBranchId() == rsBank.getInt("main_branch_id") ||
-                    accountQueryMap.selectAllAccounts(conn, new HashMap<>()).next()) {
+                    accountDAO.selectAllAccounts(conn, new HashMap<>()).next()) {
                     update(conn, newAccount, request, response);
                 }
             }
@@ -181,7 +181,7 @@ public class AccountsServlet extends HttpServlet {
         String cacheKey1 = "/" + path[0] + "/" + path[1] + "*/" + path[path.length - 2] + "/" + path[path.length - 1];
         String cacheKey2 = "/" + path[0] + "/" + path[1] + "*/" + path[path.length - 2];
 
-        if (accountQueryMap.updateAccount(conn, newAccount)) {
+        if (accountDAO.updateAccount(conn, newAccount)) {
             jedis = ControllerServlet.pool.getResource();
             Set<String> keys = jedis.keys(cacheKey1);
             if (!keys.isEmpty()) {

@@ -1,4 +1,7 @@
+@import url("https://fonts.googleapis.com/css2?family=Neonderthaw&family=Splash&display=swap");
+@import url("https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.10.5/font/bootstrap-icons.min.css");
 .auth-form, .account-form, .branch-form, .bank-form, .user-form {
+  z-index: 10;
   width: 25%;
   margin-top: 70px;
   background-color: #ebeaea;
@@ -9,7 +12,8 @@
 h2 {
   text-align: center;
   font-size: 24px;
-  color: #201E43; }
+  color: #201E43;
+  margin-bottom: 25px; }
 
 .form-group {
   margin-bottom: 25px; }
@@ -1226,5 +1230,17 @@ body {
 html, body {
   height: 100%;
   margin: 0; }
+
+.appname {
+  font-family: "Neonderthaw", cursive;
+  font-weight: 400;
+  font-style: normal;
+  font-size: 15em;
+  z-index: 100;
+  margin-top: 120px;
+  color: #508C9B;
+  text-shadow: ivory; }
+  .appname i {
+    margin-left: 340px; }
 
 /*# sourceMappingURL=banker.css.map */

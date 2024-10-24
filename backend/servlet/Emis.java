@@ -29,10 +29,10 @@ import utility.LoggerConfig;
 import utility.SessionHandler;
 
 @SuppressWarnings("serial")
-public class EmisServlet extends HttpServlet {
+public class Emis extends HttpServlet {
 
     private Logger logger = LoggerConfig.initializeLogger();
-    private EmiDAO emiQueryMap = new EmiDAO();
+    private EmiDAO emiDAO = new EmiDAO();
     private LoanDAO loanDao = new LoanDAO();
     private Jedis jedis;
 
@@ -64,8 +64,8 @@ public class EmisServlet extends HttpServlet {
                 if (checkLoanStatus(conn, newEmi)) {
                     logger.info("Loan status is approved. Fetching EMI details.");
                     
-                    ResultSet rs = emiQueryMap.selectAllEmis(conn, ControllerServlet.pathMap);
-                    List<Emi> emis = emiQueryMap.convertResultSetToList(rs);
+                    ResultSet rs = emiDAO.selectAllEmis(conn, ControllerServlet.pathMap);
+                    List<Emi> emis = emiDAO.convertResultSetToList(rs);
                     
                     JsonArray jsonArray = new JsonArray();
                     if (!emis.isEmpty()) {

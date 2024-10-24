@@ -13,14 +13,21 @@ export default Ember.Component.extend({
   confirmPassword: '',
   errorMessage: '',
   bank_name: '',
-  BankNames: [],
+  bankNames: [],
   isSignup: false,
   BankId: '',
+  nameError: '',
+  dobError: '',
+  pnoError: '',
+  addrError: '',
+  usernameError: '',
+  passwordError: '',
+  confirmPasswordError: '',
+  roleError: '',
+  bankNameError: '',
   init() {
     this._super(...arguments);
     this.loadBanks();
-
-
   },
 
   loadBanks() {
@@ -35,27 +42,22 @@ export default Ember.Component.extend({
     let array = this.get('bankNames');
     for (let i = 0; i < array.length; i++) {
       let item = array[i];
-      if (item['bank_name'] == this.get('bank_name')) {
-        this.BankId = item['bank_id'];
+      if (item['bank_name'] === this.get('bank_name')) {
+        this.set('BankId', item['bank_id']);
         break;
       }
     }
-
-
-
   },
+
   checkStorage() {
-    if (localStorage.length != 0) {
+    if (localStorage.length !== 0) {
       localStorage.clear();
     }
-
     localStorage.setItem('bankId', this.get('BankId'));
-
   },
+
   actions: {
     submitForm() {
-
-
       const username = this.get('username');
       const password = this.get('password');
       const selectedRole = this.get('selectedRole');
@@ -65,14 +67,13 @@ export default Ember.Component.extend({
         return;
       }
 
-      if (!this.get('isSuper')) {
-        if (!this.get('bank_name')) {
-          this.set('errorMessage', 'please select a bank');
-          return;
-        }
+      if (!this.get('isSuper') && !this.get('isSignup') && !this.get('bank_name')) {
+        this.set('errorMessage', 'Please select a bank');
+        return;
       }
+
       if (password.length < 8) {
-        this.set('errorMessage', 'Password must be at least 8 characters long.');
+        this.set('errorMessage', 'Password must be at least 8 characters.');
         return;
       }
 
@@ -98,8 +99,9 @@ export default Ember.Component.extend({
 
       const action = this.get('isSignup') ? 'onSignup' : 'onLogin';
 
-      // console.log('Submit button pressed'+action);  
-
+      this.setBankId();
+      this.checkStorage();
+      
       const credentials = {
         username: this.get('username'),
         password: this.get('password'),
@@ -109,34 +111,112 @@ export default Ember.Component.extend({
         addr: this.get('addr'),
         pno: this.get('pno'),
         bankId: this.get('BankId')
-      }
+      };
 
-      this.setBankId();
-      this.checkStorage();
       this.sendAction(action, credentials);
     },
 
     toggleMode() {
-      const action = this.get('isSignup') ? 'toLogin' : 'toSignup';
-      if (action == 'toLogin')
-        this.set('isSignup', false);
-      else
-        this.set('isSignup', true);
-
-      this.sendAction(action);
+      this.toggleProperty('isSignup');
+      this.sendAction(this.get('isSignup') ? 'toSignup' : 'toLogin');
     },
 
     superAdminForm() {
       if (!this.get('username') || !this.get('password')) {
-        this.set('errorMessage', 'Username and password are required.');
+        this.set('errorMessage', 'All fields are required.');
         return;
       }
       const credentials = {
         username: this.get('username'),
         password: this.get('password')
-      }
+      };
       this.sendAction("toSuperAdmin", credentials);
-    }
+    },
 
+    validateName() {
+      if (!this.get('name')) {
+        this.set('nameError', 'Name is required.');
+      } else {
+        this.set('nameError', '');
+      }
+    },
+
+    validateDob() {
+      if (!this.get('dob')) {
+        this.set('dobError', 'Date of birth is required.');
+      } else {
+        this.set('dobError', '');
+      }
+    },
+
+    validatePno() {
+      const pno = this.get('pno');
+      if (!pno || pno.length !== 10 || isNaN(pno)) {
+        this.set('pnoError', 'Please enter a valid 10-digit phone number.');
+      } else {
+        this.set('pnoError', '');
+      }
+    },
+
+    validateAddr() {
+      if (!this.get('addr')) {
+        this.set('addrError', 'Address is required.');
+      } else {
+        this.set('addrError', '');
+      }
+    },
+
+    validateUsername() {
+      if (!this.get('username')) {
+        this.set('usernameError', 'Username is required.');
+      } else {
+        this.set('usernameError', '');
+      }
+    },
+
+    validatePassword() {
+      const password = this.get('password');
+      if (!password || password.length < 8) {
+        this.set('passwordError', 'Password must be at least 8 characters.');
+      } else {
+        this.set('passwordError', '');
+      }
+    },
+    validatePass() {
+      const password = this.get('password');
+      if (!password || password.length < 8) {
+        this.set('passwordError', 'Invalid password');
+      } else {
+        this.set('passwordError', '');
+      }
+    },
+
+    validateConfirmPassword() {
+      if (!this.get('confirmPassword'))
+      {
+        this.set('confirmPasswordError', 'Confirm Password is required.');
+      }
+      else if (this.get('password') !== this.get('confirmPassword')) {
+        this.set('confirmPasswordError', 'Passwords do not match.');
+      } else {
+        this.set('confirmPasswordError', '');
+      }
+    },
+
+    validateRole() {
+      if (!this.get('selectedRole')) {
+        this.set('roleError', 'Please select a role.');
+      } else {
+        this.set('roleError', '');
+      }
+    },
+
+    validateBankName() {
+      if (!this.get('bank_name')) {
+        this.set('bankNameError', 'Please select a bank.');
+      } else {
+        this.set('bankNameError', '');
+      }
+    }
   }
 });

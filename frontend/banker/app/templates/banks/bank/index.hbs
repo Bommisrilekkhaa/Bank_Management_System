@@ -20,7 +20,9 @@
     </div>
     <div class="bank-field">
       <span class="field-label">Main Branch ID:</span>
+      {{#unless (eq bank.main_branch_id 0)}}
       <span class="field-value">{{bank.main_branch_id}}</span>
+      {{/unless}}
     </div>
      <div class="bank-field">
       <span class="field-label">Main Branch Name:</span>

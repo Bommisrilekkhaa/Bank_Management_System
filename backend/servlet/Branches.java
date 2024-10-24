@@ -20,6 +20,7 @@ import DAO.BankDAO;
 import DAO.BranchDAO;
 import DAO.UserDAO;
 import enums.UserRole;
+import model.Bank;
 import model.Branch;
 import redis.clients.jedis.Jedis;
 import utility.DbConnection;
@@ -27,12 +28,12 @@ import utility.JsonHandler;
 import utility.LoggerConfig;
 import utility.SessionHandler;
 
-public class BranchesServlet extends HttpServlet {
+public class Branches extends HttpServlet {
 
     private static final long serialVersionUID = 1L;
 	private Logger logger=LoggerConfig.initializeLogger(); 
 
-    private BranchDAO branchQueryMap = new BranchDAO();
+    private BranchDAO branchDAO = new BranchDAO();
     private BankDAO bankDao = new BankDAO();
     private UserDAO userDao = new UserDAO();
     Jedis jedis = null;
@@ -58,12 +59,12 @@ public class BranchesServlet extends HttpServlet {
             ResultSet rs;
             try (Connection conn = DbConnection.connect()) {
                 if (request.getSession(false).getAttribute("user_role").equals(UserRole.MANAGER.toString())) {
-                    rs = branchQueryMap.selectBranchByManager(conn, (int) request.getSession(false).getAttribute("user_id"));
+                    rs = branchDAO.selectBranchByManager(conn, (int) request.getSession(false).getAttribute("user_id"));
                 } else if (!ControllerServlet.pathMap.containsKey("branches")) {
                     branch.setBank_id(ControllerServlet.pathMap.get("banks"));
-                    rs = branchQueryMap.selectBranches(conn, branch);
+                    rs = branchDAO.selectBranches(conn, branch);
                 } else {
-                    rs = branchQueryMap.selectBranchById(conn, ControllerServlet.pathMap.get("branches"));
+                    rs = branchDAO.selectBranchById(conn, ControllerServlet.pathMap.get("branches"));
                 }
 
                 JsonArray jsonArray = new JsonArray();
@@ -74,7 +75,9 @@ public class BranchesServlet extends HttpServlet {
                     jsonResponse.addProperty("branch_address", rs.getString("branch_address"));
                     jsonResponse.addProperty("branch_number", rs.getInt("branch_number"));
                     jsonResponse.addProperty("bank_id", rs.getInt("bank_id"));
-                    jsonResponse.addProperty("bank_name", bankDao.getBankById(conn, rs.getInt("bank_id")).getBank_name());
+                    Bank bank=bankDao.getBankById(conn, rs.getInt("bank_id"));
+                    jsonResponse.addProperty("bank_name", bank.getBank_name());
+                    jsonResponse.addProperty("main_branch_id", bank.getMain_branch_id());
                     jsonResponse.addProperty("manager_id", rs.getInt("manager_id"));
                     jsonResponse.addProperty("manager_name", userDao.getUsername(conn, rs.getInt("manager_id")).getFullname());
                     jsonArray.add(jsonResponse);
@@ -104,10 +107,10 @@ public class BranchesServlet extends HttpServlet {
         JsonObject jsonRequest = JsonHandler.parseJsonRequest(request);
         Branch branch = new Branch();
         branch.setBank_id(ControllerServlet.pathMap.get("banks"));
-        branchQueryMap.extractBranchDetails(jsonRequest, branch);
+        branchDAO.extractBranchDetails(jsonRequest, branch);
 
         try (Connection conn = DbConnection.connect()) {
-            if (branchQueryMap.insertBranch(conn, branch)) {
+            if (branchDAO.insertBranch(conn, branch)) {
                 jedis = ControllerServlet.pool.getResource();
                 jedis.del(cacheKey);
                 JsonHandler.sendSuccessResponse(response, "Branch inserted successfully");
@@ -137,13 +140,13 @@ public class BranchesServlet extends HttpServlet {
         Branch branch = new Branch();
         branch.setBank_id(ControllerServlet.pathMap.get("banks"));
         branch.setBranch_id(ControllerServlet.pathMap.get("branches"));
-        branchQueryMap.extractBranchDetails(jsonRequest, branch);
+        branchDAO.extractBranchDetails(jsonRequest, branch);
 
         try (Connection conn = DbConnection.connect()) {
-            if (branchQueryMap.updateBranch(conn, branch)) {
+            if (branchDAO.updateBranch(conn, branch)) {
                 jedis = ControllerServlet.pool.getResource();
                 jedis.del(cacheKey);
-                jedis.del("branches");
+                jedis.del("/branches");
                 JsonHandler.sendSuccessResponse(response, "Branch updated successfully");
                 logger.info("Branch updated successfully and cache invalidated for key: " + cacheKey);
             } else {
@@ -168,10 +171,10 @@ public class BranchesServlet extends HttpServlet {
         String cacheKey = path.substring(path.indexOf("/branches"));
 
         try (Connection conn = DbConnection.connect()) {
-            if (branchQueryMap.deleteBranch(conn, ControllerServlet.pathMap.get("branches"))) {
+            if (branchDAO.deleteBranch(conn, ControllerServlet.pathMap.get("branches"))) {
                 jedis = ControllerServlet.pool.getResource();
                 jedis.del(cacheKey);
-                jedis.del("branches");
+                jedis.del("/branches");
                 JsonHandler.sendSuccessResponse(response, "Branch deleted successfully");
                 logger.info("Branch deleted successfully and cache invalidated for key: " + cacheKey);
             } else {

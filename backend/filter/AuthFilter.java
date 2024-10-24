@@ -37,7 +37,7 @@ public class AuthFilter extends HttpFilter implements Filter {
 	    response.setHeader("Access-Control-Allow-Credentials", "true");
 
 	    response.setStatus(HttpServletResponse.SC_OK);
-	    System.out.println("CORS preflight response sent.");
+//	    System.out.println("CORS preflight response sent.");
 	}
 	public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException 
 	{
@@ -57,7 +57,7 @@ public class AuthFilter extends HttpFilter implements Filter {
 		{
 			if (path[path.length-1].equals("auth") || path[path.length-1].equals("banks")) 
 			{
-				System.out.println("Login request, skipping auth filter.");
+//				System.out.println("Login request, skipping auth filter.");
 				
 				chain.doFilter(request, response);
 				return;
@@ -74,7 +74,7 @@ public class AuthFilter extends HttpFilter implements Filter {
                 {
                     if(cookie.getValue()!=null && cookie.getValue().equals(req.getSession(false).getId()))
                     {
-                    	System.out.println("cookie"+cookie.getValue());
+//                    	System.out.println("cookie"+cookie.getValue());
 
                 	    ((HttpServletResponse) response).setStatus(HttpServletResponse.SC_OK);
 //                	    JsonHandler.sendSuccessResponse((HttpServletResponse)response, "User is already Logged In");
@@ -82,9 +82,8 @@ public class AuthFilter extends HttpFilter implements Filter {
                     }
                     else
         	        {
-                    	 ((HttpServletResponse) response).setStatus(HttpServletResponse.SC_BAD_REQUEST);
+                    	 JsonHandler.sendErrorResponse((HttpServletResponse)response, "Invalid session");
                     	 return;
-//                    	 JsonHandler.sendErrorResponse((HttpServletResponse)response, "Invalis session");
         	        }
                 }
           }

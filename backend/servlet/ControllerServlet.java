@@ -50,6 +50,7 @@ public class ControllerServlet extends HttpServlet {
         pathMap = new LinkedHashMap<>();
         SessionHandler.doOptions(request, response);
         String[] path = request.getRequestURI().split("/");
+        System.out.println(request.getRequestURI());
         String method = request.getMethod();
         String reqServlet = "";
         logger.info("Request URI: " + request.getRequestURI());
@@ -92,40 +93,61 @@ public class ControllerServlet extends HttpServlet {
         pathMap = new LinkedHashMap<>();
     }
 
-    private boolean roleValidation(String role, String method, String[] path) {
-        if (role.equals(UserRole.CUSTOMER.toString())) { 
-            if (!(path[4].equals("banks") && path[6].equals("branches")) || !path[path.length - 1].equals("banks") || !path[path.length - 2].equals("branches") || !path[path.length - 1].equals("users") ||  !path[path.length - 2].equals("users")) {
+    private boolean roleValidation(String role, String method, String[] path) 
+    {
+        if (role.equals(UserRole.CUSTOMER.toString())) 
+        { 
+            if (!path[path.length - 1].equals("banks") || !path[path.length - 2].equals("branches") || !path[path.length - 1].equals("users") ||  !path[path.length - 2].equals("users")) 
+            {
                 return method.equals("GET") || method.equals("POST");
-            } else {
+            } 
+            else 
+            {
                 return false;
             }
         }
-        else if (role.equals(UserRole.MANAGER.toString())) { 
-            if ( !path[path.length - 1].equals("banks") || !path[path.length - 1].equals("branches") || !path[path.length - 1].equals("users") ||  !path[path.length - 2].equals("users")) {
+        else if (role.equals(UserRole.MANAGER.toString())) 
+        { 
+            if ( !path[path.length - 1].equals("banks") || !path[path.length - 1].equals("branches") || !path[path.length - 1].equals("users") ||  !path[path.length - 2].equals("users")) 
+            {
                 if(path[path.length - 2].equals("branches") )
                 {
-                	return  method.equals("DELETE");
+                	return  method.equals("GET") || method.equals("DELETE");
                 }
                 return true;
-            } else {
+            } 
+            else 
+            {
                 return false;
             }
         }
-        else if (role.equals(UserRole.ADMIN.toString())) { 
-            if ( !path[path.length - 1].equals("users") ||  !path[path.length - 2].equals("users")) {
+        else if (role.equals(UserRole.ADMIN.toString())) 
+        { 
+            if ( !path[path.length - 1].equals("users") ||  !path[path.length - 2].equals("users")) 
+            {
                 return true;
-            } else {
+            } 
+            else 
+            {
                 return false;
             }
         }
-        else if (role.equals(UserRole.SUPERADMIN.toString())) { 
-            if ( path[path.length - 1].equals("users") ||  path[path.length - 2].equals("users") || path[path.length - 1].equals("banks") ||  path[path.length - 2].equals("banks")) {
+        else if (role.equals(UserRole.SUPERADMIN.toString())) 
+        { 
+            if ( path[path.length - 1].equals("users") ||  path[path.length - 2].equals("users") || path[path.length - 1].equals("banks") ||  path[path.length - 2].equals("banks") ||  path[path.length - 2].equals("branches") ) 
+            {
             	if(path[path.length - 2].equals("banks"))
             	{
             		return !method.equals("PUT");
             	}
+            	else if( path[path.length - 2].equals("branches") )
+            	{
+            		return method.equals("GET");
+            	}
                 return true;
-            } else {
+            } 
+            else 
+            {
                 return false;
             }
         }
@@ -136,31 +158,42 @@ public class ControllerServlet extends HttpServlet {
         int n = path.length;
         String reqServlet = "";
         
-        for (int i = 4; i < n - 1; i += 2) {
-            if (!path[i + 1].equals("*")) {
+        for (int i = 4; i < n - 1; i += 2) 
+        {
+            if (!path[i + 1].equals("*")) 
+            {
                 pathMap.put(path[i], Integer.valueOf(path[i + 1]));
             }
         }
-        if (n % 2 != 0) {
+        if (n % 2 != 0) 
+        {
             reqServlet = path[n - 1];
         }
 
         int index = -1;
         
-        for (String key : pathMap.keySet()) {
+        for (String key : pathMap.keySet()) 
+        {
             int resIndex = resources.indexOf(key);
             
-            if (index < resIndex) {
+            if (index < resIndex) 
+            {
                 index = resIndex;
-            } else {
+            } 
+            else 
+            {
                 throw new IllegalAccessException("Invalid URL: Resource out of order.");
             }
         }
 
-        if (!reqServlet.isEmpty()) {
-            if (index < resources.indexOf(reqServlet)) {
+        if (!reqServlet.isEmpty()) 
+        {
+            if (index < resources.indexOf(reqServlet)) 
+            {
                 return reqServlet;
-            } else {
+            } 
+            else 
+            {
                 throw new IllegalAccessException("Invalid URL: Request servlet out of order.");
             }
         }
@@ -174,7 +207,7 @@ public class ControllerServlet extends HttpServlet {
 
     private void reflection(String reqServlet, String method, HttpServletRequest request, HttpServletResponse response) {
         try {
-            Class<?> servlets = Class.forName("servlet." + buildClassName(reqServlet) + "Servlet");
+            Class<?> servlets = Class.forName("servlet." + buildClassName(reqServlet));
             HttpServlet servlet = (HttpServlet) servlets.getDeclaredConstructor().newInstance();
 
             switch (method) {

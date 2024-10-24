@@ -121,6 +121,6 @@ public class SessionHandler {
             response.setHeader("Access-Control-Allow-Credentials", "true");
 
             response.setStatus(HttpServletResponse.SC_OK);
-            System.out.println("CORS preflight response sent.");
+//            System.out.println("CORS preflight response sent.");
         }
 }

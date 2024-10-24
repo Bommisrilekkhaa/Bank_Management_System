@@ -6,13 +6,13 @@
 
     {{#if isEdit}}
     <div class="form-group">
-      <label for="loan_id">Loan ID</label>
+      <label for="loan_id">Loan ID<span style="color:rgb(237, 69, 69);">*</span></label>
       <input type="text" id="loan_id" value={{loan_id}} class="form-control" oninput={{action (mut loan_id) value="target.value"}} disabled={{isEdit}}>
     </div>
     {{/if}}
 
     <div class="form-group">
-      <label for="loan_type">Loan Type</label>
+      <label for="loan_type">Loan Type<span style="color:rgb(237, 69, 69);">*</span></label>
       <select id="loan_type" class="form-control" onchange={{action (mut loan_type) value="target.value"}}>
         <option value="">Select type</option>
         {{#each types as |type|}}
@@ -21,9 +21,9 @@
       </select>
     </div>
 
-     {{#if isDirect}}
+    {{#if isDirect}}
     <div class="form-group">
-      <label for="accNo">Account Number</label>
+      <label for="accNo">Account Number<span style="color:rgb(237, 69, 69);">*</span></label>
       <select id="accNo" class="form-control" onchange={{action (mut accNo) value="target.value"}}>
         <option value="">Select Account Number</option>
         {{#each accounts as |account|}}
@@ -34,12 +34,12 @@
     {{/if}}
 
     <div class="form-group">
-      <label for="loan_amount">Loan Amount</label>
+      <label for="loan_amount">Loan Amount<span style="color:rgb(237, 69, 69);">*</span></label>
       <input type="number" id="loan_amount" value={{loan_amount}} class="form-control" oninput={{action (mut loan_amount) value="target.value"}}>
     </div>
 
-     <div class="form-group">
-      <label for="loan_duration">Loan Duration</label>
+    <div class="form-group">
+      <label for="loan_duration">Loan Duration<span style="color:rgb(237, 69, 69);">*</span></label>
       <select id="loan_duration" class="form-control" onchange={{action (mut loan_duration) value="target.value"}}>
         <option value="">Select duration</option>
         {{#each durations as |duration|}}
@@ -47,10 +47,11 @@
         {{/each}}
       </select>
     </div>
+
     {{#unless (eq role "CUSTOMER")}}
     {{#unless isEdit}}
       <div class="form-group">
-        <label for="loan_status">Loan Status</label>
+        <label for="loan_status">Loan Status<span style="color:rgb(237, 69, 69);">*</span></label>
         <select id="loan_status" class="form-control" onchange={{action (mut loan_status) value="target.value"}}>
           <option value="">Select Status</option>
           {{#each statuses as |status|}}
@@ -61,7 +62,7 @@
     {{/unless}}
     {{#if isEdit}}
     <div class="form-group">
-      <label for="loan_status">Loan Status</label>
+      <label for="loan_status">Loan Status<span style="color:rgb(237, 69, 69);">*</span></label>
       <select id="loan_status" class="form-control" onchange={{action (mut loan_status) value="target.value"}}>
         <option value="">Select Status</option>
         {{#each filteredStatuses as |status|}}
@@ -71,8 +72,6 @@
     </div>
     {{/if}}
     {{/unless}}
-
-
 
     <button type="submit" class="btn-primary">{{if isEdit "Update Loan" "Create Loan"}}</button>
    

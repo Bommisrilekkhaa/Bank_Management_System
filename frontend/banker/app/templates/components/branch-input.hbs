@@ -4,42 +4,72 @@
     
     <form {{action "submitForm" on="submit"}}>
       {{#if isEdit}}
-      <div class="form-group">
-        <label for="branchId">Branch ID</label>
-        <input type="text" id="branchId" value={{branchId}} class="form-control" oninput={{action (mut branchId) value="target.value"}} disabled>
-      </div>
+        <div class="form-group">
+          <label for="branchId">Branch ID<span style="color:rgb(237, 69, 69);">*</span></label>
+          <input 
+            type="text" 
+            id="branchId" 
+            value={{branchId}} 
+            class="form-control" 
+            oninput={{action (mut branchId) value="target.value"}} 
+            disabled
+          >
+        </div>
       {{/if}}
   
       <div class="form-group">
-        <label for="name">Branch Name</label>
-        <input type="text" id="name" value={{name}} class="form-control" oninput={{action (mut name) value="target.value"}}>
+        <label for="name">Branch Name<span style="color:rgb(237, 69, 69);">*</span></label>
+        <input 
+          type="text" 
+          id="name" 
+          value={{name}} 
+          class="form-control" 
+          oninput={{action (mut name) value="target.value"}}
+        >
       </div>
   
       <div class="form-group">
-        <label for="address">Branch Address</label>
-        <input type="text" id="address" value={{address}} class="form-control" oninput={{action (mut address) value="target.value"}}>
+        <label for="address">Branch Address<span style="color:rgb(237, 69, 69);">*</span></label>
+        <input 
+          type="text" 
+          id="address" 
+          value={{address}} 
+          class="form-control" 
+          oninput={{action (mut address) value="target.value"}}
+        >
       </div>
-     {{#if isEdit}}
+
+      {{#if isEdit}}
+        <div class="form-group">
+          <label for="branch_number">Branch Number<span style="color:rgb(237, 69, 69);">*</span></label>
+          <input 
+            type="text" 
+            id="branch_number" 
+            value={{branch_number}} 
+            class="form-control" 
+            oninput={{action (mut branch_number) value="target.value"}} 
+            disabled
+          >
+        </div>
+      {{/if}}
+
       <div class="form-group">
-        <label for="branch_number">Branch Number</label>
-        <input type="text" id="branch_number" value={{branch_number}} class="form-control" oninput={{action (mut branch_number) value="target.value"}} disabled>
+        <label for="manager_id">Manager Name<span style="color:rgb(237, 69, 69);">*</span></label>
+        <select 
+          id="manager_id" 
+          class="form-control" 
+          onchange={{action (mut manager_id) value="target.value"}}
+        >
+          {{#if isEdit}}
+            <option value={{manager_id}}>{{manager_name}}</option>
+          {{else}}
+            <option value="">Select Manager</option>
+          {{/if}}
+          {{#each availableManagers as |manager|}}
+            <option value={{manager.manager_id}}>{{manager.manager_name}}</option>
+          {{/each}}
+        </select>
       </div>
-    {{/if}}
-     <div class="form-group">
-      <label for="manager_id">Manager Name</label>
-      <select id="manager_id" class="form-control" onchange={{action (mut manager_id) value="target.value"}}>
-        {{#if isEdit}}
-          <option value={{manager_id}}>{{manager_name}}</option>
-        {{else}}
-          <option value="">Select Manager</option>
-        {{/if}}
-        {{#each availableManagers as |manager|}}
-          <option value={{manager.manager_id}}>{{manager.manager_name}}</option>
-        {{/each}}
-      </select>
-    </div>
-
-
   
       <button type="submit" class="btn-primary">{{if isEdit "Update Branch" "Create Branch"}}</button>
       

@@ -38,8 +38,8 @@ public class TransactionDAO {
     
     public boolean updateBalance(int type,double amount) throws SQLException, ServletException
     {
-    	AccountDAO accountQueryMap = new AccountDAO();
-    	return accountQueryMap.updateBalance(DbConnection.connect(), type, amount, transaction.getAcc_number());
+    	AccountDAO accountDAO = new AccountDAO();
+    	return accountDAO.updateBalance(DbConnection.connect(), type, amount, transaction.getAcc_number());
     }
 
     public ResultSet selectAllTransactions(Connection conn, HashMap<String, Integer> pathMap) throws SQLException 

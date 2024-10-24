@@ -167,7 +167,7 @@ public class QueryUtil
 	        	{
 	        		if(params[i] instanceof Integer) 
 	        		{
-	        			System.out.println(params[i]);
+//	        			System.out.println(params[i]);
 	        			stmt.setInt(i+1, (int) params[i]);
 	        		}
 	        		else if(params[i] instanceof String)
@@ -207,7 +207,7 @@ public class QueryUtil
 	        
 	        for (int i = 0; i < params.length; i++) 
 	        {
-	        	System.out.println(params[i]);
+//	        	System.out.println(params[i]);
 		            if(params[i] instanceof Integer) 
 		            {
 		            	stmt.setInt(i+1, (int) params[i]);
@@ -215,7 +215,7 @@ public class QueryUtil
 		            else if(params[i] instanceof String)
 		            {
 		            	stmt.setString(i+1,  (String) params[i]);
-		            	System.out.println(params[i]);
+//		            	System.out.println(params[i]);
 		            }
 		            else if(params[i] instanceof Double)
 		            {

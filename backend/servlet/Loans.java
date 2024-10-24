@@ -32,9 +32,9 @@ import utility.LoggerConfig;
 import utility.SessionHandler;
 
 @SuppressWarnings("serial")
-public class LoansServlet extends HttpServlet {
+public class Loans extends HttpServlet {
     private Logger logger = LoggerConfig.initializeLogger();
-    private LoanDAO loanQueryMap = new LoanDAO();
+    private LoanDAO loanDAO = new LoanDAO();
     private AccountDAO accountDao = new AccountDAO();
     Jedis jedis = null;
 
@@ -61,8 +61,8 @@ public class LoansServlet extends HttpServlet {
         } else {
             logger.info("No cache found, querying database.");
             try (Connection conn = DbConnection.connect()) {
-                ResultSet rs = loanQueryMap.selectAllLoans(conn, ControllerServlet.pathMap);
-                List<Loan> loans = loanQueryMap.convertResultSetToList(rs);
+                ResultSet rs = loanDAO.selectAllLoans(conn, ControllerServlet.pathMap);
+                List<Loan> loans = loanDAO.convertResultSetToList(rs);
                 JsonArray jsonArray = new JsonArray();
 
                 if (!loans.isEmpty()) {
@@ -103,11 +103,11 @@ public class LoansServlet extends HttpServlet {
 
         try (Connection conn = DbConnection.connect()) {
             JsonObject jsonRequest = JsonHandler.parseJsonRequest(request);
-            Loan newLoan = loanQueryMap.extractLoanDetails(jsonRequest, request);
+            Loan newLoan = loanDAO.extractLoanDetails(jsonRequest, request);
             newLoan.setAcc_no(ControllerServlet.pathMap.get("accounts"));
             if (checkAccountStatus(conn, newLoan)) {
-                if (!loanQueryMap.isLoanExists()) {
-                    if (loanQueryMap.insertLoan(conn, newLoan)) {
+                if (!loanDAO.isLoanExists()) {
+                    if (loanDAO.insertLoan(conn, newLoan)) {
                         jedis = ControllerServlet.pool.getResource();
                         Set<String> keys = jedis.keys(cacheKey);
                         if (!keys.isEmpty()) {
@@ -146,7 +146,7 @@ public class LoansServlet extends HttpServlet {
         JsonObject jsonRequest = JsonHandler.parseJsonRequest(request);
 
         try (Connection conn = DbConnection.connect()) {
-            Loan updatedLoan = loanQueryMap.extractLoanDetails(jsonRequest, request);
+            Loan updatedLoan = loanDAO.extractLoanDetails(jsonRequest, request);
             updatedLoan.setAcc_no(ControllerServlet.pathMap.get("accounts"));
             updatedLoan.setLoan_id(ControllerServlet.pathMap.get("loans"));
             if (checkAccountStatus(conn, updatedLoan)) {
@@ -156,7 +156,7 @@ public class LoansServlet extends HttpServlet {
                     JsonHandler.sendErrorResponse(response, "Error updating loan, Loan amount is greater than Limit");
                 }
 
-                if (loanQueryMap.updateLoan(conn, updatedLoan)) {
+                if (loanDAO.updateLoan(conn, updatedLoan)) {
                     jedis = ControllerServlet.pool.getResource();
                     Set<String> keys = jedis.keys(cacheKey1);
                     if (!keys.isEmpty()) {

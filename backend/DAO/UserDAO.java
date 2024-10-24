@@ -146,6 +146,7 @@ public class UserDAO {
 	    	
 	    	Map<String,Object[]> conditions = new HashMap<>();
 	    	conditions.put("u.user_role", new Object[] {"=",UserRole.MANAGER.getValue()});
+	    	conditions.put("u.user_status", new Object[] {"=",Status.ACTIVE.getValue()});
 	    	 QueryUtil query = QueryUtil.create()
 		                .select("*")
 		                .from("users u")
@@ -162,6 +163,7 @@ public class UserDAO {
 	    	
 	    	Map<String,Object[]> conditions = new HashMap<>();
 	    	conditions.put("u.user_role", new Object[] {"=",UserRole.ADMIN.getValue()});
+	    	conditions.put("u.user_status", new Object[] {"=",Status.ACTIVE.getValue()});
 	    	 QueryUtil query = QueryUtil.create()
 		                .select("*")
 		                .from("users u")
@@ -325,7 +327,7 @@ public class UserDAO {
 		  }
 		 
 		 
-	
+		
 
 
 }

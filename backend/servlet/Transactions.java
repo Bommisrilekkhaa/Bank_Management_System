@@ -39,10 +39,10 @@ import utility.LoggerConfig;
 import utility.SessionHandler;
 
 @SuppressWarnings("serial")
-public class TransactionsServlet extends HttpServlet {
+public class Transactions extends HttpServlet {
     
     private Logger logger = LoggerConfig.initializeLogger();
-    private TransactionDAO transactionQueryMap = new TransactionDAO();
+    private TransactionDAO transactionDAO = new TransactionDAO();
     private LoanDAO loanDao = new LoanDAO();
     private EmiDAO emiDao = new EmiDAO();
     private AccountDAO accountDao = new AccountDAO();
@@ -70,8 +70,8 @@ public class TransactionsServlet extends HttpServlet {
             logger.info("Data fetched from Redis cache for key: " + cacheKey);
         } else {
             try (Connection conn = DbConnection.connect()) {
-                ResultSet rs = transactionQueryMap.selectAllTransactions(conn, ControllerServlet.pathMap);
-                List<Transaction> transactions = transactionQueryMap.convertResultSetToList(rs);
+                ResultSet rs = transactionDAO.selectAllTransactions(conn, ControllerServlet.pathMap);
+                List<Transaction> transactions = transactionDAO.convertResultSetToList(rs);
 
                 JsonArray jsonArray = new JsonArray();
                 if (!transactions.isEmpty()) {
@@ -113,11 +113,11 @@ public class TransactionsServlet extends HttpServlet {
 
         try (Connection conn = DbConnection.connect()) {
             JsonObject jsonRequest = JsonHandler.parseJsonRequest(request);
-            Transaction newTransaction = transactionQueryMap.extractTransactionDetails(jsonRequest);
+            Transaction newTransaction = transactionDAO.extractTransactionDetails(jsonRequest);
             newTransaction.setAcc_number(ControllerServlet.pathMap.get("accounts"));
             
             if (checkAccountStatus(conn, newTransaction)) {
-                if (transactionQueryMap.insertTransaction(conn, newTransaction)) {
+                if (transactionDAO.insertTransaction(conn, newTransaction)) {
                     jedis = ControllerServlet.pool.getResource();
                     Set<String> keys = jedis.keys(cacheKey);
                     if (!keys.isEmpty()) {
@@ -128,7 +128,7 @@ public class TransactionsServlet extends HttpServlet {
                     if (newTransaction.getTransaction_type() == TransactionType.EMI.getValue()) {
                         processEmiTransaction(conn, newTransaction);
                     } else {
-                        if (transactionQueryMap.updateBalance(newTransaction.getTransaction_type(), newTransaction.getTransaction_amount())) {
+                        if (transactionDAO.updateBalance(newTransaction.getTransaction_type(), newTransaction.getTransaction_amount())) {
                             clearAccountCache();
                             JsonHandler.sendSuccessResponse(response, "Transaction inserted successfully");
                             logger.info("Transaction inserted successfully: " + newTransaction.getTransaction_id());

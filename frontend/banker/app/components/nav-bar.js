@@ -35,10 +35,10 @@ export default Ember.Component.extend({
     // this.getCurrentRoute();
     // console.log("init...");
     if(this.get('role')=='ADMIN' || this.get('role')=='CUSTOMER')
-    {
-      this.loadBranches();
-      
-    }
+      {
+        this.loadBranches();
+        
+      }
     if(localStorage.getItem('branchId')==null)
     {
       localStorage.setItem('branchId', '*');

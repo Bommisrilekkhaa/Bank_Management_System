@@ -24,11 +24,11 @@ import utility.DbConnection;
 import utility.JsonHandler;
 import utility.LoggerConfig;
 
-public class DashboardServlet extends HttpServlet {
+public class Dashboard extends HttpServlet {
     private static final long serialVersionUID = 1L;
 	private Logger logger=LoggerConfig.initializeLogger(); 
-    private AccountDAO accountQueryMap = new AccountDAO();
-    private BranchDAO branchQueryMap = new BranchDAO();
+    private AccountDAO accountDAO = new AccountDAO();
+    private BranchDAO branchDAO = new BranchDAO();
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
@@ -42,7 +42,7 @@ public class DashboardServlet extends HttpServlet {
             if (role.equals(UserRole.CUSTOMER.toString())) {
                 logger.info("Fetching account and loan details for customer.");
                 
-                ResultSet resultSet = accountQueryMap.accountsAndLoans(conn, ControllerServlet.pathMap);
+                ResultSet resultSet = accountDAO.accountsAndLoans(conn, ControllerServlet.pathMap);
                 
                 while (resultSet.next()) {
                     JsonObject accountJson = new JsonObject();
@@ -79,7 +79,7 @@ public class DashboardServlet extends HttpServlet {
                 ControllerServlet.pathMap.put("b.manager_id", ControllerServlet.pathMap.get("users"));
                 ControllerServlet.pathMap.remove("users");
                 
-                ResultSet rs = branchQueryMap.selectBranchAndAccounts(conn, ControllerServlet.pathMap);
+                ResultSet rs = branchDAO.selectBranchAndAccounts(conn, ControllerServlet.pathMap);
                 
                 if (rs.next()) {
                     JsonObject jsonResponse = new JsonObject();
@@ -100,7 +100,7 @@ public class DashboardServlet extends HttpServlet {
                 logger.info("Fetching branches and account details for admin.");
                 
                 ControllerServlet.pathMap.remove("users");
-                ResultSet rs = branchQueryMap.selectBranchesAndAccounts(conn, ControllerServlet.pathMap);
+                ResultSet rs = branchDAO.selectBranchesAndAccounts(conn, ControllerServlet.pathMap);
                 
                 while (rs.next()) {
                     JsonObject jsonResponse = new JsonObject();

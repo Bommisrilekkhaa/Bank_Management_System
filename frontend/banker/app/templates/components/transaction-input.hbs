@@ -1,56 +1,73 @@
 <body>
-<div class="auth-form">
-  <h2>Make new Payment</h2>
-  
-  <form {{action "submitForm" on="submit"}}>
-    {{#unless isEmi}}
-    <div class="form-group">
-      <label for="transaction_type">Transaction Type</label>
-      <select id="transaction_type" class="form-control" onchange={{action (mut transaction_type) value="target.value"}}>
-        <option value="">Select type</option>
-        {{#each types as |type|}}
-          <option value={{type}} selected={{if (eq type transaction_type) "selected"}}>{{type}}</option>
-        {{/each}}
-      </select>
-    </div>
-    {{/unless}}
-    {{#if isEmi}}
-         <div class="form-group">
-      <label for="transaction_type">Transaction Type</label>
-      <input type="text" id="transaction_type" value={{transaction_type}} class="form-control"  disabled>
-    </div>
-    {{/if}}
-    <div class="form-group">
-      <label for="transaction_amount">Transaction Amount</label>
-      <input type="number" id="transaction_amount" value={{transaction_amount}} class="form-control" oninput={{action (mut transaction_amount) value="target.value" }} disabled={{isEmi}}>
-    </div>
-  {{#if isDirect}}
-    <div class="form-group">
-      <label for="accNo">Account Number</label>
-      <select id="accNo" class="form-control" onchange={{action (mut accNo) value="target.value"}}>
-        <option value="">Select Account Number</option>
-        {{#each accounts as |account|}}
-          <option value={{account.acc_no}} >{{account.acc_no}}</option>
-        {{/each}}
-      </select>
-    </div>
-    {{/if}}
-    <button type="submit" class="btn-primary">Proceed</button>
+  <div class="auth-form">
+    <h2>Make New Payment</h2>
+    
+    <form {{action "submitForm" on="submit"}}>
       {{#unless isEmi}}
-      {{#link-to "banks.bank.transactions" bankId}}
-          <button  class="btn-secondary">Cancel</button>
-      {{/link-to}}
+        <div class="form-group">
+          <label for="transaction_type">Transaction Type<span style="color:rgb(237, 69, 69);">*</span></label>
+          <select id="transaction_type" class="form-control" onchange={{action (mut transaction_type) value="target.value"}}>
+            <option value="">Select type</option>
+            {{#each types as |type|}}
+              <option value={{type}} selected={{if (eq type transaction_type) "selected"}}>{{type}}</option>
+            {{/each}}
+          </select>
+        </div>
       {{/unless}}
 
       {{#if isEmi}}
-      
-          <button {{action "cancel"}} class="btn-secondary">Cancel</button>
-      
+        <div class="form-group">
+          <label for="transaction_type">Transaction Type<span style="color:rgb(237, 69, 69);">*</span></label>
+          <input 
+            type="text" 
+            id="transaction_type" 
+            value={{transaction_type}} 
+            class="form-control"  
+            disabled
+          >
+        </div>
       {{/if}}
-    {{#if errorMessage}}
-      <div class="error-message">* {{errorMessage}}</div>
-    {{/if}}
-  </form>
-</div>
-{{notify-box message=notification.message type=notification.type}}
+
+      <div class="form-group">
+        <label for="transaction_amount">Transaction Amount<span style="color:rgb(237, 69, 69);">*</span></label>
+        <input 
+          type="number" 
+          id="transaction_amount" 
+          value={{transaction_amount}} 
+          class="form-control" 
+          oninput={{action (mut transaction_amount) value="target.value"}} 
+          disabled={{isEmi}}
+        >
+      </div>
+  
+      {{#if isDirect}}
+        <div class="form-group">
+          <label for="accNo">Account Number<span style="color:rgb(237, 69, 69);">*</span></label>
+          <select id="accNo" class="form-control" onchange={{action (mut accNo) value="target.value"}}>
+            <option value="">Select Account Number</option>
+            {{#each accounts as |account|}}
+              <option value={{account.acc_no}}>{{account.acc_no}}</option>
+            {{/each}}
+          </select>
+        </div>
+      {{/if}}
+  
+      <button type="submit" class="btn-primary">Proceed</button>
+      
+      {{#unless isEmi}}
+        {{#link-to "banks.bank.transactions" bankId}}
+          <button class="btn-secondary">Cancel</button>
+        {{/link-to}}
+      {{/unless}}
+      
+      {{#if isEmi}}
+        <button {{action "cancel"}} class="btn-secondary">Cancel</button>
+      {{/if}}
+  
+      {{#if errorMessage}}
+        <div class="error-message">* {{errorMessage}}</div>
+      {{/if}}
+    </form>
+  </div>
+  {{notify-box message=notification.message type=notification.type}}
 </body>

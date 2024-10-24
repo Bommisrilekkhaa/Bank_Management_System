@@ -12,13 +12,15 @@
     </thead>
     <tbody>
       {{#each branches as |branch|}}
-        <tr {{action "viewBranch" branch}}>
-          <td>{{branch.branch_id}}</td>
-          <td>{{branch.branch_name}}</td>
-          <td>{{branch.branch_number}}</td>
+        <tr >
+          <td {{action "viewBranch" branch}}>{{branch.branch_id}}</td>
+          <td {{action "viewBranch" branch}}>{{branch.branch_name}}</td>
+          <td {{action "viewBranch" branch}}>{{branch.branch_number}}</td>
           <td>
             <button {{action "editBranch" branch}}>Edit</button>
+            {{#unless (eq branch.branch_id branch.main_branch_id)}}
             <button {{action "deleteBranch" branch}}>Delete</button>
+            {{/unless}}
           </td>
         </tr>
       {{/each}}

@@ -27,10 +27,10 @@ import utility.LoggerConfig;
 import utility.SessionHandler;
 
 @SuppressWarnings("serial")
-public class BanksServlet extends HttpServlet 
+public class Banks extends HttpServlet 
 {
 	private Logger logger=LoggerConfig.initializeLogger(); 
-    BankDAO bankQueryMap = new BankDAO();
+    BankDAO bankDAO = new BankDAO();
     BranchDAO branchDao = new BranchDAO();
     UserDAO userDao = new UserDAO();
     Jedis jedis = null;
@@ -54,7 +54,7 @@ public class BanksServlet extends HttpServlet
         else {
             logger.info("Cache miss for key: " + cacheKey);
             try (Connection conn = DbConnection.connect()) {
-                ResultSet rs = bankQueryMap.getBanks(conn, ControllerServlet.pathMap);
+                ResultSet rs = bankDAO.getBanks(conn, ControllerServlet.pathMap);
                 JsonArray jsonArray = new JsonArray();
                 while(rs.next()) {
                     JsonObject jsonResponse = new JsonObject();
@@ -88,8 +88,8 @@ public class BanksServlet extends HttpServlet
 
         try (Connection conn = DbConnection.connect()) {
             JsonObject jsonRequest = JsonHandler.parseJsonRequest(request);
-            Bank newBank = bankQueryMap.extractBankDetails(jsonRequest);
-            if (bankQueryMap.insertBank(conn, newBank)) {
+            Bank newBank = bankDAO.extractBankDetails(jsonRequest);
+            if (bankDAO.insertBank(conn, newBank)) {
                 jedis = ControllerServlet.pool.getResource();
                 jedis.del(cacheKey);
                 JsonHandler.sendSuccessResponse(response, "Bank inserted successfully");
@@ -123,7 +123,7 @@ public class BanksServlet extends HttpServlet
         bank.setMain_branch_id(jsonRequest.get("main_branch_id").getAsInt());
 
         try (Connection conn = DbConnection.connect()) {
-            if (bankQueryMap.updateBank(conn, bank)) {
+            if (bankDAO.updateBank(conn, bank)) {
                 jedis = ControllerServlet.pool.getResource();
                 jedis.del(cacheKey);
                 jedis.del("/banks");

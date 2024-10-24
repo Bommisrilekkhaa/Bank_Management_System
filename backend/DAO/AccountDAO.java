@@ -24,7 +24,7 @@ public class AccountDAO {
 
     private DbConnection db = new DbConnection();
     private Account account = new Account();
-    private UserDAO userQueryMap = new UserDAO();
+    private UserDAO userDAO = new UserDAO();
 
     public boolean insertAccount(Connection conn, Account account) throws SQLException 
     {
@@ -213,7 +213,7 @@ public class AccountDAO {
     public Account extractAccountDetails(JsonObject jsonRequest,HttpServletRequest request) throws SQLException, ServletException 
     {
     	if(!request.getSession(false).getAttribute("user_role").equals("CUSTOMER"))
-    	account.setUserId(userQueryMap.getUserId(DbConnection.connect(), jsonRequest.get("username").getAsString()).getUser_id());
+    	account.setUserId(userDAO.getUserId(DbConnection.connect(), jsonRequest.get("username").getAsString()).getUser_id());
     	
     	  
         account.setAccType((AccountType.valueOf(jsonRequest.get("acc_type").getAsString().toUpperCase())).getValue());

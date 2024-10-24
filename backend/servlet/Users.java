@@ -30,9 +30,9 @@ import utility.LoggerConfig;
 import utility.SessionHandler;
 
 @SuppressWarnings("serial")
-public class UsersServlet extends HttpServlet {
+public class Users extends HttpServlet {
     private Logger logger = LoggerConfig.initializeLogger();
-    private UserDAO userQueryMap = new UserDAO();
+    private UserDAO userDAO = new UserDAO();
     private User user = new User();
     private Jedis jedis = null;
 
@@ -65,7 +65,7 @@ public class UsersServlet extends HttpServlet {
                 JsonArray jsonArray = new JsonArray();
                 if (managerParam != null) {
                     logger.info("Fetching unassigned managers from the database.");
-                    ResultSet rs = userQueryMap.getUnassignedManagers(conn);
+                    ResultSet rs = userDAO.getUnassignedManagers(conn);
 
                     while (rs.next()) {
                         JsonObject jsonResponse = new JsonObject();
@@ -75,7 +75,7 @@ public class UsersServlet extends HttpServlet {
                     }
                 } else if (adminParam != null) {
                     logger.info("Fetching unassigned admins from the database.");
-                    ResultSet rs = userQueryMap.getUnassignedAdmins(conn);
+                    ResultSet rs = userDAO.getUnassignedAdmins(conn);
 
                     while (rs.next()) {
                         JsonObject jsonResponse = new JsonObject();
@@ -85,8 +85,8 @@ public class UsersServlet extends HttpServlet {
                     }
                 } else {
                     logger.info("Fetching all users from the database.");
-                    ResultSet rs = userQueryMap.selectAllUsers(conn);
-                    List<User> users = userQueryMap.convertResultSetToList(rs);
+                    ResultSet rs = userDAO.selectAllUsers(conn);
+                    List<User> users = userDAO.convertResultSetToList(rs);
 
                     if (!users.isEmpty()) {
                         for (User user : users) {
@@ -123,7 +123,7 @@ public class UsersServlet extends HttpServlet {
 
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        // Implement POST logic with logging if needed
+   
     }
 
     @Override
@@ -132,10 +132,10 @@ public class UsersServlet extends HttpServlet {
         JsonObject jsonRequest = JsonHandler.parseJsonRequest(request);
 
         try (Connection conn = DbConnection.connect()) {
-            userQueryMap.extractUserDetails(jsonRequest, user);
+            userDAO.extractUserDetails(jsonRequest, user);
             user.setUser_id(ControllerServlet.pathMap.get("users"));
 
-            if (userQueryMap.updateUser(conn, user)) {
+            if (userDAO.updateUser(conn, user)) {
                 jedis = ControllerServlet.pool.getResource();
                 Set<String> keys = jedis.keys("*users*");
                 if (!keys.isEmpty()) {
@@ -163,7 +163,7 @@ public class UsersServlet extends HttpServlet {
         try (Connection conn = DbConnection.connect()) {
             user.setUser_id(ControllerServlet.pathMap.get("users"));
 
-            if (userQueryMap.deleteUser(conn, user.getUser_id())) {
+            if (userDAO.deleteUser(conn, user.getUser_id())) {
                 jedis = ControllerServlet.pool.getResource();
                 Set<String> keys = jedis.keys("*users*");
                 if (!keys.isEmpty()) {
