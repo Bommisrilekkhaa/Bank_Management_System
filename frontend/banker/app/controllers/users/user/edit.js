@@ -1,10 +1,10 @@
 import Ember from 'ember';
-
+import { status } from '../../../utils/util';
 export default Ember.Controller.extend({
 
   notification: Ember.inject.service('notify'),
     usersService: Ember.inject.service('users'),
-    statuses: ['active', 'inactive','pending'],
+    statuses: [status.PENDING,status.ACTIVE,status.INACTIVE],
 
     actions:{
 

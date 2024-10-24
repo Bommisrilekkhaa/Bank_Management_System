@@ -21,7 +21,7 @@
       <span class="field-label">Status:</span>
       <span class="field-value">{{acc.acc_status}}</span>
     </div>
-    {{#if (eq acc.acc_status "active")}}
+    {{#if (eq acc.acc_status status.ACTIVE)}}
     <div class="view-wrap">
         <button class="view-btn"  {{action "loans"}}>View Loans</button>
          <button class="view-btn"  {{action "transactions"}}>View Transactions</button>

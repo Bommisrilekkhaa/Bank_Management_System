@@ -48,7 +48,7 @@
       </select>
     </div>
 
-    {{#unless (eq role "CUSTOMER")}}
+    {{#unless (eq role userRole.CUSTOMER)}}
     {{#unless isEdit}}
       <div class="form-group">
         <label for="loan_status">Loan Status<span style="color:rgb(237, 69, 69);">*</span></label>

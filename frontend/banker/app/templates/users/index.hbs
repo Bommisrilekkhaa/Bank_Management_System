@@ -1,6 +1,6 @@
 <div class="filters">
   <label for="userRole">Role</label>
-  <select id="userRole" onchange={{action "updateUserRole" value="target.value"}}>
+  <select id="userRole" value={{selectedUserRole}} onchange={{action "updateUserRole" value="target.value"}}>
     <option value="">All</option>
     <option value="admin">Admin</option>
     <option value="customer">Customer</option>
@@ -8,7 +8,7 @@
   </select>
 
   <label for="userStatus">Status</label>
-  <select id="userStatus" onchange={{action "updateUserStatus" value="target.value"}}>
+  <select id="userStatus" value={{selectedUserStatus}} onchange={{action "updateUserStatus" value="target.value"}}>
     <option value="">All</option>
      <option value="pending">Pending</option>
     <option value="active">Active</option>
@@ -23,7 +23,6 @@
   <table class="users-table">
     <thead>
       <tr>
-        <th>User ID</th>
         <th>Username</th>
         <th>Role</th>
         <th>Status</th>
@@ -33,14 +32,13 @@
     <tbody>
       {{#each filteredUsers as |user|}}
         <tr {{action "viewUser" user}}>
-          <td>{{user.user_id}}</td>
           <td>{{user.username}}</td>
           <td>{{user.user_role}}</td>
           <td>{{user.user_status}}</td>
           <td>
-            <button {{action "editUser" user}}>Edit</button>
-            {{#if (eq user.user_status "pending")}}
-            <button {{action "deleteUser" user}}>Delete</button>
+            <button {{action "editUser" user }}>Edit</button>
+            {{#if (eq user.user_status status.PENDING)}}
+            <button {{action "deleteUser" user bubbles=false}}>Delete</button>
             {{/if}}
           </td>
         </tr>
@@ -48,4 +46,5 @@
     </tbody>
   </table>
 </div>
+ {{notify-box message=notification.message type=notification.type}}
 

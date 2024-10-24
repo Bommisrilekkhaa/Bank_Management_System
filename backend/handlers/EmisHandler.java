@@ -1,4 +1,4 @@
-package servlet;
+package handlers;
 
 import java.io.IOException;
 import java.sql.Connection;
@@ -23,6 +23,7 @@ import DAO.LoanDAO;
 import enums.LoanStatus;
 import model.Emi;
 import redis.clients.jedis.Jedis;
+import servlets.ControllerServlet;
 import utility.DbUtil;
 import utility.JsonUtil;
 import utility.LoggerConfig;
@@ -38,8 +39,8 @@ public class EmisHandler extends HttpServlet {
     private Connection conn = null;
     private DbUtil dbUtil = new DbUtil();
 
-    @Override
-    protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+   
+    public void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         SessionUtil.doOptions(request, response);
 
         String path = request.getRequestURI();

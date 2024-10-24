@@ -4,7 +4,6 @@ export default Ember.Controller.extend({
   branchSelection: Ember.inject.service('branch-select'),
   loansService: Ember.inject.service('loans'),
   
-
   init() {
     this._super(...arguments);
    

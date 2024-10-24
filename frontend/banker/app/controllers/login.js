@@ -36,6 +36,7 @@ export default Ember.Controller.extend({
         })
         .catch((error) => {
           this.set('errorMessage', error.message || 'Login failed');
+         
         });
     },
 
@@ -48,6 +49,7 @@ export default Ember.Controller.extend({
         })
         .catch((error) => {
           this.set('errorMessage', error.message || 'Signup failed');
+         
         });
     },
 

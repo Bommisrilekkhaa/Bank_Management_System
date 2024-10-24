@@ -1,4 +1,4 @@
-package servlet;
+package handlers;
 
 import java.io.IOException;
 import java.sql.Connection;
@@ -28,6 +28,7 @@ import enums.Status;
 import model.Account;
 import model.User;
 import redis.clients.jedis.Jedis;
+import servlets.ControllerServlet;
 import utility.DbUtil;
 import utility.JsonUtil;
 import utility.LoggerConfig;
@@ -43,15 +44,22 @@ public class AccountsHandler extends HttpServlet {
     private Connection conn = null;
     private DbUtil dbUtil = new DbUtil();
 
-    @Override
-    protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+   
+    public void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         SessionUtil.doOptions(request, response);
         String path = request.getRequestURI();
         String cacheKey = path.substring(path.indexOf("/banks"));
 
         jedis = ControllerServlet.pool.getResource();
         String cachedData = jedis.get(cacheKey);
-
+        String param = request.getParameter("acc_status");
+        
+        if(param!=null)
+        {
+        	ControllerServlet.pathMap.put("a.acc_status", Integer.valueOf(request.getParameter("acc_status")));
+        	cachedData = null;
+        }
+        
         if (request.getSession(false).getAttribute("user_role").equals("CUSTOMER")) {
             ControllerServlet.pathMap.put("users", (Integer) request.getSession(false).getAttribute("user_id"));
             cachedData = null;
@@ -114,8 +122,8 @@ public class AccountsHandler extends HttpServlet {
         }
     }
 
-    @Override
-    protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+  
+    public void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         SessionUtil.doOptions(request, response);
         String[] path = request.getRequestURI().substring(request.getRequestURI().indexOf("banks")).split("/");
         String cacheKey = "/" + path[0] + "/" + path[1] + "*/" + path[path.length - 1];
@@ -160,8 +168,8 @@ public class AccountsHandler extends HttpServlet {
         }
     }
 
-    @Override
-    protected void doPut(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+    
+    public void doPut(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         SessionUtil.doOptions(request, response);
         JsonObject jsonRequest = JsonUtil.parseJsonRequest(request);
 

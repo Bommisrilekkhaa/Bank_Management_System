@@ -1,16 +1,16 @@
 <div class="navbar">
   <ul class="nav-items">
-    {{#if (eq role "SUPERADMIN")}}
+    {{#if (eq role userRole.SUPERADMIN)}}
       <li {{action "toUsers"}}><a>Users</a></li>
       <li {{action "toBanks"}}><a>Banks</a></li>
     {{/if}}
-    {{#unless (eq role "SUPERADMIN")}}
+    {{#unless (eq role userRole.SUPERADMIN)}}
       <li {{action "todashboard"}}><a>DashBoard</a></li>
       <li {{action "toBank"}}><a>Bank</a></li>
-      {{#if (eq role "ADMIN")}}
+      {{#if (eq role userRole.ADMIN)}}
         <li {{action "toBranches"}}><a>Branches</a></li>
       {{/if}}
-      {{#if (eq role "MANAGER")}}
+      {{#if (eq role userRole.MANAGER)}}
         <li {{action "toBranch"}}><a>Branch</a></li>
       {{/if}}
       <li {{action "toAccounts"}}><a>Accounts</a></li>
@@ -18,8 +18,8 @@
       <li {{action "toLoans"}}><a>Loans</a></li>
     {{/unless}}
     </ul>
-  {{#unless (eq role "SUPERADMIN")}}
-    {{#unless (eq role "MANAGER")}}
+  {{#unless (eq role userRole.SUPERADMIN)}}
+    {{#unless (eq role userRole.MANAGER)}}
     {{!-- {{#if isRoute}} --}}
       <div class="branch-dropdown">
         <select id="branch" value={{branch_name}} onchange={{action "setbranch" value="target.value"}} >

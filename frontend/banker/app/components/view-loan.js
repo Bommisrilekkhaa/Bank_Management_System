@@ -1,6 +1,7 @@
 import Ember from 'ember';
-
+import { loanStatus } from '../utils/util';
 export default Ember.Component.extend({
+    status:loanStatus,
     actions:{
         toEmis(loan)
         {

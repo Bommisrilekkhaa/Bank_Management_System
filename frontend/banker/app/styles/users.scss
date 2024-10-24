@@ -8,6 +8,7 @@
 .filters {
   display: flex;
   align-items: center;
+  margin-left: 20px;
   margin-bottom: 20px;
   margin-top:20px;
 }
@@ -125,7 +126,7 @@
 
 .users-list {
   margin: 20px auto;
-  width: 80%;
+  width: 60%;
   max-width: 1500px;
 }
 
@@ -158,10 +159,6 @@
   color: #fff;
 }
 
-.users-table tr:nth-child(even) {
-  background-color: transparent !important;
-  color: #fff !important;
-}
 
 .users-table td button {
   border-width: 2px;

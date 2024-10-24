@@ -132,7 +132,12 @@ fetchTransaction() {
         return response;
       },
       error: (error) => {
-        console.log("insert...err");
+        // console.log("insert...err");
+        if (error.responseJSON) {
+          alert(`Error: ${error.responseJSON.message}`);
+        } else {
+          alert("An error occurred while inserting transactions.");
+        }
         throw error.responseJSON || error;
       }
     });

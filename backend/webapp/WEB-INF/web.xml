@@ -17,7 +17,7 @@
    
     <servlet>
         <servlet-name>ControllerServlet</servlet-name>
-        <servlet-class>servlet.ControllerServlet</servlet-class>
+        <servlet-class>servlets.ControllerServlet</servlet-class>
     </servlet>
     <servlet-mapping>
         <servlet-name>ControllerServlet</servlet-name>

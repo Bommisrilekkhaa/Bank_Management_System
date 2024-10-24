@@ -119,6 +119,7 @@
           <label for="role">Register as<span style="color:rgb(237, 69, 69);">*</span></label>
           <select
             id="role"
+            value={{selectedRole}}
             onchange={{action (mut selectedRole) value="target.value"}}
             class="form-control"
             onblur={{action "validateRole"}}
@@ -141,6 +142,7 @@
             <select
               id="bank_name"
               class="form-control"
+              value={{bank_name}}
               onchange={{action (mut bank_name) value="target.value"}}
               onblur={{action "validateBankName"}}
             >

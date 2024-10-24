@@ -2,10 +2,7 @@
   <div class="bank-card">
     <h2>Bank Details</h2>
     {{#each banks as |bank|}}
-     <div class="bank-field">
-      <span class="field-label">Bank Id:</span>
-      <span class="field-value">{{bank.bank_id}}</span>
-    </div>
+     
     <div class="bank-field">
       <span class="field-label">Bank Name:</span>
       <span class="field-value">{{bank.bank_name}}</span>
@@ -18,12 +15,7 @@
       <span class="field-label">Bank Admin:</span>
       <span class="field-value">{{bank.admin_name}}</span>
     </div>
-    <div class="bank-field">
-      <span class="field-label">Main Branch ID:</span>
-      {{#unless (eq bank.main_branch_id 0)}}
-      <span class="field-value">{{bank.main_branch_id}}</span>
-      {{/unless}}
-    </div>
+   
      <div class="bank-field">
       <span class="field-label">Main Branch Name:</span>
       <span class="field-value">{{branch.branch_name}}</span>
@@ -32,8 +24,7 @@
       <span class="field-label">Main Branch Address:</span>
       <span class="field-value">{{branch.branch_address}}</span>
     </div>
-    {{#if (eq role "ADMIN")}}
-    
+    {{#if (eq role userRole.ADMIN)}}
     
       <div class="view-wrap">
         <button class="view-btn"  {{action "updateMainBranch" bank}}>Update Main Branch</button>

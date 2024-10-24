@@ -32,7 +32,7 @@ h2 {
   font-size: 16px;
   transition: border-color 0.3s ease;
   box-sizing: border-box;
-  background-color: #a2cbd5a5 !important; }
+  background-color: #a2cbd5 !important; }
 
 .form-control::placeholder {
   color: #999;
@@ -193,7 +193,7 @@ select.form-control {
 
 .accounts-list {
   margin: 20px auto;
-  width: 80%;
+  width: 60%;
   max-width: 1500px; }
 
 .clear {
@@ -242,6 +242,7 @@ select.form-control {
   border-bottom: 1px solid #ddd; }
 
 .accounts-table td {
+  padding-left: 15px;
   background-color: transparent !important;
   color: #fff !important; }
 
@@ -392,7 +393,7 @@ select.form-control {
 
 .loans-list {
   margin: 20px auto;
-  width: 80%;
+  width: 70%;
   max-width: 1500px; }
 
 .new-loan-btn {
@@ -425,6 +426,7 @@ select.form-control {
   width: max-content !important; }
 
 .loans-table td {
+  padding-left: 20px;
   background-color: transparent !important;
   color: #fff !important; }
 
@@ -664,7 +666,7 @@ select.form-control {
 
 .transactions-list, .emi-list {
   margin: 20px auto;
-  width: 80%;
+  width: 65%;
   max-width: 1500px; }
 
 .new-transaction-btn, .new-emi-btn {
@@ -816,7 +818,7 @@ select.form-control {
 
 .banks-list {
   margin: 20px auto;
-  width: 80%;
+  width: 50%;
   max-width: 1500px; }
 
 .banks-table {
@@ -826,7 +828,7 @@ select.form-control {
   border-radius: 8px; }
 
 .banks-table th, .banks-table td {
-  padding: 12px 15px;
+  padding: 15px;
   text-align: left;
   border-bottom: 1px solid #ddd; }
 
@@ -848,7 +850,7 @@ select.form-control {
 
 .branches-list {
   margin: 20px auto;
-  width: 80%;
+  width: 60%;
   max-width: 1500px; }
 
 .new-branch-btn {
@@ -958,6 +960,7 @@ select.form-control {
 .filters {
   display: flex;
   align-items: center;
+  margin-left: 20px;
   margin-bottom: 20px;
   margin-top: 20px; }
 
@@ -1058,7 +1061,7 @@ select.form-control {
 
 .users-list {
   margin: 20px auto;
-  width: 80%;
+  width: 60%;
   max-width: 1500px; }
 
 .users-table {
@@ -1084,10 +1087,6 @@ select.form-control {
 .users-table th {
   background-color: rgba(226, 232, 240, 0.4);
   color: #fff; }
-
-.users-table tr:nth-child(even) {
-  background-color: transparent !important;
-  color: #fff !important; }
 
 .users-table td button {
   border-width: 2px;
@@ -1242,5 +1241,10 @@ html, body {
   text-shadow: ivory; }
   .appname i {
     margin-left: 340px; }
+
+.form-control:disabled {
+  background-color: #a3bec2 !important;
+  color: #6c757d;
+  border-color: #ced4da; }
 
 /*# sourceMappingURL=banker.css.map */

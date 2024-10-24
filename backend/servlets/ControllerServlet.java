@@ -1,4 +1,4 @@
-package servlet;
+package servlets;
 
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
@@ -14,6 +14,7 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import enums.Resources;
 import enums.UserRole;
 import redis.clients.jedis.JedisPool;
 import utility.JsonUtil;
@@ -23,12 +24,9 @@ import utility.SessionUtil;
 public class ControllerServlet extends HttpServlet {
     private static final long serialVersionUID = 1L;
     private Logger logger= LoggerConfig.initializeLogger();
-    public static List<String> resources = Arrays.asList("banks", "branches", "accounts", "transactions", "loans", "emis", "users", "dashboard");
+    public static List<String> resources = Arrays.asList(Resources.BANKS.toString().toLowerCase(),Resources.BRANCHES.toString().toLowerCase(),Resources.ACCOUNTS.toString().toLowerCase(),Resources.TRANSACTIONS.toString().toLowerCase(),Resources.LOANS.toString().toLowerCase(),Resources.EMIS.toString().toLowerCase(),Resources.USERS.toString().toLowerCase(),Resources.DASHBOARD.toString().toLowerCase());
     public static HashMap<String, Integer> pathMap;
     public static JedisPool pool = null;
-
-   
-   
 
     public static void initializeCache(Logger logger) {
         pool = new JedisPool("localhost", 6379);
@@ -95,64 +93,28 @@ public class ControllerServlet extends HttpServlet {
 
     private boolean roleValidation(String role, String method, String[] path) 
     {
-        if (role.equals(UserRole.CUSTOMER.toString())) 
-        { 
-            if (!path[path.length - 1].equals("banks") || !path[path.length - 2].equals("branches") || !path[path.length - 1].equals("users") ||  !path[path.length - 2].equals("users")) 
-            {
-                return method.equals("GET") || method.equals("POST");
-            } 
-            else 
-            {
-                return false;
-            }
-        }
-        else if (role.equals(UserRole.MANAGER.toString())) 
-        { 
-            if ( !path[path.length - 1].equals("banks") || !path[path.length - 1].equals("branches") || !path[path.length - 1].equals("users") ||  !path[path.length - 2].equals("users")) 
-            {
-                if(path[path.length - 2].equals("branches") )
-                {
-                	return  method.equals("GET") || method.equals("DELETE");
-                }
-                return true;
-            } 
-            else 
-            {
-                return false;
-            }
-        }
-        else if (role.equals(UserRole.ADMIN.toString())) 
-        { 
-            if ( !path[path.length - 1].equals("users") ||  !path[path.length - 2].equals("users")) 
-            {
-                return true;
-            } 
-            else 
-            {
-                return false;
-            }
-        }
-        else if (role.equals(UserRole.SUPERADMIN.toString())) 
-        { 
-            if ( path[path.length - 1].equals("users") ||  path[path.length - 2].equals("users") || path[path.length - 1].equals("banks") ||  path[path.length - 2].equals("banks") ||  path[path.length - 2].equals("branches") ) 
-            {
-            	if(path[path.length - 2].equals("banks"))
-            	{
-            		return !method.equals("PUT");
-            	}
-            	else if( path[path.length - 2].equals("branches") )
-            	{
-            		return method.equals("GET");
-            	}
-                return true;
-            } 
-            else 
-            {
-                return false;
-            }
-        }
-        return true;
+    	switch(UserRole.valueOf(role)){
+    	
+    	case CUSTOMER:
+    		return customerRouteAccess(path,method);
+    		
+    	case MANAGER:
+    		return managerRouteAccess(path,method);
+    		
+    	case ADMIN:
+    		return adminRouteAccess(path,method);
+    		
+    	case SUPERADMIN:
+    		return superadminRouteAccess(path,method);
+    		
+    	default:
+    		return false;
+    		
+    	
+    	}
     }
+    
+   
 
     private String pathValidation(String[] path) throws IllegalAccessException {
         int n = path.length;
@@ -200,16 +162,18 @@ public class ControllerServlet extends HttpServlet {
         return path[n - 2];
     }
 
-    private String buildClassName(String path) {
+    private String buildClassName(String path) 
+    {
         String firstLetter = path.substring(0, 1);
         return firstLetter.toUpperCase() + path.substring(1);
     }
 
-    private void reflection(String reqServlet, String method, HttpServletRequest request, HttpServletResponse response) {
+    private void reflection(String reqServlet, String method, HttpServletRequest request, HttpServletResponse response) 
+    {
         try {
-            Class<?> servlets = Class.forName("servlet." + buildClassName(reqServlet)+"Handler");
+            Class<?> servlets = Class.forName("handlers." + buildClassName(reqServlet)+"Handler");
             HttpServlet servlet = (HttpServlet) servlets.getDeclaredConstructor().newInstance();
-
+            
             switch (method) {
                 case "GET":
                     method = "doGet";
@@ -233,4 +197,64 @@ public class ControllerServlet extends HttpServlet {
             logger.log(Level.SEVERE, "Error during reflection for servlet invocation.", e);
         }
     }
+    
+    private boolean customerRouteAccess(String[] path,String method)
+    {
+    	if (!path[path.length - 1].equals("banks") || !path[path.length - 2].equals("branches") || 
+    			!path[path.length - 1].equals("users") ||  !path[path.length - 2].equals("users")) 
+        {
+    		if(path[path.length - 1].equals("branches") || path[path.length - 2].equals("banks"))
+    		{
+    			return method.equals("GET");
+    		}
+            return method.equals("GET") || method.equals("POST");
+        } 
+        return false;
+        
+    }
+    
+    private boolean managerRouteAccess(String[] path,String method)
+    {
+    	 if ( !path[path.length - 1].equals("banks") || !path[path.length - 1].equals("branches") || 
+    			 !path[path.length - 1].equals("users") ||  !path[path.length - 2].equals("users")) 
+         {
+             if(path[path.length - 2].equals("branches"))
+             {
+             	return  method.equals("GET") || method.equals("DELETE");
+             }
+             else if(path[path.length - 2].equals("banks"))
+             {
+            	 return  method.equals("GET");
+             }
+             return true;
+         } 
+         return false;
+         
+    }
+    
+    private boolean adminRouteAccess(String[] path,String method)
+    {
+    	 if ( !path[path.length - 1].equals("banks") || !path[path.length - 1].equals("users") || 
+    			 !path[path.length - 2].equals("users")) 
+         {
+             return true;
+         } 
+         return false;
+         
+    }
+        
+    private boolean superadminRouteAccess(String[] path,String method)
+    {
+    	 if ( path[path.length - 1].equals("users") ||  path[path.length - 2].equals("users") || path[path.length - 1].equals("banks") ||  path[path.length - 2].equals("banks") ||  path[path.length - 2].equals("branches") ) 
+         {
+         	if(path[path.length - 2].equals("banks"))
+         	{
+         		return !method.equals("PUT");
+         	}
+             return true;
+         } 
+         return false;
+         
+         
+    }  
 }

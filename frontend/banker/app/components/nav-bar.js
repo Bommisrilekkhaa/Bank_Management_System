@@ -1,26 +1,12 @@
 import Ember from 'ember';
-
+import { role } from '../utils/util';
 export default Ember.Component.extend({
   branchSelection: Ember.inject.service('branch-select'),
   branchesService: Ember.inject.service('branches'),
   session: Ember.inject.service(),
   bankId: localStorage.getItem('bankId'),
   branches: [],
-  // getCurrentRoute()
-  // {
-  //   let currentRouteName=Ember.getOwner(this).lookup('router:main').get('currentRouteName');
-  //   this.set('currentRouteName',currentRouteName);
-  // },
-  // isRoute: Ember.computed(function() {
-    
-  //   const bankRoutes = [
-  //     'banks.bank.accounts.index',
-  //     'banks.bank.loans.index',
-  //     'banks.bank.transactions.index'
-  //   ];
-  //   console.log(this.get('currentRouteName'));
-  //   return bankRoutes.includes(this.get('currentRouteName'));
-  // }),
+  userRole:role,
   role:Ember.computed(()=>{
     let value = `; ${document.cookie}`;
     let parts = value.split(`; ${'sessionData'}=`);
@@ -32,9 +18,7 @@ export default Ember.Component.extend({
   }),
   init() {
     this._super(...arguments);
-    // this.getCurrentRoute();
-    // console.log("init...");
-    if(this.get('role')=='ADMIN' || this.get('role')=='CUSTOMER')
+    if(this.get('role')==role.ADMIN || this.get('role')==role.CUSTOMER)
       {
         this.loadBranches();
         

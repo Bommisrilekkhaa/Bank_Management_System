@@ -50,7 +50,7 @@
 
 .loans-list {
       margin: 20px auto;
-      width: 80%;
+      width: 70%;
       max-width: 1500px;
     }
     
@@ -88,6 +88,7 @@
       width: max-content !important;
     }
     .loans-table td{
+      padding-left: 20px;
       background-color: transparent !important;
       color: #fff !important;
     }

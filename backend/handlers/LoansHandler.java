@@ -1,4 +1,4 @@
-package servlet;
+package handlers;
 
 import java.io.IOException;
 import java.sql.Connection;
@@ -26,6 +26,7 @@ import enums.LoanType;
 import enums.Status;
 import model.Loan;
 import redis.clients.jedis.Jedis;
+import servlets.ControllerServlet;
 import utility.DbUtil;
 import utility.JsonUtil;
 import utility.LoggerConfig;
@@ -40,8 +41,8 @@ public class LoansHandler extends HttpServlet {
     private Connection conn = null;
     private DbUtil dbUtil = new DbUtil();
 
-    @Override
-    protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+  
+    public void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         logger.info("GET request received for LoansServlet");
         SessionUtil.doOptions(request, response);
         String path = request.getRequestURI();
@@ -104,8 +105,8 @@ public class LoansHandler extends HttpServlet {
         }
     }
     
-    @Override
-    protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+  
+    public void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         logger.info("POST request received for LoansServlet");
         SessionUtil.doOptions(request, response);
         String[] path = request.getRequestURI().substring(request.getRequestURI().indexOf("banks")).split("/");
@@ -147,8 +148,8 @@ public class LoansHandler extends HttpServlet {
         }
     }
     
-    @Override
-    protected void doPut(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+   
+    public void doPut(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         logger.info("PUT request received for LoansServlet");
         SessionUtil.doOptions(request, response);
         String[] path = request.getRequestURI().substring(request.getRequestURI().indexOf("banks")).split("/");
@@ -166,7 +167,7 @@ public class LoansHandler extends HttpServlet {
                 if (updatedLoan.getLoan_amount() > 3000000 && 
                     updatedLoan.getLoan_status() != LoanStatus.REJECTED.getValue()) {
                     logger.warning("Loan amount exceeds limit, updating status to REJECTED.");
-                    JsonUtil.sendErrorResponse(response, "Error updating loan, Loan amount is greater than Limit");
+                    JsonUtil.sendErrorResponse(response, "Loan amount is greater than Limit!");
                 }
 
                 if (loanDAO.updateLoan(conn, updatedLoan)) {

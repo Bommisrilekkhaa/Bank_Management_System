@@ -1,9 +1,10 @@
-package servlet;
+package handlers;
 
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -23,6 +24,7 @@ import enums.UserRole;
 import model.Bank;
 import model.Branch;
 import redis.clients.jedis.Jedis;
+import servlets.ControllerServlet;
 import utility.DbUtil;
 import utility.JsonUtil;
 import utility.LoggerConfig;
@@ -40,13 +42,13 @@ public class BranchesHandler extends HttpServlet {
     private Connection conn = null;
     private DbUtil dbUtil = new DbUtil();
 
-    @Override
-    protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException 
+   
+    public void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException 
     {
         SessionUtil.doOptions(request, response);
 
         String path = request.getRequestURI();
-        String cacheKey = path.substring(path.indexOf("/branches"));
+        String cacheKey = path.substring(path.indexOf("/banks"));
         jedis = ControllerServlet.pool.getResource();
         
         String cachedData = jedis.get(cacheKey);
@@ -102,12 +104,11 @@ public class BranchesHandler extends HttpServlet {
         }
     }
 
-    @Override
-    protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException 
+   
+    public void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException 
     {
         SessionUtil.doOptions(request, response);
-        String path = request.getRequestURI();
-        String cacheKey = path.substring(path.indexOf("/branches"));
+        String cacheKey = "/banks/"+ControllerServlet.pathMap.get("banks")+"/branches";
 
         JsonObject jsonRequest = JsonUtil.parseJsonRequest(request);
         Branch branch = new Branch();
@@ -119,6 +120,11 @@ public class BranchesHandler extends HttpServlet {
             if (branchDAO.insertBranch(conn, branch)) {
                 jedis = ControllerServlet.pool.getResource();
                 jedis.del(cacheKey);
+                Set<String> keys = jedis.keys("*manager");
+                if (!keys.isEmpty()) {
+                    jedis.del(keys.toArray(new String[0]));
+                    logger.info("Deleted cache keys: " + keys);
+                }
                 JsonUtil.sendSuccessResponse(response, "Branch inserted successfully");
                 logger.info("Branch inserted successfully and cache invalidated for key: " + cacheKey);
             } else {
@@ -136,13 +142,12 @@ public class BranchesHandler extends HttpServlet {
         }
     }
 
-    @Override
-    protected void doPut(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException 
+   
+    public void doPut(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException 
     {
         SessionUtil.doOptions(request, response);
-        String path = request.getRequestURI();
-        String cacheKey = path.substring(path.indexOf("/branches"));
-
+        String cacheKey1 = "/banks/"+ControllerServlet.pathMap.get("banks")+"/branches";
+        String cacheKey2 = "/banks/"+ControllerServlet.pathMap.get("banks")+"/branches/"+ControllerServlet.pathMap.get("branches");
         JsonObject jsonRequest = JsonUtil.parseJsonRequest(request);
         Branch branch = new Branch();
         branch.setBank_id(ControllerServlet.pathMap.get("banks"));
@@ -153,10 +158,15 @@ public class BranchesHandler extends HttpServlet {
         	 conn = dbUtil.connect();
             if (branchDAO.updateBranch(conn, branch)) {
                 jedis = ControllerServlet.pool.getResource();
-                jedis.del(cacheKey);
-                jedis.del("/branches");
+                jedis.del(cacheKey1);
+                jedis.del(cacheKey2);
+                Set<String> keys = jedis.keys("*manager");
+                if (!keys.isEmpty()) {
+                    jedis.del(keys.toArray(new String[0]));
+                    logger.info("Deleted cache keys: " + keys);
+                }
                 JsonUtil.sendSuccessResponse(response, "Branch updated successfully");
-                logger.info("Branch updated successfully and cache invalidated for key: " + cacheKey);
+                logger.info("Branch updated successfully and cache invalidated for keys: " + cacheKey1+","+cacheKey2);
             } else {
                 JsonUtil.sendErrorResponse(response, "Error updating branch");
                 logger.warning("Error updating branch");
@@ -172,21 +182,27 @@ public class BranchesHandler extends HttpServlet {
         }
     }
 
-    @Override
-    protected void doDelete(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException 
+ 
+    public void doDelete(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException 
     {
         SessionUtil.doOptions(request, response);
-        String path = request.getRequestURI();
-        String cacheKey = path.substring(path.indexOf("/branches"));
+        String cacheKey1 = "/banks/"+ControllerServlet.pathMap.get("banks")+"/branches";
+        String cacheKey2 = "/banks/"+ControllerServlet.pathMap.get("banks")+"/branches/"+ControllerServlet.pathMap.get("branches");
+       
 
         try {
         	conn = dbUtil.connect();
             if (branchDAO.deleteBranch(conn, ControllerServlet.pathMap.get("branches"))) {
                 jedis = ControllerServlet.pool.getResource();
-                jedis.del(cacheKey);
-                jedis.del("/branches");
+                jedis.del(cacheKey1);
+                jedis.del(cacheKey2);
+                Set<String> keys = jedis.keys("*manager");
+                if (!keys.isEmpty()) {
+                    jedis.del(keys.toArray(new String[0]));
+                    logger.info("Deleted cache keys: " + keys);
+                }
                 JsonUtil.sendSuccessResponse(response, "Branch deleted successfully");
-                logger.info("Branch deleted successfully and cache invalidated for key: " + cacheKey);
+                logger.info("Branch deleted successfully and cache invalidated for keys: " + cacheKey1+","+cacheKey2);
             } else {
                 JsonUtil.sendErrorResponse(response, "Error deleting branch");
                 logger.warning("Error deleting branch");

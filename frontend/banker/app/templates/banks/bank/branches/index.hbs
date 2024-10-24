@@ -4,18 +4,18 @@
   <table class="branches-table">
     <thead>
       <tr>
-        <th>Branch ID</th>
         <th>Branch Name</th>
         <th>Branch Number</th>
+        <th>Manager Name</th>
         <th>Actions</th>
       </tr>
     </thead>
     <tbody>
       {{#each branches as |branch|}}
         <tr >
-          <td {{action "viewBranch" branch}}>{{branch.branch_id}}</td>
           <td {{action "viewBranch" branch}}>{{branch.branch_name}}</td>
           <td {{action "viewBranch" branch}}>{{branch.branch_number}}</td>
+          <td {{action "viewBranch" branch}}>{{branch.manager_name}}</td>
           <td>
             <button {{action "editBranch" branch}}>Edit</button>
             {{#unless (eq branch.branch_id branch.main_branch_id)}}
@@ -27,3 +27,4 @@
     </tbody>
   </table>
 </div>
+ {{notify-box message=notification.message type=notification.type}}

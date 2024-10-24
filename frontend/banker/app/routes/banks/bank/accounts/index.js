@@ -1,19 +1,8 @@
 import Ember from 'ember';
-
+import { getSessionData,role } from '../../../../utils/util';
 export default Ember.Route.extend({
   branchSelection: Ember.inject.service('branch-select'),
   beforeModel() {
-
-    let getSessionData = () => {
-      let value = `; ${document.cookie}`;
-      let parts = value.split(`; sessionData=`);
-      if (parts.length === 2) {
-        let cookieData = decodeURIComponent(parts.pop().split(';').shift());
-        return JSON.parse(cookieData);
-      }
-      return null;
-    };
-
     let sessionData = getSessionData();
 
     if (!sessionData) {
@@ -21,16 +10,16 @@ export default Ember.Route.extend({
       return;
     }
 
-    let role = sessionData.user_role;
+    let userrole = sessionData.user_role;
 
-    if (role == 'SUPERADMIN') {
+    if(userrole == role.SUPERADMIN) {
       this.transitionTo('users');
       return;
     }
 
     localStorage.setItem('transactionId', '*');
     localStorage.setItem('accNo', '*');
-    if(role != 'MANAGER')
+    if(userrole != role.MANAGER)
     {
       localStorage.setItem('branchId', '*');
     }

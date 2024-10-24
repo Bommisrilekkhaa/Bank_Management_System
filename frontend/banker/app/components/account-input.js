@@ -1,12 +1,14 @@
 import Ember from 'ember';
+import {status,accountType,role} from '../utils/util';
 export default Ember.Component.extend({
   notification: Ember.inject.service('notify'),
   branchesService: Ember.inject.service('branches'),
   accountsService: Ember.inject.service('accounts'),
   errorMessage: '',
   branchNames: [],
-  statuses: ['pending','active', 'inactive'],
-  types: ['savings','business'],
+  userRole:role,
+  statuses: [status.ACTIVE,status.INACTIVE,status.PENDING],
+  types: [accountType.BUSINESS,accountType.SAVINGS],
   role:Ember.computed(()=>{
     let value = `; ${document.cookie}`;
     let parts = value.split(`; ${'sessionData'}=`);
@@ -109,7 +111,7 @@ export default Ember.Component.extend({
             this.sendAction("toAccount");
             }, 2000);
         }).catch((error) => {
-          // alert('Error updating account');
+          alert('Error updating account');
           console.error(error);
         });
 

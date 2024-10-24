@@ -1,17 +1,8 @@
 import Ember from 'ember';
-
+import { getSessionData,role } from '../../../../../../utils/util';
 export default Ember.Route.extend({
   beforeModel() {
-    let getSessionData = () => {
-      let value = `; ${document.cookie}`;
-      let parts = value.split(`; sessionData=`);
-      if (parts.length === 2) {
-        let cookieData = decodeURIComponent(parts.pop().split(';').shift());
-        return JSON.parse(cookieData);
-      }
-      return null;
-    };
-
+   
     let sessionData = getSessionData();
 
     if (!sessionData) {
@@ -19,9 +10,9 @@ export default Ember.Route.extend({
       return;
     }
 
-    let role = sessionData.user_role;
+    let userrole = sessionData.user_role;
 
-    if (role == 'SUPERADMIN') {
+    if (userrole == role.SUPERADMIN) {
       this.transitionTo('users');
       return;
     }

@@ -1,4 +1,4 @@
-package servlet;
+package handlers;
 
 import java.io.IOException;
 import java.sql.Connection;
@@ -33,6 +33,7 @@ import enums.TransactionType;
 import model.Emi;
 import model.Transaction;
 import redis.clients.jedis.Jedis;
+import servlets.ControllerServlet;
 import utility.DbUtil;
 import utility.JsonUtil;
 import utility.LoggerConfig;
@@ -50,8 +51,8 @@ public class TransactionsHandler extends HttpServlet {
     private Connection conn = null;
     private DbUtil dbUtil = new DbUtil();
     
-    @Override
-    protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+   
+    public void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         SessionUtil.doOptions(request, response);
         String path = request.getRequestURI();
         String cacheKey = path.substring(path.indexOf("/banks"));
@@ -112,8 +113,7 @@ public class TransactionsHandler extends HttpServlet {
         }
     }
 
-    @Override
-    protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+    public void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         SessionUtil.doOptions(request, response);
         String[] path = request.getRequestURI().substring(request.getRequestURI().indexOf("banks")).split("/");
         String cacheKey = "/" + path[0] + "/" + path[1] + "*/" + path[path.length - 1];
@@ -127,7 +127,8 @@ public class TransactionsHandler extends HttpServlet {
             newTransaction.setAcc_number(ControllerServlet.pathMap.get("accounts"));
             
             if (checkAccountStatus(conn, newTransaction)) {
-                if (transactionDAO.insertTransaction(conn, newTransaction)) {
+                if (transactionDAO.insertTransaction(conn, newTransaction)) 
+                {
                     jedis = ControllerServlet.pool.getResource();
                     Set<String> keys = jedis.keys(cacheKey);
                     if (!keys.isEmpty()) {
@@ -152,7 +153,7 @@ public class TransactionsHandler extends HttpServlet {
                 }
             } else {
                 logger.warning("Unauthorized account access attempt for account: " + newTransaction.getAcc_number());
-                JsonUtil.sendErrorResponse(response, "Unauthorized Account");
+                JsonUtil.sendErrorResponse(response, "Unauthorized Account/Insufficient Balance");
             }
         } catch (SQLException e) {
             logger.log(Level.SEVERE, "Error processing transaction request", e);
@@ -173,7 +174,24 @@ public class TransactionsHandler extends HttpServlet {
         ResultSet rs=null;
 		try {
 			rs = accountDao.selectAllAccounts(conn, accountMap);
-			status= rs.next();
+			if(rs.next()) {
+				if(newTransaction.getTransaction_type()==TransactionType.DEBIT.getValue())
+				{
+					if(rs.getDouble("acc_balance") > newTransaction.getTransaction_amount())
+					{
+						status=true;
+					}
+					else {
+						status=false;
+					}
+					
+				}
+				else {
+					
+					status=true;
+				}
+			}
+			
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}

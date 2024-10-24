@@ -49,4 +49,10 @@ html,body{
   }
 }
 
+.form-control:disabled {
+  background-color: #a3bec2 !important; 
+  color: #6c757d; 
+  border-color: #ced4da; 
+}
+
 

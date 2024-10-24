@@ -1,10 +1,7 @@
 <div class="branch-card-wrapper">
   <div class="branch-card">
     <h2>Branch Details</h2>
-    <div class="branch-field">
-      <span class="field-label">Branch ID:</span>
-      <span class="field-value">{{branch.branch_id}}</span>
-    </div>
+   
     <div class="branch-field">
       <span class="field-label">Branch Name:</span>
       <span class="field-value">{{branch.branch_name}}</span>
@@ -29,11 +26,13 @@
         <div >
             <button class="view-btn"  {{action "viewAccounts" branch}}>View Accounts</button>
         </div>
-        {{#if (eq role "MANAGER")}}
+        {{#unless (eq branch.branch_id branch.main_branch_id)}}
+        {{#if (eq role userRole.MANAGER)}}
         <div >
             <button class="view-btn" {{action "delete" branch}} >delete Branch</button>
         </div>
-    {{/if}}
+        {{/if}}
+        {{/unless}}
     </div>
   </div>
 </div>

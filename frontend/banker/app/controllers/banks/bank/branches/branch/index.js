@@ -1,8 +1,9 @@
 import Ember from 'ember';
-
+import { role } from '../../../../../utils/util';
 export default Ember.Controller.extend({
   branchesService: Ember.inject.service('branches'),
   branch:[],
+  userRole:role,
   role:Ember.computed(()=>{
     let value = `; ${document.cookie}`;
     let parts = value.split(`; ${'sessionData'}=`);

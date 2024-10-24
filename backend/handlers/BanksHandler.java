@@ -1,9 +1,10 @@
-package servlet;
+package handlers;
 
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -20,6 +21,7 @@ import DAO.BankDAO;
 import DAO.UserDAO;
 import model.Bank;
 import redis.clients.jedis.Jedis;
+import servlets.ControllerServlet;
 import utility.DbUtil;
 import utility.JsonUtil;
 import utility.LoggerConfig;
@@ -35,8 +37,8 @@ public class BanksHandler extends HttpServlet
     private Connection conn = null;
     private DbUtil dbUtil = new DbUtil();
   
-    @Override
-    protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException 
+   
+    public void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException 
     {
         SessionUtil.doOptions(request,response);
         String path = request.getRequestURI();
@@ -86,8 +88,8 @@ public class BanksHandler extends HttpServlet
         }
     }
 
-    @Override
-    protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException 
+    
+    public void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException 
     {
         SessionUtil.doOptions(request, response);
         String path = request.getRequestURI();
@@ -100,6 +102,11 @@ public class BanksHandler extends HttpServlet
             if (bankDAO.insertBank(conn, newBank)) {
                 jedis = ControllerServlet.pool.getResource();
                 jedis.del(cacheKey);
+                Set<String> keys = jedis.keys("*admin");
+                if (!keys.isEmpty()) {
+                    jedis.del(keys.toArray(new String[0]));
+                    logger.info("Deleted cache keys: " + keys);
+                }
                 JsonUtil.sendSuccessResponse(response, "Bank inserted successfully");
                 logger.info("New bank inserted and cache invalidated for key: " + cacheKey);
             } else {
@@ -117,8 +124,8 @@ public class BanksHandler extends HttpServlet
         }
     }
 
-    @Override
-    protected void doPut(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException 
+   
+    public void doPut(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException 
     {
         SessionUtil.doOptions(request, response);
         String path = request.getRequestURI();

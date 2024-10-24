@@ -33,7 +33,7 @@
       <span class="field-label">Account Number:</span>
       <span class="field-value">{{loan.acc_number}}</span>
     </div>
-    {{#if (eq loan.loan_status "approved")}}
+    {{#if (eq loan.loan_status status.APPROVED)}}
     <div class="view-wrap">
         <button class="view-btn"  {{action "toEmis" loan}}>View Emis</button>
     </div>

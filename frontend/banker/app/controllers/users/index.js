@@ -1,9 +1,9 @@
 import Ember from 'ember';
-
+import { status } from '../../utils/util';
 export default Ember.Controller.extend({
   usersService: Ember.inject.service('users'),
   bankId: localStorage.getItem("bankId"),
-  
+  status:status,
   notification: Ember.inject.service('notify'),
   users: [],
   selectedUserRole: '',
@@ -62,10 +62,9 @@ export default Ember.Controller.extend({
           user_status: user.user_status,
           bankId: this.get('bankId')
         });
-
-        this.loadUsers();
+        
       }).catch((error) => {
-        console.error("Transition failed", error);
+        console.error("Failed to load users:", error);
       });
     },
 
@@ -73,11 +72,16 @@ export default Ember.Controller.extend({
       if (confirm(`Are you sure you want to delete the user: ${user.fullname}?`)) {
         this.get('usersService').deleteUser(user.user_id).then(() => {
           console.log('User deleted successfully');
-          this.loadUsers();
+          this.get('notification').showNotification('User Deleted successfully!', 'success');
+
+          Ember.run.later(() => {
+            this.transitionToRoute('users');
+            this.loadUsers();
+           }, 2000);
         }).catch((error) => {
-          console.error("Failed to delete user:", error);
-          alert('Error occurred while deleting the user.');
+          console.error("Failed to load users:", error);
         });
+        
       }
     },
 

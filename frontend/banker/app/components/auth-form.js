@@ -114,6 +114,7 @@ export default Ember.Component.extend({
       };
 
       this.sendAction(action, credentials);
+      this.resetForm();
     },
 
     toggleMode() {
@@ -218,5 +219,30 @@ export default Ember.Component.extend({
         this.set('bankNameError', '');
       }
     }
+  },
+  resetForm() {
+    this.setProperties({
+      username: '',
+      password: '',
+      confirmPassword: '',
+      selectedRole: '',
+      name: '',
+      dob: '',
+      addr: '',
+      pno: '',
+      bank_name: '',
+      BankId: '',
+      nameError: '',
+      dobError: '',
+      pnoError: '',
+      addrError: '',
+      usernameError: '',
+      passwordError: '',
+      confirmPasswordError: '',
+      roleError: '',
+      bankNameError: '',
+      errorMessage: ''
+    });
   }
+  
 });

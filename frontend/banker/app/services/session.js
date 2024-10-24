@@ -57,6 +57,7 @@ export default Ember.Service.extend({
           return response;
         },
         error: (error) => {
+          alert("Error:"+error.responseJSON.message );
           throw error.responseJSON || error;
         }
       });

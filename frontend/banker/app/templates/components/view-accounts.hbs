@@ -16,7 +16,7 @@
       <option value="inactive">Inactive</option>
       <option value="pending">Pending</option>
     </select>
-  <button class="clear" {{action (mut selectedAccountType) value=''}} {{action (mut selectedAccountStatus) value=''}}>Clear</button>
+  <button class="clear" {{action (mut selectedAccountType) ''}} {{action (mut selectedAccountStatus) ''}}>Clear</button>
   </div>
 
 
@@ -25,13 +25,14 @@
       <tr>
         <th>Account No</th>
         <th>Type</th>
-        <th>Balance</th>
         <th>Status</th>
-        {{#unless (eq role "CUSTOMER")}}
-          <th>Fullname</th>
+         {{#unless (eq role userRole.CUSTOMER)}}
+        <th>Username</th>
         {{/unless}}
+        {{#unless (eq role userRole.MANAGER)}}
         <th>BranchName</th>
-        {{#unless (eq role "CUSTOMER")}}
+            {{/unless}}
+        {{#unless (eq role userRole.CUSTOMER)}}
           <th>Actions</th>
         {{/unless}}
       </tr>
@@ -41,13 +42,14 @@
         <tr {{action "viewAccount" account}}>
           <td>{{account.acc_no}}</td>
           <td>{{account.acc_type}}</td>
-          <td>Rs.{{account.acc_balance}}</td>
           <td>{{account.acc_status}}</td>
-          {{#unless (eq role "CUSTOMER")}}
-            <td>{{account.user_fullname}}</td>
+          {{#unless (eq role userRole.CUSTOMER)}}
+          <td>{{account.username}}</td>
           {{/unless}}
+          {{#unless (eq role userRole.MANAGER)}}
           <td>{{account.branch_name}}</td>
-          {{#unless (eq role "CUSTOMER")}}
+          {{/unless}}
+          {{#unless (eq role userRole.CUSTOMER)}}
             <td>
               <button {{action "editAccount" account}}>Edit</button>
             </td>

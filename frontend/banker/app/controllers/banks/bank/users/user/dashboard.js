@@ -1,8 +1,9 @@
 import Ember from 'ember';
-
+import { role } from '../../../../../utils/util';
 export default Ember.Controller.extend({
 
   dashboardService: Ember.inject.service('dashboard'),
+  userRole:role,
   getSessionData(){
     let value = `; ${document.cookie}`;
     let parts = value.split(`; ${'sessionData'}=`);

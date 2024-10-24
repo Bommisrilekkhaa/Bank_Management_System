@@ -95,5 +95,28 @@ export default Ember.Service.extend({
             throw error.responseJSON || error;
           }
         });
-      }
+      },
+
+      createBank(bankDetails) {
+        const { bank_name, bank_code, admin_id } = bankDetails;
+        let url = `http://localhost:8080/banker/api/v1/banks`;
+        // console.log("insert...");
+        return $.ajax({
+          url: url,
+          type: 'POST',
+          contentType: 'application/json',
+          data: JSON.stringify({
+            bank_name:bank_name,
+            bank_code:bank_code,
+            admin_id:admin_id
+          }),
+          success: (response) => {
+            return response;
+          },
+          error: (error) => {
+            console.log("insert...err");
+            throw error.responseJSON || error;
+          }
+        });
+      },
 });

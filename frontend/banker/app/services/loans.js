@@ -129,7 +129,12 @@ export default Ember.Service.extend({
           return response;
         },
         error: (error) => {
-          console.log("insert...err");
+          // console.log("insert...err");
+          if (error.responseJSON) {
+            alert(`Error: ${error.responseJSON.message}`);
+          } else {
+            alert("An error occurred while creating loan.");
+          }
           throw error.responseJSON || error;
         }
       });
@@ -174,6 +179,11 @@ export default Ember.Service.extend({
           return response;
         },
         error: (error) => {
+          if (error.responseJSON) {
+            alert(`Error: ${error.responseJSON.message}`);
+          } else {
+            alert("An error occurred while updating loan.");
+          }
           throw error.responseJSON || error;
         }
       });

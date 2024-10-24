@@ -26,7 +26,7 @@ export default Ember.Controller.extend({
   bankId: '',
   bank_name: '',
   bank_code: '',
-  admin_name: '',
+  admin_id: '',
   isEdit: false,
 
   actions: {
@@ -40,7 +40,7 @@ export default Ember.Controller.extend({
         this.set("errorMessage", 'Please provide a bank code.');
         return;
       }
-      if(!this.get('admin_name'))
+      if(!this.get('admin_id'))
       {
         this.set("errorMessage", 'Please select an admin');
         return;
@@ -49,7 +49,7 @@ export default Ember.Controller.extend({
       const bankData = {
         bank_name: this.get('bank_name'),
         bank_code: this.get('bank_code'),
-        admin_name: this.get('admin_name'),
+        admin_id: this.get('admin_id'),
       };
 
      
@@ -76,7 +76,7 @@ export default Ember.Controller.extend({
       bank_name: '',
       bank_code: '',
       bank_status: '',
-      admin_name: '',
+      admin_id: '',
       isEdit: false
     });
   }

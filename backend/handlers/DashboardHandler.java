@@ -1,4 +1,4 @@
-package servlet;
+package handlers;
 
 import java.io.IOException;
 import java.sql.Connection;
@@ -20,6 +20,7 @@ import DAO.BranchDAO;
 import enums.LoanType;
 import enums.TransactionType;
 import enums.UserRole;
+import servlets.ControllerServlet;
 import utility.DbUtil;
 import utility.JsonUtil;
 import utility.LoggerConfig;
@@ -32,8 +33,8 @@ public class DashboardHandler extends HttpServlet {
     private Connection conn = null;
     private DbUtil dbUtil = new DbUtil();
 
-    @Override
-    protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+    
+    public void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         String role = (String) request.getSession(false).getAttribute("user_role");
         
         logger.info("Dashboard request initiated for role: " + role);
@@ -79,8 +80,8 @@ public class DashboardHandler extends HttpServlet {
             } else if (role.equals(UserRole.MANAGER.toString())) {
                 logger.info("Fetching branch and account details for manager.");
 
-                ControllerServlet.pathMap.put("b.manager_id", ControllerServlet.pathMap.get("useresultSet"));
-                ControllerServlet.pathMap.remove("useresultSet");
+                ControllerServlet.pathMap.put("b.manager_id", ControllerServlet.pathMap.get("users"));
+                ControllerServlet.pathMap.remove("users");
                 
                 resultSet = branchDAO.selectBranchAndAccounts(conn, ControllerServlet.pathMap);
                 
@@ -102,7 +103,7 @@ public class DashboardHandler extends HttpServlet {
             } else if (role.equals(UserRole.ADMIN.toString())) {
                 logger.info("Fetching branches and account details for admin.");
                 
-                ControllerServlet.pathMap.remove("useresultSet");
+                ControllerServlet.pathMap.remove("users");
                 resultSet = branchDAO.selectBranchesAndAccounts(conn, ControllerServlet.pathMap);
                 
                 while (resultSet.next()) {

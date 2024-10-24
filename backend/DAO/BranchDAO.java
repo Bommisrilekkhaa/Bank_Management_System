@@ -10,7 +10,7 @@ import com.google.gson.JsonObject;
 
 import model.Account;
 import model.Branch;
-import servlet.ControllerServlet;
+import servlets.ControllerServlet;
 import utility.DbUtil;
 import utility.QueryUtil;
 
@@ -18,7 +18,7 @@ public class BranchDAO {
 
     private DbUtil dbUtil = new DbUtil();
     
-
+    
     public boolean insertBranch(Connection conn, Branch branch) throws SQLException 
     {
         QueryUtil query = QueryUtil.create()

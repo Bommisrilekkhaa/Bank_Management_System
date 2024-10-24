@@ -1,5 +1,5 @@
 import Ember from 'ember';
-
+import { loanStatus,loanType ,role} from '../utils/util';
 export default Ember.Component.extend({
   notification: Ember.inject.service('notify'),
   accountsService: Ember.inject.service('accounts'),
@@ -17,8 +17,9 @@ export default Ember.Component.extend({
   isDirect:false,
   accNo:'',
   bankId:localStorage.getItem("bankId"),
-  statuses: ['approved','closed', 'pending', 'rejected'],
-  types: ['businessloan', 'homeloan', 'educationloan'], 
+  userRole:role,
+  statuses: [loanStatus.PENDING,loanStatus.APPROVED,loanStatus.CLOSED,loanStatus.REJECTED],
+  types: [loanType.BUSINESSLOAN,loanType.EDUCATIONLOAN,loanType.HOMELOAN], 
   durations:[6,12,18,24],
   init() {
     this._super(...arguments);
@@ -41,9 +42,9 @@ export default Ember.Component.extend({
 
   filteredStatuses: Ember.computed('loan_amount', function() {
     if (this.get('loan_amount') > 3000000) {
-      return ['rejected']; 
+      return [loanStatus.REJECTED]; 
     } else {
-      return ['approved', 'closed', 'pending'];
+      return [loanStatus.PENDING,loanStatus.APPROVED,loanStatus.CLOSED,loanStatus.REJECTED];
     }
   }),
 
@@ -73,7 +74,7 @@ export default Ember.Component.extend({
         return;
       }
 
-      if(this.get('role')!='CUSTOMER')
+      if(this.get('role')!=this.userRole.CUSTOMER)
       {
         if (!this.get('statuses').includes(this.get('loan_status'))) {
           this.set("errorMessage", "Please select a valid loan status.");
@@ -130,6 +131,8 @@ export default Ember.Component.extend({
            this.sendAction("toLoan");
            }, 2000);
         }).catch((error) => {
+          this.resetForm();
+          this.sendAction("toLoan");
           console.error('Error creating loan:', error);
         });
       }

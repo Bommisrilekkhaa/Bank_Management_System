@@ -1,10 +1,10 @@
 import Ember from 'ember';
-
+import { role } from '../utils/util';
 export default Ember.Component.extend({
   accountssService: Ember.inject.service('accounts'),
   accounts: [],
   branchId: localStorage.getItem('branchId'),
-
+  userRole:role,
   role: Ember.computed(function() {
     let value = `; ${document.cookie}`;
     let parts = value.split(`; ${'sessionData'}=`);

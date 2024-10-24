@@ -3,7 +3,7 @@
 
   <div class="filters">
     <label for="loanType">Type</label>
-    <select id="loanType" onchange={{action (mut selectedLoanType) value="target.value"}}>
+    <select id="loanType" value={{selectedLoanType}} onchange={{action (mut selectedLoanType) value="target.value"}}>
       <option value="">All</option>
       <option value="homeloan">Home Loan</option>
       <option value="businessloan">Business Loan</option>
@@ -11,7 +11,7 @@
     </select>
 
     <label for="loanStatus">Status</label>
-    <select id="loanStatus" onchange={{action (mut selectedLoanStatus) value="target.value"}}>
+    <select id="loanStatus" value={{selectedLoanStatus}} onchange={{action (mut selectedLoanStatus) value="target.value"}}>
       <option value="">All</option>
       <option value="approved">Approved</option>
       <option value="pending">Pending</option>
@@ -19,18 +19,18 @@
       <option value="closed">Closed</option>
     </select>
 
-    <button class="clear" {{action "clearFilters"}}>Clear</button>
+    <button class="clear" {{action (mut selectedLoanType) ''}} {{action (mut selectedLoanStatus) ''}} >Clear</button>
   </div>
 
   <table class="loans-table">
     <thead>
       <tr>
-        <th>Loan Id</th>
+        <th>Loan ID</th>
         <th>Loan Type</th>
         <th>Loan Status</th>
+        <th>Account Number</th>
         <th>Amount</th>
-        <th>Availed Date</th>
-        {{#unless (eq role "CUSTOMER")}}
+        {{#unless (eq role userRole.CUSTOMER)}}
         <th>Action</th>
         {{/unless}}
       </tr>
@@ -38,12 +38,12 @@
     <tbody>
       {{#each filteredLoans as |loan|}}
         <tr {{action "viewLoan" loan}}>
-          <td>{{loan.loan_id}}</td>
+           <td>{{loan.loan_id}}</td>
           <td>{{loan.loan_type}}</td>
           <td>{{loan.loan_status}}</td>
+          <td>{{loan.acc_number}}</td>
           <td>Rs.{{loan.loan_amount}}</td>
-          <td>{{loan.loan_availed_date}}</td>
-          {{#unless (eq role "CUSTOMER")}}
+          {{#unless (eq role userRole.CUSTOMER)}}
             <td>
               <button class="view-btn" {{action "editLoan" loan}}>Edit</button>
             </td>

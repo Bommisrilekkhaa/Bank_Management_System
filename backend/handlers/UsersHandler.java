@@ -1,4 +1,4 @@
-package servlet;
+package handlers;
 
 import java.io.IOException;
 import java.sql.Connection;
@@ -24,6 +24,7 @@ import enums.Status;
 import enums.UserRole;
 import model.User;
 import redis.clients.jedis.Jedis;
+import servlets.ControllerServlet;
 import utility.DbUtil;
 import utility.JsonUtil;
 import utility.LoggerConfig;
@@ -38,8 +39,8 @@ public class UsersHandler extends HttpServlet {
     private Connection conn = null;
     private DbUtil dbUtil = new DbUtil();
 
-    @Override
-    protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+  
+    public void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         SessionUtil.doOptions(request, response);
         String adminParam = request.getParameter("filter_admin");
         String managerParam = request.getParameter("filter_manager");
@@ -130,13 +131,11 @@ public class UsersHandler extends HttpServlet {
         }
     }
 
-    @Override
-    protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
    
-    }
+    
 
-    @Override
-    protected void doPut(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+   
+    public void doPut(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         SessionUtil.doOptions(request, response);
         JsonObject jsonRequest = JsonUtil.parseJsonRequest(request);
 
@@ -167,8 +166,8 @@ public class UsersHandler extends HttpServlet {
         }
     }
 
-    @Override
-    protected void doDelete(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+   
+    public void doDelete(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         SessionUtil.doOptions(request, response);
 
         try {

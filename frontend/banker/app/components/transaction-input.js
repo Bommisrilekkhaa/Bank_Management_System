@@ -1,17 +1,17 @@
 import Ember from 'ember';
-
+import { transactionStatus,transactionType } from '../utils/util';
 export default Ember.Component.extend({
   notification: Ember.inject.service('notify'),
   accountsService: Ember.inject.service('accounts'),
   transactionsService: Ember.inject.service('transactions'),
   errorMessage: '',
-  statuses: ['pending','success'],
-  types: ['debit','credit'],
+  statuses: [transactionStatus.PENDING,transactionStatus.SUCCESS],
+  types: [transactionType.CREDIT,transactionType.DEBIT],
   isDirect:false,
   accounts:[],
   bankId:localStorage.getItem('bankId'),
   isEmi: Ember.computed('transaction_type', function() {
-    return this.get('transaction_type') == 'emi';
+    return this.get('transaction_type') == transactionType.EMI;
   }),
   init() {
     this._super(...arguments);
@@ -90,6 +90,8 @@ export default Ember.Component.extend({
         
         }).catch((error) => {
           console.error('Error creating transaction:', error);
+          this.resetForm();
+          this.sendAction("toTransaction");
         });
       
     },

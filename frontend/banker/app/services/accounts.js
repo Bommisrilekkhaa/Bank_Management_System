@@ -3,7 +3,6 @@ import $ from 'jquery';
 
 export default Ember.Service.extend({
   ajax: Ember.inject.service(),
-
  
   fetchAccounts(bankid) {
     let url = `http://localhost:8080/banker/api/v1/`;
@@ -33,6 +32,7 @@ export default Ember.Service.extend({
         return response;
       },
       error: (error) => {
+
         console.error("Error fetching accounts:", error);
         if (error.responseJSON) {
           alert(`Error: ${error.responseJSON.message}`);
@@ -156,7 +156,12 @@ fetchAccount(bankid) {
         return response;
       },
       error: (error) => {
-        console.log("insert...err");
+        // console.log("insert...err");
+        if (error.responseJSON) {
+          alert(`Error: ${error.responseJSON.message}`);
+        } else {
+          alert("An error occurred while creating account.");
+        }
         throw error.responseJSON || error;
       }
     });
@@ -199,6 +204,11 @@ fetchAccount(bankid) {
         return response;
       },
       error: (error) => {
+        if (error.responseJSON) {
+          alert(`Error: ${error.responseJSON.message}`);
+        } else {
+          alert("An error occurred while updating account.");
+        }
         throw error.responseJSON || error;
       }
     });

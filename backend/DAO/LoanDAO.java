@@ -41,8 +41,8 @@ public class LoanDAO {
     	 Map<String,Object[]> conditions = new HashMap<>();
      	
         conditions.put("acc_number", new Object[] {"=", loan.getAcc_no()});
-        conditions.put("loan_status", new Object[] {"=", LoanStatus.APPROVED.getValue()});
-         
+        conditions.put("loan_status", new Object[] {"!=", LoanStatus.REJECTED.getValue()});
+        conditions.put("loan_status", new Object[] {"!=", LoanStatus.CLOSED.getValue()});
     	 QueryUtil query = QueryUtil.create()
     			 .select("*")
     			 .from("loan")

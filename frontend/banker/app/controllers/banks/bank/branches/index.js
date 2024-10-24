@@ -1,6 +1,7 @@
 import Ember from 'ember';
 
 export default Ember.Controller.extend({
+  notification: Ember.inject.service('notify'),
   branchesService: Ember.inject.service('branches'),
   bankId: localStorage.getItem("bankId"),
   branches: [],
@@ -11,6 +12,7 @@ export default Ember.Controller.extend({
       console.log(response);
       this.set('branches', response);
     }).catch((error) => {
+      
       console.error("Failed to load branches:", error);
     });
   },
@@ -53,6 +55,7 @@ export default Ember.Controller.extend({
           bankId: this.get('bankId')
         });
       }).catch((error) => {
+        
         console.error("Transition failed", error);
       });
     },
@@ -61,10 +64,14 @@ export default Ember.Controller.extend({
       if (confirm(`Are you sure you want to delete the branch: ${branch.branch_name}?`)) {
         this.get('branchesService').deleteBranch(this.get('bankId'), branch.branch_id).then(() => {
           console.log('Branch deleted successfully');
-          this.loadBranches();
+          this.get('notification').showNotification('Branch Deleted successfully!', 'success');
+          Ember.run.later(() => {
+            this.transitionToRoute('banks.bank.branches',this.get('bankId'));
+            this.loadBranches();
+           }, 2000);
         }).catch((error) => {
           console.error("Failed to delete branch:", error);
-          alert('Error occurred while deleting the branch.');
+          // alert('Error occurred while deleting the branch.');
         });
       }
     }

@@ -58,6 +58,7 @@
         <select 
           id="manager_id" 
           class="form-control" 
+          value={{manager_id}}
           onchange={{action (mut manager_id) value="target.value"}}
         >
           {{#if isEdit}}

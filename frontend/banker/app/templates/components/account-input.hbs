@@ -31,7 +31,7 @@
         </select>
       </div>
 
-      {{#unless (eq role "CUSTOMER")}}
+      {{#unless (eq role userRole.CUSTOMER)}}
         <div class="form-group">
           <label for="acc_status">Account Status<span style="color:rgb(237, 69, 69);">*</span></label>
           <select 

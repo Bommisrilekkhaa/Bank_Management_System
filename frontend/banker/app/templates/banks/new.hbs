@@ -18,7 +18,7 @@
    
     <div class="form-group">
     <label for="admin_name">Admin Name</label>
-    <select id="admin_name" class="form-control" onchange={{action (mut admin_name) value="target.value"}}>
+    <select id="admin_name" class="form-control" onchange={{action (mut admin_id) value="target.value"}}>
         <option value="">Select Admin</option>
         {{#each admins as |admin|}}
         <option value={{admin.admin_id}} >{{admin.admin_name}}</option>

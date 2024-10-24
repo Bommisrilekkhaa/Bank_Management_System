@@ -1,10 +1,10 @@
 import Ember from 'ember';
-
+import { role } from '../utils/util';
 export default Ember.Component.extend({
   loansService: Ember.inject.service('loans'),
   loans: [],
   branchId: localStorage.getItem('branchId'),
-
+  userRole:role,
   role: Ember.computed(function() {
     let value = `; ${document.cookie}`;
     let parts = value.split(`; ${'sessionData'}=`);
@@ -46,10 +46,6 @@ export default Ember.Component.extend({
     },
     editLoan(loan) {
       this.sendAction('toeditLoan',true,loan ,this.get('branchId'));
-    },
-    clearFilters() {
-      this.set('selectedLoanType', '');
-      this.set('selectedLoanStatus', '');
     }
   }
 });

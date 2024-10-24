@@ -1,4 +1,4 @@
-package servlet;
+package handlers;
 
 import java.io.IOException;
 import java.sql.Connection;
@@ -19,6 +19,7 @@ import DAO.UserDAO;
 import model.Bank;
 import model.User;
 import redis.clients.jedis.Jedis;
+import servlets.ControllerServlet;
 import utility.DbUtil;
 import utility.JsonUtil;
 import utility.LoggerConfig;
@@ -36,8 +37,8 @@ public class AuthHandler extends HttpServlet {
     private DbUtil dbUtil = new DbUtil();
     
     
-    @Override
-    protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+   
+    public void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         SessionUtil.doOptions(request, response);
         String action = request.getParameter("action");
 
@@ -51,8 +52,8 @@ public class AuthHandler extends HttpServlet {
         }
     }
 
-    @Override
-    protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+  
+    public void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         SessionUtil.doOptions(request, response);
         String action = request.getParameter("action");
 
