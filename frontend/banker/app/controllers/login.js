@@ -28,8 +28,10 @@ export default Ember.Controller.extend({
         .then(() => {
           this.set('userId',this.getUserIdFromCookie());
           if (this.get('userId')) {
-
-            this.transitionToRoute('banks.bank.users.user.dashboard',localStorage.getItem('bankId'), this.get('userId')); 
+            
+              this.transitionToRoute('banks.bank.users.user.dashboard',localStorage.getItem('bankId'), this.get('userId')); 
+              
+            
           } else {
             this.set('errorMessage', 'User ID not found in cookies');
           }

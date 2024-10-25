@@ -30,6 +30,7 @@ import enums.LoanStatus;
 import enums.Status;
 import enums.TransactionStatus;
 import enums.TransactionType;
+import enums.UserRole;
 import model.Emi;
 import model.Transaction;
 import redis.clients.jedis.Jedis;
@@ -59,9 +60,10 @@ public class TransactionsHandler extends HttpServlet {
         jedis = ControllerServlet.pool.getResource();
         
         logger.info("GET request received for path: " + path);
-
+        String role = request.getSession(false).getAttribute("user_role").toString();
         String cachedData = jedis.get(cacheKey);
-        if(request.getSession(false).getAttribute("user_role").equals("CUSTOMER")) {
+        
+        if (role.equals(UserRole.CUSTOMER.toString())) {
             ControllerServlet.pathMap.put("user_id", (Integer) request.getSession(false).getAttribute("user_id"));
             cachedData = null;
         }
@@ -95,11 +97,15 @@ public class TransactionsHandler extends HttpServlet {
                     JsonUtil.sendErrorResponse(response, "No matching transactions found.");
                     return;
                 }
+                if(!role.equals(UserRole.CUSTOMER.toString()))
+                {
+                	jedis.set(cacheKey, jsonArray.toString());
+                	logger.info("Transaction data fetched from DB and stored in Redis for key: " + cacheKey);
+                	
+                }
                 
-                jedis.set(cacheKey, jsonArray.toString());
                 response.setContentType("application/json");
                 JsonUtil.sendJsonResponse(response, jsonArray);
-                logger.info("Transaction data fetched from DB and stored in Redis for key: " + cacheKey);
             } catch (SQLException e) {
                 logger.log(Level.SEVERE, "Error fetching transaction details", e);
                 JsonUtil.sendErrorResponse(response, "Error fetching transaction details: " + e.getMessage());

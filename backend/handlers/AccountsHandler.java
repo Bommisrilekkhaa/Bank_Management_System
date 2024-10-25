@@ -25,6 +25,7 @@ import DAO.BranchDAO;
 import DAO.UserDAO;
 import enums.AccountType;
 import enums.Status;
+import enums.UserRole;
 import model.Account;
 import model.User;
 import redis.clients.jedis.Jedis;
@@ -49,7 +50,7 @@ public class AccountsHandler extends HttpServlet {
         SessionUtil.doOptions(request, response);
         String path = request.getRequestURI();
         String cacheKey = path.substring(path.indexOf("/banks"));
-
+        String role = request.getSession(false).getAttribute("user_role").toString();
         jedis = ControllerServlet.pool.getResource();
         String cachedData = jedis.get(cacheKey);
         String param = request.getParameter("acc_status");
@@ -60,7 +61,7 @@ public class AccountsHandler extends HttpServlet {
         	cachedData = null;
         }
         
-        if (request.getSession(false).getAttribute("user_role").equals("CUSTOMER")) {
+        if (role.equals(UserRole.CUSTOMER.toString())) {
             ControllerServlet.pathMap.put("users", (Integer) request.getSession(false).getAttribute("user_id"));
             cachedData = null;
         }
@@ -97,8 +98,14 @@ public class AccountsHandler extends HttpServlet {
                         }
                         jsonArray.add(accountJson);
                     }
-                    jedis.set(cacheKey, jsonArray.toString());
-                    logger.info("Data cached in Redis for path: " + cacheKey);
+                    
+                    if(!role.equals(UserRole.CUSTOMER.toString()) && param==null)
+                    {
+                    	jedis.set(cacheKey, jsonArray.toString());
+                    	logger.info("Data cached in Redis for path: " + cacheKey);
+                    	
+                    }
+                    
                 } else {
                     JsonUtil.sendErrorResponse(response, "No matching accounts found.");
                     logger.warning("No accounts found for path: " + cacheKey);

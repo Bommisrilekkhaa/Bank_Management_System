@@ -3,16 +3,16 @@
 	"file": "banker.css",
 	"sourceRoot": "/Users/bommi-pt7707/Documents/BankManagement/frontend/banker/app/styles",
 	"sources": [
-		"../../sass_compiler-input_base_path-HwdyEkNm.tmp/app/styles/app.scss",
-		"../../sass_compiler-input_base_path-HwdyEkNm.tmp/app/styles/auth.scss",
-		"../../sass_compiler-input_base_path-HwdyEkNm.tmp/app/styles/accounts.scss",
-		"../../sass_compiler-input_base_path-HwdyEkNm.tmp/app/styles/loans.scss",
-		"../../sass_compiler-input_base_path-HwdyEkNm.tmp/app/styles/navbar.scss",
-		"../../sass_compiler-input_base_path-HwdyEkNm.tmp/app/styles/transactions.scss",
-		"../../sass_compiler-input_base_path-HwdyEkNm.tmp/app/styles/banks.scss",
-		"../../sass_compiler-input_base_path-HwdyEkNm.tmp/app/styles/branches.scss",
-		"../../sass_compiler-input_base_path-HwdyEkNm.tmp/app/styles/users.scss",
-		"../../sass_compiler-input_base_path-HwdyEkNm.tmp/app/styles/notify.scss"
+		"../../sass_compiler-input_base_path-we4Ynsok.tmp/app/styles/app.scss",
+		"../../sass_compiler-input_base_path-we4Ynsok.tmp/app/styles/auth.scss",
+		"../../sass_compiler-input_base_path-we4Ynsok.tmp/app/styles/accounts.scss",
+		"../../sass_compiler-input_base_path-we4Ynsok.tmp/app/styles/loans.scss",
+		"../../sass_compiler-input_base_path-we4Ynsok.tmp/app/styles/navbar.scss",
+		"../../sass_compiler-input_base_path-we4Ynsok.tmp/app/styles/transactions.scss",
+		"../../sass_compiler-input_base_path-we4Ynsok.tmp/app/styles/banks.scss",
+		"../../sass_compiler-input_base_path-we4Ynsok.tmp/app/styles/branches.scss",
+		"../../sass_compiler-input_base_path-we4Ynsok.tmp/app/styles/users.scss",
+		"../../sass_compiler-input_base_path-we4Ynsok.tmp/app/styles/notify.scss"
 	],
 	"sourcesContent": [
 		"@import \"./auth.scss\";\n@import \"./accounts.scss\";\n@import \"./loans.scss\";\n@import \"./navbar.scss\";\n@import \"./transactions.scss\";\n@import \"./banks.scss\";\n@import \"./branches.scss\";\n@import \"./users.scss\";\n@import \"./notify.scss\";\n@import url('https://fonts.googleapis.com/css2?family=Neonderthaw&family=Splash&display=swap');\n@import url('https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.10.5/font/bootstrap-icons.min.css');\n* {\n    margin: 0;\n    box-sizing: border-box;\n  }\n  \n  body {\n    font-family: Arial, sans-serif;\n    background: linear-gradient(to bottom, #0d1b2a, black);\n    height: 100vh;\n    width: 100vw; \n    display: flex !important;\n    flex-direction: column;\n    align-items: center !important;\n    justify-content: flex-start !important;\n  }\n\n.container{\n    display: flex;\n    flex-direction: column;\n    width: 100%;\n}\nhtml,body{\n  height: 100%;\n    margin: 0;\n}\n.appname{\n  font-family: \"Neonderthaw\", cursive;\n  font-weight: 400;\n  font-style: normal;\n  font-size:15em;\n  z-index: 100;\n  margin-top: 120px;\n  color: #508C9B;\n  text-shadow: ivory;\n\n  i{\n    margin-left: 340px;\n  }\n}\n\n.form-control:disabled {\n  background-color: #a3bec2 !important; \n  color: #6c757d; \n  border-color: #ced4da; \n}\n\n\n",

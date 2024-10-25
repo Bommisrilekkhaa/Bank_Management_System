@@ -45,7 +45,7 @@ public class DashboardHandler extends HttpServlet {
             
             if (role.equals(UserRole.CUSTOMER.toString())) {
                 logger.info("Fetching account and loan details for customer.");
-                
+//                System.out.println( ControllerServlet.pathMap.toString());
                 resultSet = accountDAO.accountsAndLoans(conn, ControllerServlet.pathMap);
                 
                 while (resultSet.next()) {
@@ -82,7 +82,7 @@ public class DashboardHandler extends HttpServlet {
 
                 ControllerServlet.pathMap.put("b.manager_id", ControllerServlet.pathMap.get("users"));
                 ControllerServlet.pathMap.remove("users");
-                
+//                System.out.println( ControllerServlet.pathMap.toString());
                 resultSet = branchDAO.selectBranchAndAccounts(conn, ControllerServlet.pathMap);
                 
                 if (resultSet.next()) {
@@ -104,6 +104,7 @@ public class DashboardHandler extends HttpServlet {
                 logger.info("Fetching branches and account details for admin.");
                 
                 ControllerServlet.pathMap.remove("users");
+//                System.out.println( ControllerServlet.pathMap.toString());
                 resultSet = branchDAO.selectBranchesAndAccounts(conn, ControllerServlet.pathMap);
                 
                 while (resultSet.next()) {

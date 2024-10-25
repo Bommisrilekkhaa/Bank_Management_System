@@ -24,6 +24,7 @@ import DAO.LoanDAO;
 import enums.LoanStatus;
 import enums.LoanType;
 import enums.Status;
+import enums.UserRole;
 import model.Loan;
 import redis.clients.jedis.Jedis;
 import servlets.ControllerServlet;
@@ -47,11 +48,12 @@ public class LoansHandler extends HttpServlet {
         SessionUtil.doOptions(request, response);
         String path = request.getRequestURI();
         String cacheKey = path.substring(path.indexOf("/banks")); 
-        
+
+        String role = request.getSession(false).getAttribute("user_role").toString();
         jedis = ControllerServlet.pool.getResource();
         String cachedData = jedis.get(cacheKey);
         
-        if(request.getSession(false).getAttribute("user_role").equals("CUSTOMER")) {
+        if (role.equals(UserRole.CUSTOMER.toString())) {
             ControllerServlet.pathMap.put("user_id", (Integer) request.getSession(false).getAttribute("user_id"));
             cachedData = null;
         }
@@ -83,8 +85,12 @@ public class LoansHandler extends HttpServlet {
                         loanJson.addProperty("acc_number", loan.getAcc_no());
                         jsonArray.add(loanJson);
                     }
-                    jedis.set(cacheKey, jsonArray.toString());
-                    logger.info("Data cached with key: " + cacheKey);
+                    
+                    if(!role.equals(UserRole.CUSTOMER.toString()))
+                    {
+	                    jedis.set(cacheKey, jsonArray.toString());
+	                    logger.info("Data cached with key: " + cacheKey);
+                    }
                     response.setContentType("application/json");
                     JsonUtil.sendJsonResponse(response, jsonArray);
                 } else {

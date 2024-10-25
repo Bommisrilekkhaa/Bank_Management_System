@@ -196,7 +196,7 @@ public class QueryUtil
 	        }
 	        	
 	        
-	        
+//	        System.out.println(stmt);
 	        return stmt.executeQuery();
 	    }
 

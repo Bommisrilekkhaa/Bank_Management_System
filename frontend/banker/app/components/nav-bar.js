@@ -39,12 +39,14 @@ export default Ember.Component.extend({
    
   loadBranches() {
     console.log(this.get('bankId'));
+    Ember.run.later(() => {
     this.get('branchesService').fetchBranches(this.get('bankId')).then((response) => {
       console.log(response);
       this.set('branches', response);
     }).catch((error) => {
       console.error("Failed to load branches:", error);
     });
+  }, 3000);
   },
 
  

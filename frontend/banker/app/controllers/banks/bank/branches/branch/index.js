@@ -2,6 +2,8 @@ import Ember from 'ember';
 import { role } from '../../../../../utils/util';
 export default Ember.Controller.extend({
   branchesService: Ember.inject.service('branches'),
+  sessionService: Ember.inject.service('session'),
+  notification: Ember.inject.service('notify'),
   branch:[],
   userRole:role,
   role:Ember.computed(()=>{
@@ -38,10 +40,18 @@ export default Ember.Controller.extend({
     delete(branch) {
       if (confirm(`Are you sure you want to delete the branch: ${branch.branch_name}?`)) {
         this.get('branchesService').deleteBranch(this.get('bankId'), branch.branch_id).then(() => {
-          console.log('Branch deleted successfully');
+          localStorage.setItem('branchId','*');
+          this.get('notification').showNotification('Branch Deleted successfully!', 'success');
+          Ember.run.later(() => {
+            this.get('sessionService').logout().then(() => {
+              this.transitionToRoute('login');
+    
+            });
+           }, 2000);
+          // console.log('Branch deleted successfully');
         }).catch((error) => {
           console.error("Failed to delete branch:", error);
-          alert('Error occurred while deleting the branch.');
+          // alert('Error occurred while deleting the branch.');
         });
       }
     }

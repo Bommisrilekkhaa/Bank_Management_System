@@ -808,12 +808,14 @@ define('banker/components/nav-bar', ['exports', 'banker/utils/util'], function (
       var _this = this;
 
       console.log(this.get('bankId'));
-      this.get('branchesService').fetchBranches(this.get('bankId')).then(function (response) {
-        console.log(response);
-        _this.set('branches', response);
-      }).catch(function (error) {
-        console.error("Failed to load branches:", error);
-      });
+      Ember.run.later(function () {
+        _this.get('branchesService').fetchBranches(_this.get('bankId')).then(function (response) {
+          console.log(response);
+          _this.set('branches', response);
+        }).catch(function (error) {
+          console.error("Failed to load branches:", error);
+        });
+      }, 3000);
     },
     changeBranch: function changeBranch(branchId) {
 
@@ -2020,6 +2022,8 @@ define('banker/controllers/banks/bank/branches/branch/index', ['exports', 'banke
   });
   exports.default = Ember.Controller.extend({
     branchesService: Ember.inject.service('branches'),
+    sessionService: Ember.inject.service('session'),
+    notification: Ember.inject.service('notify'),
     branch: [],
     userRole: _util.role,
     role: Ember.computed(function () {
@@ -2058,12 +2062,21 @@ define('banker/controllers/banks/bank/branches/branch/index', ['exports', 'banke
         });
       },
       delete: function _delete(branch) {
+        var _this3 = this;
+
         if (confirm('Are you sure you want to delete the branch: ' + branch.branch_name + '?')) {
           this.get('branchesService').deleteBranch(this.get('bankId'), branch.branch_id).then(function () {
-            console.log('Branch deleted successfully');
+            localStorage.setItem('branchId', '*');
+            _this3.get('notification').showNotification('Branch Deleted successfully!', 'success');
+            Ember.run.later(function () {
+              _this3.get('sessionService').logout().then(function () {
+                _this3.transitionToRoute('login');
+              });
+            }, 2000);
+            // console.log('Branch deleted successfully');
           }).catch(function (error) {
             console.error("Failed to delete branch:", error);
-            alert('Error occurred while deleting the branch.');
+            // alert('Error occurred while deleting the branch.');
           });
         }
       }
@@ -3297,8 +3310,8 @@ define('banker/helpers/app-version', ['exports', 'banker/config/environment', 'e
 
   exports.default = Ember.Helper.helper(appVersion);
 });
-define("banker/helpers/eq", ["exports"], function (exports) {
-  "use strict";
+define('banker/helpers/eq', ['exports'], function (exports) {
+  'use strict';
 
   Object.defineProperty(exports, "__esModule", {
     value: true
@@ -3348,7 +3361,7 @@ define("banker/helpers/eq", ["exports"], function (exports) {
         param1 = _ref2[0],
         param2 = _ref2[1];
 
-    console.log("eq" + param2);
+    // console.log("eq"+param2);
     return param1 === param2;
   }
 
@@ -6370,7 +6383,7 @@ define("banker/templates/banks/bank/branches/branch/index", ["exports"], functio
   Object.defineProperty(exports, "__esModule", {
     value: true
   });
-  exports.default = Ember.HTMLBars.template({ "id": "eWCCeIap", "block": "{\"statements\":[[11,\"div\",[]],[15,\"class\",\"branch-card-wrapper\"],[13],[0,\"\\n  \"],[11,\"div\",[]],[15,\"class\",\"branch-card\"],[13],[0,\"\\n    \"],[11,\"h2\",[]],[13],[0,\"Branch Details\"],[14],[0,\"\\n   \\n    \"],[11,\"div\",[]],[15,\"class\",\"branch-field\"],[13],[0,\"\\n      \"],[11,\"span\",[]],[15,\"class\",\"field-label\"],[13],[0,\"Branch Name:\"],[14],[0,\"\\n      \"],[11,\"span\",[]],[15,\"class\",\"field-value\"],[13],[1,[28,[\"branch\",\"branch_name\"]],false],[14],[0,\"\\n    \"],[14],[0,\"\\n    \"],[11,\"div\",[]],[15,\"class\",\"branch-field\"],[13],[0,\"\\n      \"],[11,\"span\",[]],[15,\"class\",\"field-label\"],[13],[0,\"Branch Number:\"],[14],[0,\"\\n      \"],[11,\"span\",[]],[15,\"class\",\"field-value\"],[13],[1,[28,[\"branch\",\"branch_number\"]],false],[14],[0,\"\\n    \"],[14],[0,\"\\n    \"],[11,\"div\",[]],[15,\"class\",\"branch-field\"],[13],[0,\"\\n      \"],[11,\"span\",[]],[15,\"class\",\"field-label\"],[13],[0,\"Address:\"],[14],[0,\"\\n      \"],[11,\"span\",[]],[15,\"class\",\"field-value\"],[13],[1,[28,[\"branch\",\"branch_address\"]],false],[14],[0,\"\\n    \"],[14],[0,\"\\n    \"],[11,\"div\",[]],[15,\"class\",\"branch-field\"],[13],[0,\"\\n      \"],[11,\"span\",[]],[15,\"class\",\"field-label\"],[13],[0,\"Bank Name:\"],[14],[0,\"\\n      \"],[11,\"span\",[]],[15,\"class\",\"field-value\"],[13],[1,[28,[\"branch\",\"bank_name\"]],false],[14],[0,\"\\n    \"],[14],[0,\"\\n    \"],[11,\"div\",[]],[15,\"class\",\"branch-field\"],[13],[0,\"\\n      \"],[11,\"span\",[]],[15,\"class\",\"field-label\"],[13],[0,\"Manager Name:\"],[14],[0,\"\\n      \"],[11,\"span\",[]],[15,\"class\",\"field-value\"],[13],[1,[28,[\"branch\",\"manager_name\"]],false],[14],[0,\"\\n    \"],[14],[0,\"\\n    \"],[11,\"div\",[]],[15,\"class\",\"view-wrap\"],[13],[0,\"\\n        \"],[11,\"div\",[]],[13],[0,\"\\n            \"],[11,\"button\",[]],[15,\"class\",\"view-btn\"],[5,[\"action\"],[[28,[null]],\"viewAccounts\",[28,[\"branch\"]]]],[13],[0,\"View Accounts\"],[14],[0,\"\\n        \"],[14],[0,\"\\n\"],[6,[\"unless\"],[[33,[\"eq\"],[[28,[\"branch\",\"branch_id\"]],[28,[\"branch\",\"main_branch_id\"]]],null]],null,{\"statements\":[[6,[\"if\"],[[33,[\"eq\"],[[28,[\"role\"]],[28,[\"userRole\",\"MANAGER\"]]],null]],null,{\"statements\":[[0,\"        \"],[11,\"div\",[]],[13],[0,\"\\n            \"],[11,\"button\",[]],[15,\"class\",\"view-btn\"],[5,[\"action\"],[[28,[null]],\"delete\",[28,[\"branch\"]]]],[13],[0,\"delete Branch\"],[14],[0,\"\\n        \"],[14],[0,\"\\n\"]],\"locals\":[]},null]],\"locals\":[]},null],[0,\"    \"],[14],[0,\"\\n  \"],[14],[0,\"\\n\"],[14],[0,\"\\n\"]],\"locals\":[],\"named\":[],\"yields\":[],\"hasPartials\":false}", "meta": { "moduleName": "banker/templates/banks/bank/branches/branch/index.hbs" } });
+  exports.default = Ember.HTMLBars.template({ "id": "ShVUNoa1", "block": "{\"statements\":[[11,\"div\",[]],[15,\"class\",\"branch-card-wrapper\"],[13],[0,\"\\n  \"],[11,\"div\",[]],[15,\"class\",\"branch-card\"],[13],[0,\"\\n    \"],[11,\"h2\",[]],[13],[0,\"Branch Details\"],[14],[0,\"\\n   \\n    \"],[11,\"div\",[]],[15,\"class\",\"branch-field\"],[13],[0,\"\\n      \"],[11,\"span\",[]],[15,\"class\",\"field-label\"],[13],[0,\"Branch Name:\"],[14],[0,\"\\n      \"],[11,\"span\",[]],[15,\"class\",\"field-value\"],[13],[1,[28,[\"branch\",\"branch_name\"]],false],[14],[0,\"\\n    \"],[14],[0,\"\\n    \"],[11,\"div\",[]],[15,\"class\",\"branch-field\"],[13],[0,\"\\n      \"],[11,\"span\",[]],[15,\"class\",\"field-label\"],[13],[0,\"Branch Number:\"],[14],[0,\"\\n      \"],[11,\"span\",[]],[15,\"class\",\"field-value\"],[13],[1,[28,[\"branch\",\"branch_number\"]],false],[14],[0,\"\\n    \"],[14],[0,\"\\n    \"],[11,\"div\",[]],[15,\"class\",\"branch-field\"],[13],[0,\"\\n      \"],[11,\"span\",[]],[15,\"class\",\"field-label\"],[13],[0,\"Address:\"],[14],[0,\"\\n      \"],[11,\"span\",[]],[15,\"class\",\"field-value\"],[13],[1,[28,[\"branch\",\"branch_address\"]],false],[14],[0,\"\\n    \"],[14],[0,\"\\n    \"],[11,\"div\",[]],[15,\"class\",\"branch-field\"],[13],[0,\"\\n      \"],[11,\"span\",[]],[15,\"class\",\"field-label\"],[13],[0,\"Bank Name:\"],[14],[0,\"\\n      \"],[11,\"span\",[]],[15,\"class\",\"field-value\"],[13],[1,[28,[\"branch\",\"bank_name\"]],false],[14],[0,\"\\n    \"],[14],[0,\"\\n    \"],[11,\"div\",[]],[15,\"class\",\"branch-field\"],[13],[0,\"\\n      \"],[11,\"span\",[]],[15,\"class\",\"field-label\"],[13],[0,\"Manager Name:\"],[14],[0,\"\\n      \"],[11,\"span\",[]],[15,\"class\",\"field-value\"],[13],[1,[28,[\"branch\",\"manager_name\"]],false],[14],[0,\"\\n    \"],[14],[0,\"\\n    \"],[11,\"div\",[]],[15,\"class\",\"view-wrap\"],[13],[0,\"\\n        \"],[11,\"div\",[]],[13],[0,\"\\n            \"],[11,\"button\",[]],[15,\"class\",\"view-btn\"],[5,[\"action\"],[[28,[null]],\"viewAccounts\",[28,[\"branch\"]]]],[13],[0,\"View Accounts\"],[14],[0,\"\\n        \"],[14],[0,\"\\n\"],[6,[\"unless\"],[[33,[\"eq\"],[[28,[\"branch\",\"branch_id\"]],[28,[\"branch\",\"main_branch_id\"]]],null]],null,{\"statements\":[[6,[\"if\"],[[33,[\"eq\"],[[28,[\"role\"]],[28,[\"userRole\",\"MANAGER\"]]],null]],null,{\"statements\":[[0,\"        \"],[11,\"div\",[]],[13],[0,\"\\n            \"],[11,\"button\",[]],[15,\"class\",\"view-btn\"],[5,[\"action\"],[[28,[null]],\"delete\",[28,[\"branch\"]]]],[13],[0,\"delete Branch\"],[14],[0,\"\\n        \"],[14],[0,\"\\n\"]],\"locals\":[]},null]],\"locals\":[]},null],[0,\"    \"],[14],[0,\"\\n  \"],[14],[0,\"\\n\"],[14],[0,\"\\n \"],[1,[33,[\"notify-box\"],null,[[\"message\",\"type\"],[[28,[\"notification\",\"message\"]],[28,[\"notification\",\"type\"]]]]],false],[0,\"\\n\"]],\"locals\":[],\"named\":[],\"yields\":[],\"hasPartials\":false}", "meta": { "moduleName": "banker/templates/banks/bank/branches/branch/index.hbs" } });
 });
 define("banker/templates/banks/bank/branches/index", ["exports"], function (exports) {
   "use strict";
@@ -6812,6 +6825,6 @@ catch(err) {
 });
 
 if (!runningTests) {
-  require("banker/app")["default"].create({"name":"banker","version":"0.0.0+7e8576eb"});
+  require("banker/app")["default"].create({"name":"banker","version":"0.0.0+c35200cd"});
 }
 //# sourceMappingURL=banker.map
