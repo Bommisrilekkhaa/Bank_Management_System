@@ -1,9 +1,8 @@
 import Ember from 'ember';
-import {status,accountType,role} from '../utils/util';
+import {status,accountType,role,methods} from '../utils/util';
 export default Ember.Component.extend({
   notification: Ember.inject.service('notify'),
-  branchesService: Ember.inject.service('branches'),
-  accountsService: Ember.inject.service('accounts'),
+  fetchService: Ember.inject.service('fetch'),
   errorMessage: '',
   branchNames: [],
   userRole:role,
@@ -46,8 +45,15 @@ export default Ember.Component.extend({
   isEdit: false,  
   branchId:'',
   loadBranches() {
-    // console.log(this.get('bankId'));
-    this.get('branchesService').fetchBranches(this.get('bankId')).then((response) => {
+    let bankId=localStorage.getItem('bankId');
+    let url = `http://localhost:8080/banker/api/v1/`;
+      if(bankId!="*")
+      {
+        url=url +`banks/${bankId}`;
+      }
+      
+      url=url+`/branches`;
+    this.get('fetchService').fetch(url,methods.GET).then((response) => {
       this.set('branchNames', response);
      
     }).catch((error) => {
@@ -87,21 +93,33 @@ export default Ember.Component.extend({
           userId:this.get('userId')
         }
         const accountData = {
-          accNo: this.get('accNo'),
-          acc_type: this.get('acc_type'),
+          acc_type: (this.get('acc_type')==accountType.BUSINESS)?0:1,
           // acc_balance: this.get('acc_balance'),
           username:this.get('username'),
-          acc_status: this.get('acc_status'),
-          fullname: this.get('fullname'),
-          bankId:this.get('bankId'),
+          acc_status: (this.get('acc_status')=='')?0:((this.get('acc_status')==status.PENDING)?0:((this.get('acc_status')==status.ACTIVE)?1:2)),
+          bank_id:this.get('bankId'),
         };
 
 
-    
+  let url = `http://localhost:8080/banker/api/v1/`;
+  let bankId = localStorage.getItem('bankId');
+  let branchId = localStorage.getItem("branchId");
     if (this.get('isEdit')) {
-            
-       
-        this.get('accountsService').updateAccount(accountData).then(() => {
+      let accNo = localStorage.getItem('accNo');
+      if(bankId!="*")
+      {
+        url=url +`banks/${bankId}`;
+      }
+      if(branchId!='*')
+      {
+        url=url+`/branches/${branchId}`;
+      }
+      if(accNo!="*")
+      {
+        url = url+`/accounts/${accNo}`;
+      }
+
+        this.get('fetchService').fetch(url,methods.PUT,accountData).then(() => {
           // alert('Account updated successfully!');
 
           this.resetForm();
@@ -111,14 +129,24 @@ export default Ember.Component.extend({
             this.sendAction("toAccount");
             }, 2000);
         }).catch((error) => {
-          alert('Error updating account');
+          // alert('Error updating account');
           console.error(error);
+          this.sendAction("toAccount");
         });
 
         
       } else {
-       
-        this.get('accountsService').createAccount(accountData).then(() => {
+        if(bankId!="*")
+        {
+          url=url +`banks/${bankId}`;
+        }
+        if(branchId!='*')
+        {
+          url=url+`/branches/${branchId}`;
+        }
+        url=url+`/accounts`;
+    
+        this.get('fetchService').fetch(url,methods.POST,accountData).then(() => {
 
           // alert('Account created successfully!');
           this.resetForm();
@@ -131,6 +159,7 @@ export default Ember.Component.extend({
         }).catch((error) => {
           // alert('Error creating account');
           console.error(error);
+          this.sendAction("toAccount");
         });
       }
     },

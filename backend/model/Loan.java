@@ -1,17 +1,18 @@
 package model;
 
+import java.math.BigDecimal;
 import java.sql.Date;
 
 public class Loan {
 	
 	 private int loan_id;
 	 private int loan_type;
-	 private double loan_amount;
+	 private BigDecimal loan_amount;
 	 private double loan_interest;
 	 private int loan_duration;
 	 private int loan_status;
 	 private Date loan_availed_date;
-	 private int acc_no;
+	 private int acc_number;
 	 
 	 
 	public int getLoan_id() {
@@ -26,10 +27,10 @@ public class Loan {
 	public void setLoan_type(int loan_type) {
 		this.loan_type = loan_type;
 	}
-	public double getLoan_amount() {
+	public BigDecimal getLoan_amount() {
 		return loan_amount;
 	}
-	public void setLoan_amount(double loan_amount) {
+	public void setLoan_amount(BigDecimal loan_amount) {
 		this.loan_amount = loan_amount;
 	}
 	public double getLoan_interest() {
@@ -58,10 +59,10 @@ public class Loan {
 	}
 	
 	public int getAcc_no() {
-		return acc_no;
+		return acc_number;
 	}
 	public void setAcc_no(int integer) {
-		this.acc_no = integer;
+		this.acc_number = integer;
 	}
 
 	 

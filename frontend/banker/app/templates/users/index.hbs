@@ -15,7 +15,7 @@
     <option value="inactive">Inactive</option>
    
   </select>
-   <button class="clear" {{action (mut selectedUserRole) ''}} {{action (mut selectedUserStatus) ''}}>Clear</button>
+   <button class="clear" {{action (mut selectedUserRole) ''}} {{action (mut selectedUserStatus) ''}}>Reset</button>
   
 </div>
 
@@ -36,9 +36,9 @@
           <td>{{user.user_role}}</td>
           <td>{{user.user_status}}</td>
           <td>
-            <button {{action "editUser" user }}>Edit</button>
+            <button {{action "editUser" user }}><i class="bi bi-pencil"></i> Edit</button>
             {{#if (eq user.user_status status.PENDING)}}
-            <button {{action "deleteUser" user bubbles=false}}>Delete</button>
+            <button {{action "deleteUser" user bubbles=false}}><i class="bi bi-trash-fill"></i> Delete</button>
             {{/if}}
           </td>
         </tr>

@@ -6,7 +6,6 @@ import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
 
-import com.google.gson.JsonObject;
 
 import model.Account;
 import model.Branch;
@@ -30,10 +29,10 @@ public class BranchDAO {
         return query.executeUpdate(conn, dbUtil) > 0;
     }
 
-    public ResultSet selectBranches(Connection conn,Branch branch) throws SQLException 
+    public ResultSet selectBranches(Connection conn,int bankId) throws SQLException 
     {
     	Map<String,Object[]> conditions = new HashMap<>();
-    	conditions.put("bank_id", new Object[] {"=",branch.getBank_id()});
+    	conditions.put("bank_id", new Object[] {"=",bankId});
     	
         QueryUtil query = QueryUtil.create()
                 .select("*")
@@ -118,7 +117,7 @@ public class BranchDAO {
     
     public String changeName(String key)
     {
-    	System.out.println(key);
+//    	System.out.println(key);
     	if(key.equals("branches"))
     	{
     		return "b."+key.substring(0,key.length()-2)+"_id";
@@ -195,7 +194,7 @@ public class BranchDAO {
         return query.executeUpdate(conn,  dbUtil) > 0;
     }
     
-    private void moveAccounts(Connection conn,int branchId)
+    private void moveAccounts(Connection conn,int branchId) throws SQLException
     {
     	BankDAO bankDAO = new BankDAO();
     	HashMap<String, Integer> branchMap = new HashMap<>();
@@ -214,7 +213,7 @@ public class BranchDAO {
 				account.setAccNo(rs.getInt("acc_number"));
 				account.setAccType(rs.getInt("acc_type"));
 				account.setAccStatus(rs.getInt("acc_status"));
-				account.setAccBalance(rs.getDouble("acc_balance"));
+				account.setAccBalance(rs.getBigDecimal("acc_balance"));
 				account.setUserId(rs.getInt("user_id"));
 				if(rsBank.next())
 				{
@@ -223,9 +222,7 @@ public class BranchDAO {
 				
 				accountDAO.updateAccount(conn, account);
 			}
-		} catch (SQLException e) {
-			e.printStackTrace();
-		}
+		} 
 		finally{
 			dbUtil.close(null, null, rsBank);
 			dbUtil.close(null, null, rs);
@@ -233,13 +230,5 @@ public class BranchDAO {
     	
     }
     
-    public Branch extractBranchDetails(JsonObject jsonRequest,Branch branch) 
-    {
-    	branch.setName(jsonRequest.get("branch_name").getAsString());
-        branch.setAddress(jsonRequest.get("branch_address").getAsString());
-        branch.setManager_id(jsonRequest.get("manager_id").getAsInt());
-        
-		return branch;
-    
-    }
+   
 }

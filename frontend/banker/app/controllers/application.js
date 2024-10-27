@@ -1,8 +1,9 @@
 import Ember from 'ember';
+import { methods } from '../utils/util';
 
 export default Ember.Controller.extend({
   session: Ember.inject.service('session'),
-  branchesService: Ember.inject.service('branches'),
+  fetchService: Ember.inject.service('fetch'),
   userId: Ember.computed(() => {
     let value = `; ${document.cookie}`;
     let parts = value.split(`; ${'sessionData'}=`);
@@ -17,8 +18,14 @@ export default Ember.Controller.extend({
     return authRoutes.includes(this.get('currentRouteName'));
   }),
   getBranchId(userId) {
+    let bankId=localStorage.getItem('bankId');
+    let url = `http://localhost:8080/banker/api/v1/`;
+      if(bankId!="*")
+      {
+        url=url +`banks/${bankId}`;
+      }
     this.set('bankId',localStorage.getItem('bankId'));
-    this.get('branchesService').fetchBranches(this.get('bankId')).then((response) => {
+    this.get('fetchService').fetch(url,methods.GET).then((response) => {
       this.set('branchNames', response);
     }).catch((error) => {
       console.error("Failed to load branches:", error);

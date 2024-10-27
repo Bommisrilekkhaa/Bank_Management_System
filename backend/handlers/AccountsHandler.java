@@ -7,11 +7,10 @@ import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Set;
-import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 import javax.servlet.ServletException;
-import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
@@ -33,10 +32,8 @@ import servlets.ControllerServlet;
 import utility.DbUtil;
 import utility.JsonUtil;
 import utility.LoggerConfig;
-import utility.SessionUtil;
 
-@SuppressWarnings("serial")
-public class AccountsHandler extends HttpServlet {
+public class AccountsHandler  {
     private Logger logger = LoggerConfig.initializeLogger();
     private AccountDAO accountDAO = new AccountDAO();
     private UserDAO userDAO = new UserDAO();
@@ -46,8 +43,8 @@ public class AccountsHandler extends HttpServlet {
     private DbUtil dbUtil = new DbUtil();
 
    
-    public void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        SessionUtil.doOptions(request, response);
+    public void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException ,SQLException{
+       
         String path = request.getRequestURI();
         String cacheKey = path.substring(path.indexOf("/banks"));
         String role = request.getSession(false).getAttribute("user_role").toString();
@@ -74,11 +71,12 @@ public class AccountsHandler extends HttpServlet {
         } else {
         	ResultSet rs=null;
         	ResultSet rsBranch=null;
-            try{
+            try {
             	conn = dbUtil.connect();
                 JsonArray jsonArray = new JsonArray();
                 rs = accountDAO.selectAllAccounts(conn, ControllerServlet.pathMap);
-                List<Account> accounts = accountDAO.convertResultSetToList(rs);
+//                List<Account> accounts = accountDAO.convertResultSetToList(rs);
+                List<Account> accounts = JsonUtil.convertResultSetToList(rs, Account.class);
 
                 if (!accounts.isEmpty()) {
                     for (Account account : accounts) {
@@ -115,34 +113,40 @@ public class AccountsHandler extends HttpServlet {
                 response.setContentType("application/json");
                 JsonUtil.sendJsonResponse(response, jsonArray);
                 logger.info("Data fetched from database for path: " + cacheKey);
-            } catch (SQLException e) {
-                logger.log(Level.SEVERE, "Error fetching account details: " + e.getMessage(), e);
-                JsonUtil.sendErrorResponse(response, "Error fetching account details: " + e.getMessage());
-            }
-            finally {
+            }finally {
+            	
             	dbUtil.close(conn, null, rs);
             	dbUtil.close(null, null, rsBranch);
             }
-        }
+        
+    	}
         if (jedis != null) {
             jedis.close();
         }
     }
 
   
-    public void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        SessionUtil.doOptions(request, response);
+    public void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException,SQLException {
+       
         String[] path = request.getRequestURI().substring(request.getRequestURI().indexOf("banks")).split("/");
         String cacheKey = "/" + path[0] + "/" + path[1] + "*/" + path[path.length - 1];
-
         try {
            	conn = dbUtil.connect();
-            JsonObject jsonRequest = JsonUtil.parseJsonRequest(request);
-            Account newAccount = accountDAO.extractAccountDetails(jsonRequest, request);
+            String body = request.getReader().lines().collect(Collectors.joining(System.lineSeparator()));
+            
+            Account newAccount = (Account) JsonUtil.parseRequest(body,Account.class);
+            User user = (User) JsonUtil.parseRequest(body,User.class);
+//            JsonObject jsonRequest = JsonUtil.parseJsonRequest(request);
+//            Account newAccount = accountDAO.extractAccountDetails(jsonRequest, request);
             newAccount.setBranchId(ControllerServlet.pathMap.get("branches"));
 
+            
             if (request.getSession(false).getAttribute("user_role").equals("CUSTOMER")) {
                 newAccount.setUserId((Integer) request.getSession(false).getAttribute("user_id"));
+            }
+            else {
+                	newAccount.setUserId(userDAO.getUserId(dbUtil.connect(), user.getUsername()).getUser_id());
+                	
             }
 
             if (!accountDAO.checkAccount(newAccount)) {
@@ -163,26 +167,28 @@ public class AccountsHandler extends HttpServlet {
                 JsonUtil.sendErrorResponse(response, "Account already exists");
                 logger.warning("Account already exists for path: " + cacheKey);
             }
-        } catch (SQLException e) {
-            logger.log(Level.SEVERE, "Error processing request: " + e.getMessage(), e);
-            JsonUtil.sendErrorResponse(response, "Error processing request: " + e.getMessage());
-        } finally {
-            if (jedis != null) {
-                jedis.close();
-            }
-           dbUtil.close(conn, null, null);
-            
         }
+          finally {
+            	
+            	if (jedis != null) {
+            		jedis.close();
+            	}
+            	dbUtil.close(conn, null, null);
+            }
+            
     }
 
     
-    public void doPut(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        SessionUtil.doOptions(request, response);
-        JsonObject jsonRequest = JsonUtil.parseJsonRequest(request);
-
+    public void doPut(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException,SQLException {
+      
+//        JsonObject jsonRequest = JsonUtil.parseJsonRequest(request);
         try {
            	conn = dbUtil.connect();
-            Account newAccount = accountDAO.extractAccountDetails(jsonRequest, request);
+           	String body = request.getReader().lines().collect(Collectors.joining(System.lineSeparator()));
+            
+            Account newAccount = (Account) JsonUtil.parseRequest(body,Account.class);
+           
+//            Account newAccount = accountDAO.extractAccountDetails(jsonRequest, request);
             newAccount.setBranchId(ControllerServlet.pathMap.get("branches"));
             newAccount.setAccNo(ControllerServlet.pathMap.get("accounts"));
 
@@ -196,43 +202,44 @@ public class AccountsHandler extends HttpServlet {
                     update(conn, newAccount, request, response);
                 }
             }
-        } catch (SQLException e) {
-            logger.log(Level.SEVERE, "Error updating account: " + e.getMessage(), e);
-            JsonUtil.sendErrorResponse(response, "Error updating account: " + e.getMessage());
-        } finally {
-            if (jedis != null) {
-                jedis.close();
-            }
-            dbUtil.close(conn, null, null);
-            
+        }finally {
+        	
+        	if (jedis != null) {
+        		jedis.close();
+        	}
+        	dbUtil.close(conn, null, null);
         }
+            
     }
 
     private void update(Connection conn, Account newAccount, HttpServletRequest request, HttpServletResponse response) throws SQLException, IOException {
         String[] path = request.getRequestURI().substring(request.getRequestURI().indexOf("banks")).split("/");
         String cacheKey1 = "/" + path[0] + "/" + path[1] + "*/" + path[path.length - 2] + "/" + path[path.length - 1];
         String cacheKey2 = "/" + path[0] + "/" + path[1] + "*/" + path[path.length - 2];
-
-        if (accountDAO.updateAccount(conn, newAccount)) {
-            jedis = ControllerServlet.pool.getResource();
-            Set<String> keys = jedis.keys(cacheKey1);
-            if (!keys.isEmpty()) {
-                jedis.del(keys.toArray(new String[0]));
-                logger.info("Deleted cache keys: " + keys);
-            }
-            keys = jedis.keys(cacheKey2);
-            if (!keys.isEmpty()) {
-                jedis.del(keys.toArray(new String[0]));
-                logger.info("Deleted cache keys: " + keys);
-            }
-            JsonUtil.sendSuccessResponse(response, "Account updated successfully");
-            logger.info("Account updated successfully for path: " + cacheKey1);
-        } else {
-            JsonUtil.sendErrorResponse(response, "Error updating account");
-            logger.warning("Failed to update account for path: " + cacheKey1);
-        }
-        if (jedis != null) {
-            jedis.close();
+        try {
+	        if (accountDAO.updateAccount(conn, newAccount)) {
+	            jedis = ControllerServlet.pool.getResource();
+	            Set<String> keys = jedis.keys(cacheKey1);
+	            if (!keys.isEmpty()) {
+	                jedis.del(keys.toArray(new String[0]));
+	                logger.info("Deleted cache keys: " + keys);
+	            }
+	            keys = jedis.keys(cacheKey2);
+	            if (!keys.isEmpty()) {
+	                jedis.del(keys.toArray(new String[0]));
+	                logger.info("Deleted cache keys: " + keys);
+	            }
+	            JsonUtil.sendSuccessResponse(response, "Account updated successfully");
+	            logger.info("Account updated successfully for path: " + cacheKey1);
+	        } else {
+	            JsonUtil.sendErrorResponse(response, "Error updating account");
+	            logger.warning("Failed to update account for path: " + cacheKey1);
+	        }
+        }finally {
+        	
+        	if (jedis != null) {
+        		jedis.close();
+        	}
         }
     }
 }

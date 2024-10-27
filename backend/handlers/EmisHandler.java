@@ -6,11 +6,9 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.List;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import javax.servlet.ServletException;
-import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
@@ -27,10 +25,8 @@ import servlets.ControllerServlet;
 import utility.DbUtil;
 import utility.JsonUtil;
 import utility.LoggerConfig;
-import utility.SessionUtil;
 
-@SuppressWarnings("serial")
-public class EmisHandler extends HttpServlet {
+public class EmisHandler  {
 
     private Logger logger = LoggerConfig.initializeLogger();
     private EmiDAO emiDAO = new EmiDAO();
@@ -40,8 +36,8 @@ public class EmisHandler extends HttpServlet {
     private DbUtil dbUtil = new DbUtil();
 
    
-    public void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        SessionUtil.doOptions(request, response);
+    public void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException, SQLException {
+        
 
         String path = request.getRequestURI();
         String cacheKey = path.substring(path.indexOf("/banks"));
@@ -70,7 +66,7 @@ public class EmisHandler extends HttpServlet {
                     logger.info("Loan status is approved. Fetching EMI details.");
                     
                    rs = emiDAO.selectAllEmis(conn, ControllerServlet.pathMap);
-                    List<Emi> emis = emiDAO.convertResultSetToList(rs);
+                   List<Emi> emis= JsonUtil.convertResultSetToList(rs, Emi.class);
                     
                     JsonArray jsonArray = new JsonArray();
                     if (!emis.isEmpty()) {
@@ -100,9 +96,6 @@ public class EmisHandler extends HttpServlet {
                     logger.warning("Loan ID: " + newEmi.getLoan_id() + " is not in approved status.");
                     JsonUtil.sendErrorResponse(response, "Loan status is not approved.");
                 }
-            } catch (SQLException e) {
-                logger.log(Level.SEVERE, "Error fetching EMI details", e);
-                JsonUtil.sendErrorResponse(response, "Error fetching EMI details: " + e.getMessage());
             } finally {
                 if (jedis != null) {
                     jedis.close();
@@ -113,7 +106,7 @@ public class EmisHandler extends HttpServlet {
         }
     }
 
-    private boolean checkLoanStatus(Connection conn, Emi emi){
+    private boolean checkLoanStatus(Connection conn, Emi emi) throws SQLException{
         HashMap<String, Integer> loanMap = new HashMap<>();
         loanMap.put("loans", emi.getLoan_id());
         loanMap.put("l.loan_status", LoanStatus.APPROVED.getValue());
@@ -124,8 +117,6 @@ public class EmisHandler extends HttpServlet {
 			rs = loanDao.selectAllLoans(conn, loanMap);
 			isApproved= rs.next();
         
-		} catch (SQLException e) {
-			e.printStackTrace();
 		}
 		finally {
 			dbUtil.close(null, null, rs);

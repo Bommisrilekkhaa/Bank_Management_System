@@ -2,6 +2,7 @@ package servlets;
 
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
+import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -13,13 +14,13 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-
+import Exception.CustomExceptions.CustomIllegalAccessException;
+import Exception.CustomExceptions.CustomSQLException;
 import enums.Resources;
 import enums.UserRole;
 import redis.clients.jedis.JedisPool;
 import utility.JsonUtil;
 import utility.LoggerConfig;
-import utility.SessionUtil;
 
 public class ControllerServlet extends HttpServlet {
     private static final long serialVersionUID = 1L;
@@ -27,17 +28,19 @@ public class ControllerServlet extends HttpServlet {
     public static List<String> resources = Arrays.asList(Resources.BANKS.toString().toLowerCase(),Resources.BRANCHES.toString().toLowerCase(),Resources.ACCOUNTS.toString().toLowerCase(),Resources.TRANSACTIONS.toString().toLowerCase(),Resources.LOANS.toString().toLowerCase(),Resources.EMIS.toString().toLowerCase(),Resources.USERS.toString().toLowerCase(),Resources.DASHBOARD.toString().toLowerCase());
     public static HashMap<String, Integer> pathMap;
     public static JedisPool pool = null;
-
+   
+    
     public static void initializeCache(Logger logger) {
         pool = new JedisPool("localhost", 6379);
         logger.info("Redis cache initialized.");
     }
 
-    @Override
-    public void destroy() {
-        if (pool != null) {
-            pool.close();
-            logger.info("Redis pool closed.");
+    public void destroying() {
+    	if (pool != null) 
+    	{
+	      pool.close();
+	        logger.info("Pool is Closed");
+	       
         }
     }
 
@@ -46,49 +49,79 @@ public class ControllerServlet extends HttpServlet {
     	
         initializeCache(logger);
         pathMap = new LinkedHashMap<>();
-        SessionUtil.doOptions(request, response);
+        
         String[] path = request.getRequestURI().split("/");
         System.out.println(request.getRequestURI());
         String method = request.getMethod();
         String reqServlet = "";
         logger.info("Request URI: " + request.getRequestURI());
         logger.info("HTTP Method: " + method);
-
         try {
-            if (path.length >= 4) {
-                if (!(path[path.length - 1].contains("auth") || path[path.length - 1].equals("banks"))) {
-                    try {
-                        String role = (String) request.getSession(false).getAttribute("user_role");
-                        logger.info("User role: " + role);
 
-                        if (roleValidation(role, method, path)) {
-                            try {
-                                reqServlet = pathValidation(path);
-                                logger.info("Validated servlet path: " + reqServlet);
-                            } catch (IllegalAccessException e) {
-                                logger.log(Level.SEVERE, "Path validation failed.", e);
-                            }
-                        } else {
-                            logger.warning("Role validation failed.");
-                            response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-                            return;
-                        }
-                    } catch (NullPointerException e) {
-                        logger.log(Level.WARNING, "No session found: User not logged in.", e);
-                        JsonUtil.sendErrorResponse(response, "No Cookies Found! Login to Proceed");
-                    }
-                } else {
-                    reqServlet = path[4];
-                }
-            } else {
-                throw new IllegalAccessException("Invalid URL");
-            }
-        } catch (IllegalAccessException e) {
-            logger.log(Level.SEVERE, "Invalid URL format.", e);
+	            if (path.length >= 4) {
+	                if (!(path[path.length - 1].contains("auth") || path[path.length - 1].equals("banks"))) {
+
+	                        String role = (String) request.getSession(false).getAttribute("user_role");
+	                        logger.info("User role: " + role);
+	
+	                        if (roleValidation(role, method, path)) {
+
+	                                reqServlet = pathValidation(path);
+	                                logger.info("Validated servlet path: " + reqServlet);
+	                        } else {
+	                            throw new IllegalAccessException("Illegal Access for "+role+"!");
+	                            
+	                        }
+	                        
+	                } else {
+	                    reqServlet = path[4];
+	                }
+	            } else {
+	                throw new IllegalAccessException("Invalid request URL!");
+	            }
+	            
+	        reflection(reqServlet, method, request, response);
+	        pathMap = new LinkedHashMap<>();
         }
-
-        reflection(reqServlet, method, request, response);
-        pathMap = new LinkedHashMap<>();
+        catch(SQLException e)
+        {
+        	try {
+        		logger.log(Level.SEVERE, "Error fetching "+reqServlet+" details: " + e.getMessage(), e);
+                throw new CustomSQLException("Error fetching "+reqServlet+" details", e);
+        	}
+        	catch(CustomSQLException ex)
+        	{
+        		JsonUtil.sendErrorResponse(response,ex.getMessage());
+        		
+        	}
+        }
+        catch (NullPointerException e) {
+            logger.log(Level.WARNING, "No session found: User not logged in.", e);
+            JsonUtil.sendErrorResponse(response, "No Cookies Found! Login to Proceed");
+        }
+        catch(IllegalAccessException e)
+        {
+        	try {
+        		logger.log(Level.SEVERE, "Illegal Access: " + e.getMessage(), e);
+                throw new CustomIllegalAccessException(e.getMessage());
+        	}
+        	catch(CustomIllegalAccessException ex)
+        	{
+        		JsonUtil.sendErrorResponse(response,ex.getMessage());
+        		
+        	}
+        } 
+        catch (ClassNotFoundException | InstantiationException | IllegalArgumentException | 
+        	       InvocationTargetException | NoSuchMethodException | SecurityException e) {
+        	 logger.log(Level.WARNING, "Error during reflection: ", e);
+             JsonUtil.sendErrorResponse(response, "Error during reflection: "+e);
+        
+        	   
+        }
+        finally {
+        	destroying();
+        }
+        
     }
 
     private boolean roleValidation(String role, String method, String[] path) 
@@ -168,11 +201,11 @@ public class ControllerServlet extends HttpServlet {
         return firstLetter.toUpperCase() + path.substring(1);
     }
 
-    private void reflection(String reqServlet, String method, HttpServletRequest request, HttpServletResponse response) 
+    private void reflection(String reqServlet, String method, HttpServletRequest request, HttpServletResponse response)  throws SQLException, ClassNotFoundException, InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException, NoSuchMethodException, SecurityException
     {
-        try {
+        
             Class<?> servlets = Class.forName("handlers." + buildClassName(reqServlet)+"Handler");
-            HttpServlet servlet = (HttpServlet) servlets.getDeclaredConstructor().newInstance();
+            Object servlet =  servlets.getDeclaredConstructor().newInstance();
             
             switch (method) {
                 case "GET":
@@ -193,17 +226,16 @@ public class ControllerServlet extends HttpServlet {
             servlets.getDeclaredMethod(method, HttpServletRequest.class, HttpServletResponse.class)
                     .invoke(servlet, request, response);
 
-        } catch (ClassNotFoundException | NoSuchMethodException | SecurityException | IllegalAccessException | IllegalArgumentException | InvocationTargetException | InstantiationException e) {
-            logger.log(Level.SEVERE, "Error during reflection for servlet invocation.", e);
-        }
+        
+      
     }
     
     private boolean customerRouteAccess(String[] path,String method)
     {
-    	if (!path[path.length - 1].equals("banks") || !path[path.length - 2].equals("branches") || 
-    			!path[path.length - 1].equals("users") ||  !path[path.length - 2].equals("users")) 
+    	if (!path[path.length - 1].equals("banks") && 
+    			!path[path.length - 1].equals("users") &&  !path[path.length - 2].equals("users")) 
         {
-    		if(path[path.length - 1].equals("branches") || path[path.length - 2].equals("banks"))
+    		if(path[path.length - 1].equals("branches") || path[path.length - 2].equals("banks") ||path[path.length - 2].equals("branches"))
     		{
     			return method.equals("GET");
     		}
@@ -215,8 +247,8 @@ public class ControllerServlet extends HttpServlet {
     
     private boolean managerRouteAccess(String[] path,String method)
     {
-    	 if ( !path[path.length - 1].equals("banks") || !path[path.length - 1].equals("branches") || 
-    			 !path[path.length - 1].equals("users") ||  !path[path.length - 2].equals("users")) 
+    	 if ( !path[path.length - 1].equals("banks") && !path[path.length - 1].equals("branches") && 
+    			 !path[path.length - 1].equals("users") &&  !path[path.length - 2].equals("users")) 
          {
              if(path[path.length - 2].equals("branches"))
              {
@@ -234,7 +266,7 @@ public class ControllerServlet extends HttpServlet {
     
     private boolean adminRouteAccess(String[] path,String method)
     {
-    	 if ( !path[path.length - 1].equals("banks") || !path[path.length - 1].equals("users") || 
+    	 if ( !path[path.length - 1].equals("banks") && 
     			 !path[path.length - 2].equals("users")) 
          {
              return true;

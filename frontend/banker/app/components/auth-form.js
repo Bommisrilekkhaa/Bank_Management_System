@@ -1,8 +1,7 @@
 import Ember from 'ember';
-
+import {methods,role} from '../utils/util';
 export default Ember.Component.extend({
-  banksService: Ember.inject.service('banks'),
-  accountsService: Ember.inject.service('accounts'),
+  fetchService: Ember.inject.service('fetch'),
   username: '',
   password: '',
   selectedRole: '',
@@ -31,7 +30,8 @@ export default Ember.Component.extend({
   },
 
   loadBanks() {
-    this.get('banksService').fetchBanks().then((response) => {
+    let  url= `http://localhost:8080/banker/api/v1/banks`;
+    this.get('fetchService').fetch(url,methods.GET).then((response) => {
       this.set('bankNames', response);
     }).catch((error) => {
       console.error("Failed to load banks:", error);
@@ -101,16 +101,19 @@ export default Ember.Component.extend({
 
       this.setBankId();
       this.checkStorage();
+      var dob = this.get('dob');
+      var date = dob ? new Date(dob) : null;
+      var formattedDate = date && !isNaN(date.getTime()) ? date.toISOString().slice(0, 10) : 'Invalid Date';
       
       const credentials = {
         username: this.get('username'),
         password: this.get('password'),
-        selectedRole: this.get('selectedRole'),
-        name: this.get('name'),
-        dob: this.get('dob'),
-        addr: this.get('addr'),
-        pno: this.get('pno'),
-        bankId: this.get('BankId')
+        user_role: (this.get('selectedRole')==role.ADMIN)?0:((this.get('selectedRole')==role.MANAGER?1:2)),
+        full_name: this.get('name'),
+        date_of_birth: formattedDate,
+        user_address: this.get('addr'),
+        user_phonenumber: this.get('pno'),
+        bank_id: this.get('BankId')
       };
 
       this.sendAction(action, credentials);

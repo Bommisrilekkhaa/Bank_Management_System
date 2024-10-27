@@ -1,8 +1,7 @@
 import Ember from 'ember';
-import { role } from '../../../utils/util';
+import { role,methods} from '../../../utils/util';
 export default Ember.Controller.extend({
-branchesService: Ember.inject.service('branches'),
-banksService: Ember.inject.service('banks'),
+fetchService: Ember.inject.service('fetch'),
 bankId:localStorage.getItem('bankId'),
 branch:[],
 banks:[], 
@@ -17,19 +16,32 @@ role:Ember.computed(()=>{
   }
 }),
 loadBanks(){
-    this.get('banksService').fetchBank(localStorage.getItem('bankId')).then((response) => {
-      console.log(response);
-      this.set('banks', response);
-      this.set('branchId',localStorage.getItem('branchId'));
-      localStorage.setItem('branchId',this.get('banks')[0].main_branch_id)
-      this.get('branchesService').fetchBranch(this.get('bankId')).then((response) => {
+  let bankId = localStorage.getItem('bankId');
+  let url = `http://localhost:8080/banker/api/v1/`;
+  if(bankId!="*")
+  {
+    url=url +`banks/${bankId}`;
+  }
+    this.get('fetchService').fetch(url,methods.GET).then((response) => {
         console.log(response);
-        localStorage.setItem('branchId',this.get('branchId'));
-        this.set('branch', response);
-        this.set('branch',this.get('branch')[0]);
-      }).catch((error) => {
-        console.error("Failed to load banks:", error);
-      });
+        this.set('banks', response);
+        this.set('branchId',localStorage.getItem('branchId'));
+        localStorage.setItem('branchId',this.get('banks')[0].main_branch_id)
+
+        let branchId = localStorage.getItem('branchId');
+        if(branchId!="*")
+          {
+            url=url +`/branches/${branchId}`;
+          }
+          
+        this.get('fetchService').fetch(url,methods.GET).then((response) => {
+          console.log(response);
+          localStorage.setItem('branchId',this.get('branchId'));
+          this.set('branch', response);
+          this.set('branch',this.get('branch')[0]);
+        }).catch((error) => {
+          console.error("Failed to load banks:", error);
+        });
 
     }).catch((error) => {
       console.error("Failed to load banks:", error);

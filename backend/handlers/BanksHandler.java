@@ -4,12 +4,12 @@ import java.io.IOException;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.List;
 import java.util.Set;
-import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 import javax.servlet.ServletException;
-import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
@@ -25,10 +25,8 @@ import servlets.ControllerServlet;
 import utility.DbUtil;
 import utility.JsonUtil;
 import utility.LoggerConfig;
-import utility.SessionUtil;
 
-@SuppressWarnings("serial")
-public class BanksHandler extends HttpServlet 
+public class BanksHandler
 {
 	private Logger logger=LoggerConfig.initializeLogger(); 
 	private BankDAO bankDAO = new BankDAO();
@@ -38,9 +36,8 @@ public class BanksHandler extends HttpServlet
     private DbUtil dbUtil = new DbUtil();
   
    
-    public void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException 
+    public void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException, SQLException 
     {
-        SessionUtil.doOptions(request,response);
         String path = request.getRequestURI();
         String cacheKey = path.substring(path.indexOf("/banks")); 
 
@@ -59,26 +56,26 @@ public class BanksHandler extends HttpServlet
             try{
             	conn = dbUtil.connect();
                 rs = bankDAO.getBanks(conn, ControllerServlet.pathMap);
+                List<Bank> banks = JsonUtil.convertResultSetToList(rs, Bank.class);
                 JsonArray jsonArray = new JsonArray();
-                while(rs.next()) {
+
+                if (!banks.isEmpty()) {
+                    for (Bank bank : banks) {
                     JsonObject jsonResponse = new JsonObject();
-                    jsonResponse.addProperty("bank_id", rs.getInt("bank_id"));
-                    jsonResponse.addProperty("bank_name", rs.getString("bank_name"));
-                    jsonResponse.addProperty("bank_code", rs.getString("bank_code"));
-                    jsonResponse.addProperty("admin_id", rs.getInt("admin_id"));
-                    jsonResponse.addProperty("admin_name", userDao.getUsername(conn, rs.getInt("admin_id")).getFullname());
-                    jsonResponse.addProperty("main_branch_id", rs.getInt("main_branch_id"));
+                    jsonResponse.addProperty("bank_id", bank.getBank_id());
+                    jsonResponse.addProperty("bank_name", bank.getBank_name());
+                    jsonResponse.addProperty("bank_code", bank.getBank_code());
+                    jsonResponse.addProperty("admin_id", bank.getAdmin_id());
+                    jsonResponse.addProperty("main_branch_id", bank.getMain_branch_id());
+                    jsonResponse.addProperty("admin_name", userDao.getUsername(conn, bank.getAdmin_id()).getFullname());
                     jsonArray.add(jsonResponse);
+                    }
                 }
                 jedis.set(cacheKey, jsonArray.toString());
                 response.setContentType("application/json");
                 JsonUtil.sendJsonResponse(response, jsonArray);
                 logger.info("Data fetched from DB and cached in Redis for key: " + cacheKey);
             } 
-            catch (SQLException e) {
-                logger.log(Level.SEVERE, "Error fetching bank details from DB", e);
-                JsonUtil.sendErrorResponse(response, "Error fetching bank details: " + e.getMessage());
-            }
             finally {
             	dbUtil.close(conn, null, rs);
             }
@@ -89,16 +86,17 @@ public class BanksHandler extends HttpServlet
     }
 
     
-    public void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException 
+    public void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException, SQLException 
     {
-        SessionUtil.doOptions(request, response);
         String path = request.getRequestURI();
         String cacheKey = path.substring(path.indexOf("/banks"));
 
         try {
         	 conn = dbUtil.connect();
-            JsonObject jsonRequest = JsonUtil.parseJsonRequest(request);
-            Bank newBank = bankDAO.extractBankDetails(jsonRequest);
+        	 String body = request.getReader().lines().collect(Collectors.joining(System.lineSeparator()));
+             
+        	 Bank newBank = (Bank) JsonUtil.parseRequest(body,Bank.class);
+            
             if (bankDAO.insertBank(conn, newBank)) {
                 jedis = ControllerServlet.pool.getResource();
                 jedis.del(cacheKey);
@@ -113,10 +111,7 @@ public class BanksHandler extends HttpServlet
                 JsonUtil.sendErrorResponse(response, "Error inserting bank");
                 logger.warning("Error inserting bank");
             }
-        } catch (SQLException e) {
-            logger.log(Level.SEVERE, "Error inserting bank", e);
-            JsonUtil.sendErrorResponse(response, "Error processing request: " + e.getMessage());
-        } finally {
+        }  finally {
             if (jedis != null) {
                 jedis.close();
             }
@@ -125,19 +120,16 @@ public class BanksHandler extends HttpServlet
     }
 
    
-    public void doPut(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException 
+    public void doPut(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException, SQLException 
     {
-        SessionUtil.doOptions(request, response);
         String path = request.getRequestURI();
         String cacheKey = path.substring(path.indexOf("/banks"));
 
-        JsonObject jsonRequest = JsonUtil.parseJsonRequest(request);
-        Bank bank = new Bank();
-        bank.setBank_id(ControllerServlet.pathMap.get("banks"));
-        bank.setBank_name(jsonRequest.get("bank_name").getAsString());
-        bank.setAdmin_id(jsonRequest.get("admin_id").getAsInt());
-        bank.setMain_branch_id(jsonRequest.get("main_branch_id").getAsInt());
-
+        String body = request.getReader().lines().collect(Collectors.joining(System.lineSeparator()));
+        
+   	 	Bank bank = (Bank) JsonUtil.parseRequest(body,Bank.class);
+       
+   	 	bank.setBank_id(ControllerServlet.pathMap.get("banks"));
         try {
         	conn = dbUtil.connect();
             if (bankDAO.updateBank(conn, bank)) {
@@ -150,9 +142,6 @@ public class BanksHandler extends HttpServlet
                 JsonUtil.sendErrorResponse(response, "Error updating bank");
                 logger.warning("Error updating bank");
             }
-        } catch (SQLException e) {
-            logger.log(Level.SEVERE, "Error updating bank", e);
-            JsonUtil.sendErrorResponse(response, "Error updating bank: " + e.getMessage());
         } finally {
             if (jedis != null) {
                 jedis.close();

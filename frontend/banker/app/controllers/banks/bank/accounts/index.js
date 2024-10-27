@@ -1,9 +1,8 @@
 import Ember from 'ember';
-
+import {methods} from '../../../../utils/util';
 export default Ember.Controller.extend({
   branchSelection: Ember.inject.service('branch-select'),
-  branchesService: Ember.inject.service('branches'),
-  accountsService: Ember.inject.service('accounts'),
+  fetchService: Ember.inject.service('fetch'),
   bankId: localStorage.getItem('bankId'),
 
   init() {
@@ -22,13 +21,27 @@ export default Ember.Controller.extend({
   accounts: [],
 
   loadAccounts() {
-    this.get('accountsService').fetchAccounts(localStorage.getItem('bankId')).then((response) => {
+    let url = `http://localhost:8080/banker/api/v1/`;
+    let branchId = localStorage.getItem("branchId");
+    let bankId = localStorage.getItem('bankId');
+    if(bankId!="*")
+    {
+      url=url +`banks/${bankId}`;
+    }
+    if(branchId!='*')
+    {
+      url=url+`/branches/${branchId}`;
+    }
+    url=url+`/accounts`;
+
+    this.get('fetchService').fetch(url,methods.GET).then((response) => {
       console.log(response);
       this.set('accounts', response);
     }).catch((error) => {
       this.set('accounts', []);
       console.error("Failed to load accounts:", error);
     });
+ 
   },
 
   actions: {

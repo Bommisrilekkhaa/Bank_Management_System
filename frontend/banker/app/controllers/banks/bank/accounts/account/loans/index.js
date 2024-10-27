@@ -1,11 +1,29 @@
 import Ember from 'ember';
-
+import {methods} from '../../../../../../utils/util';
 export default Ember.Controller.extend({
-  loansService: Ember.inject.service('loans'),
+  fetchService: Ember.inject.service('fetch'),
   loans: [],
   loadLoans() {
-    console.log(this.get('accNo'));
-    this.get('loansService').fetchLoans(this.get('accNo'),this.get('bankId')).then((response) => {
+    let url = `http://localhost:8080/banker/api/v1/`;
+    let bankId = localStorage.getItem("bankId");
+    let branchId = localStorage.getItem("branchId");
+    let accno = localStorage.getItem('accNo');
+    if(bankId!="*")
+    {
+      url=url +`banks/${bankId}`;
+    }
+    if(branchId!='*')
+    {
+      url=url+`/branches/${branchId}`;
+    }
+    if(accno!="*")
+    {
+      url = url+`/accounts/${accno}`;
+    }
+    url=url+`/loans`;
+
+    // console.log(this.get('accNo'));
+    this.get('fetchService').fetch(url,methods.GET).then((response) => {
       console.log(response);
       this.set('loans', response);
     }).catch((error) => {

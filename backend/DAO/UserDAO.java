@@ -1,10 +1,8 @@
 package DAO;
 
 import java.sql.Connection;
-import java.sql.Date;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import com.google.gson.JsonObject;
 
 import enums.Status;
 import enums.UserRole;
@@ -15,11 +13,7 @@ import utility.DbUtil;
 import utility.QueryUtil;
 import utility.SessionUtil;
 
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 public class UserDAO {
@@ -91,7 +85,7 @@ public class UserDAO {
 	        QueryUtil query = QueryUtil.create()
 	                .insert("users")
 	                .columns("full_name", "date_of_birth", "user_phonenumber", "user_address", "user_role", "username", "password", "user_status")
-	                .values(user.getFullname(),user.getDate_of_birth(),
+	                .values(user.getFullname(),new java.sql.Date(user.getDate_of_birth().getTime()),
 		             user.getUser_phonenumber(),
 		             user.getUser_address(),
 		             user.getUser_role(),
@@ -122,29 +116,7 @@ public class UserDAO {
 	        return query.executeQuery(conn, db);
 	    }
 	    
-	    public List<User> convertResultSetToList(ResultSet rs) throws SQLException 
-	    {
-	        List<User> userList = new ArrayList<>();
-
-	        while (rs.next()) 
-	        {
-	            User user = new User();
-	            user.setUser_id(rs.getInt("user_id"));
-	            user.setFullname(rs.getString("full_name"));
-	            user.setDate_of_birth(rs.getDate("date_of_birth"));
-	            user.setUser_phonenumber(rs.getString("user_phonenumber"));
-	            user.setUser_address(rs.getString("user_address"));
-	            user.setUser_role(rs.getInt("user_role"));
-	            user.setUsername(rs.getString("username"));
-	            user.setPassword(rs.getString("password"));
-	            user.setUser_status(rs.getInt("user_status"));
-	            userList.add(user);
-	        }
-	        return userList;
-	    }
-
-	    
-	    
+	
 	    public ResultSet getUnassignedManagers(Connection conn) throws SQLException
 	    {
 	    	
@@ -245,48 +217,7 @@ public class UserDAO {
 	        return query.executeUpdate(conn, db) > 0;
 	    }
 
-	    public User extractUserDetails(JsonObject jsonRequest, User user) throws ParseException {
-	        SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");  
-
-	        if (jsonRequest.has("full_name")) {
-	            user.setFullname(jsonRequest.get("full_name").getAsString());
-	        }
-
-	        if (jsonRequest.has("date_of_birth")) {
-	            Date strDate = new java.sql.Date(formatter.parse(jsonRequest.get("date_of_birth").getAsString()).getTime());
-	            user.setDate_of_birth(strDate);
-	        }
-
-	        if (jsonRequest.has("user_phonenumber")) {
-	            user.setUser_phonenumber(jsonRequest.get("user_phonenumber").getAsString());
-	        }
-
-	        if (jsonRequest.has("user_address")) {
-	            user.setUser_address(jsonRequest.get("user_address").getAsString());
-	        }
-
-	        if (jsonRequest.has("user_role")) {
-	            user.setUser_role(UserRole.valueOf(jsonRequest.get("user_role").getAsString().toUpperCase()).getValue());
-	        }
-
-	        if (jsonRequest.has("username")) {
-	            user.setUsername(jsonRequest.get("username").getAsString());
-	        }
-
-	        if (jsonRequest.has("password")) {
-	            user.setPassword(jsonRequest.get("password").getAsString());
-	        }
-	        
-	        if(jsonRequest.has("user_status"))
-	        {
-
-	            user.setUser_status(Status.valueOf(jsonRequest.get("user_status").getAsString().toUpperCase()).getValue());
-	          
-	        }
-
-	        return user;
-	    }
-		
+	   		
 		 public User getUsername(Connection conn, int userId) throws SQLException 
 		 {
 			 Map<String,Object[]> conditions = new HashMap<>();

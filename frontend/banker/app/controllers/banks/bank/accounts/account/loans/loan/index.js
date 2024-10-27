@@ -1,13 +1,33 @@
 import Ember from 'ember';
+import { methods } from '../../../../../../../utils/util';
 
 export default Ember.Controller.extend({
-    loansService: Ember.inject.service('loans'),
+    fetchService: Ember.inject.service('fetch'),
     loan:[],
     loadLoan() {
-        let accNo=localStorage.getItem('accNo');
-        let bankId=localStorage.getItem('bankId');
-        this.get('loansService').fetchLoan(accNo,bankId).then((response) => {
-          console.log(response);
+      let bankId = localStorage.getItem("bankId");
+      let url = `http://localhost:8080/banker/api/v1/`;
+      let branchId = localStorage.getItem("branchId");
+      let accno = localStorage.getItem('accNo');
+      let loanId = localStorage.getItem('loanId');
+      if(bankId!="*")
+      {
+        url=url +`banks/${bankId}`;
+      }
+      if(branchId!='*')
+      {
+        url=url+`/branches/${branchId}`;
+      }
+      if(accno!="*")
+      {
+        url = url+`/accounts/${accno}`;
+      }
+      if(loanId!="*")
+        {
+          url = url+`/loans/${loanId}`;
+        }
+        this.get('fetchService').fetch(url,methods.GET).then((response) => {
+          // console.log(response);
           this.set('loan', response);
           this.set('loan',this.get('loan')[0]);
         }).catch((error) => {
@@ -18,7 +38,6 @@ export default Ember.Controller.extend({
       actions:{
         toEmis(loan,emiAmount)
         {
-
             this.transitionToRoute("banks.bank.accounts.account.loans.loan.emi",localStorage.getItem('bankId'),loan.acc_number,loan.loan_id).then((newRoute)=>{
 
                 newRoute.controller.setProperties({

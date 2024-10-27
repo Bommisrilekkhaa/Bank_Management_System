@@ -1,7 +1,6 @@
 import Ember from 'ember';
 import { role } from '../utils/util';
 export default Ember.Component.extend({
-  loansService: Ember.inject.service('loans'),
   loans: [],
   branchId: localStorage.getItem('branchId'),
   userRole:role,

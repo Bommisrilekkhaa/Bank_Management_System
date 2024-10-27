@@ -125,9 +125,9 @@
             onblur={{action "validateRole"}}
           >
             <option value="" disabled selected>Select a role</option>
-            <option value="manager">Manager</option>
-            <option value="customer">Customer</option>
-            <option value="admin">Admin</option>
+            <option value="MANAGER">Manager</option>
+            <option value="CUSTOMER">Customer</option>
+            <option value="ADMIN">Admin</option>
           </select>
           {{#if roleError}}
             <div class="error-message">{{roleError}}</div>

@@ -1,17 +1,17 @@
 package handlers;
 
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Set;
-import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 import javax.servlet.ServletException;
-import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
@@ -31,10 +31,8 @@ import servlets.ControllerServlet;
 import utility.DbUtil;
 import utility.JsonUtil;
 import utility.LoggerConfig;
-import utility.SessionUtil;
 
-@SuppressWarnings("serial")
-public class LoansHandler extends HttpServlet {
+public class LoansHandler{
     private Logger logger = LoggerConfig.initializeLogger();
     private LoanDAO loanDAO = new LoanDAO();
     private AccountDAO accountDao = new AccountDAO();
@@ -43,9 +41,9 @@ public class LoansHandler extends HttpServlet {
     private DbUtil dbUtil = new DbUtil();
 
   
-    public void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+    public void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException ,SQLException{
         logger.info("GET request received for LoansServlet");
-        SessionUtil.doOptions(request, response);
+      
         String path = request.getRequestURI();
         String cacheKey = path.substring(path.indexOf("/banks")); 
 
@@ -69,7 +67,8 @@ public class LoansHandler extends HttpServlet {
             try {
             	conn = dbUtil.connect();
                 rs = loanDAO.selectAllLoans(conn, ControllerServlet.pathMap);
-                List<Loan> loans = loanDAO.convertResultSetToList(rs);
+                List<Loan> loans = JsonUtil.convertResultSetToList(rs, Loan.class);
+                
                 JsonArray jsonArray = new JsonArray();
 
                 if (!loans.isEmpty()) {
@@ -97,10 +96,7 @@ public class LoansHandler extends HttpServlet {
                     logger.warning("No matching loans found.");
                     JsonUtil.sendErrorResponse(response, "No matching loans found.");
                 }
-            } catch (SQLException e) {
-                logger.log(Level.SEVERE, "Error fetching loan details: " + e.getMessage(), e);
-                JsonUtil.sendErrorResponse(response, "Error fetching loan details: " + e.getMessage());
-            }
+            } 
             finally {
             	dbUtil.close(conn, null, rs);
             }
@@ -112,19 +108,37 @@ public class LoansHandler extends HttpServlet {
     }
     
   
-    public void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+    public void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException, SQLException {
         logger.info("POST request received for LoansServlet");
-        SessionUtil.doOptions(request, response);
+       
         String[] path = request.getRequestURI().substring(request.getRequestURI().indexOf("banks")).split("/");
         String cacheKey = "/" + path[0] + "/" + path[1] + "*/" + path[path.length - 1];
 
         try {
         	conn = dbUtil.connect();
-            JsonObject jsonRequest = JsonUtil.parseJsonRequest(request);
-            Loan newLoan = loanDAO.extractLoanDetails(jsonRequest, request);
+        	String body = request.getReader().lines().collect(Collectors.joining(System.lineSeparator()));
+             
+        	Loan newLoan = (Loan) JsonUtil.parseRequest(body,Loan.class);
+            
             newLoan.setAcc_no(ControllerServlet.pathMap.get("accounts"));
+            
+            if(loanDAO.checkLoans(newLoan.getAcc_no()))
+        	{
+            	newLoan.setLoan_interest(11.0);
+        	}
+        	else
+        	{
+        		
+        		newLoan.setLoan_interest(15.0);
+        	}
+	        if(newLoan.getLoan_status() < 2)
+	        {
+	        	newLoan.setLoan_availed_date(new java.sql.Date(System.currentTimeMillis()));
+	        	
+	        }
+        	
             if (checkAccountStatus(conn, newLoan)) {
-                if (!loanDAO.isLoanExists()) {
+                if (!loanDAO.isLoanExists(newLoan)) {
                     if (loanDAO.insertLoan(conn, newLoan)) {
                         jedis = ControllerServlet.pool.getResource();
                         Set<String> keys = jedis.keys(cacheKey);
@@ -145,9 +159,6 @@ public class LoansHandler extends HttpServlet {
                 logger.warning("Unauthorized account access.");
                 JsonUtil.sendErrorResponse(response, "Unauthorized Account");
             }
-        } catch (SQLException e) {
-            logger.log(Level.SEVERE, "Error processing loan insertion: " + e.getMessage(), e);
-            JsonUtil.sendErrorResponse(response, "Error processing request: " + e.getMessage());
         } finally {
             if (jedis != null) jedis.close();
             dbUtil.close(conn, null, null);
@@ -155,22 +166,28 @@ public class LoansHandler extends HttpServlet {
     }
     
    
-    public void doPut(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+    public void doPut(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException, SQLException {
         logger.info("PUT request received for LoansServlet");
-        SessionUtil.doOptions(request, response);
+     
         String[] path = request.getRequestURI().substring(request.getRequestURI().indexOf("banks")).split("/");
         String cacheKey1 = "/" + path[0] + "/" + path[1] + "*/" + path[path.length - 2] + "/" + path[path.length - 1];
         String cacheKey2 = "/" + path[0] + "/" + path[1] + "*/" + path[path.length - 2];
 
-        JsonObject jsonRequest = JsonUtil.parseJsonRequest(request);
-
         try  {
         	conn = dbUtil.connect();
-            Loan updatedLoan = loanDAO.extractLoanDetails(jsonRequest, request);
+        	String body = request.getReader().lines().collect(Collectors.joining(System.lineSeparator()));
+        	
+        	Loan updatedLoan = (Loan) JsonUtil.parseRequest(body,Loan.class);
+        	
             updatedLoan.setAcc_no(ControllerServlet.pathMap.get("accounts"));
             updatedLoan.setLoan_id(ControllerServlet.pathMap.get("loans"));
+            if(updatedLoan.getLoan_status() < 2)
+	        {
+            	updatedLoan.setLoan_availed_date(new java.sql.Date(System.currentTimeMillis()));
+	        	
+	        }
             if (checkAccountStatus(conn, updatedLoan)) {
-                if (updatedLoan.getLoan_amount() > 3000000 && 
+                if (updatedLoan.getLoan_amount().compareTo(BigDecimal.valueOf(3000000.0))==1  && 
                     updatedLoan.getLoan_status() != LoanStatus.REJECTED.getValue()) {
                     logger.warning("Loan amount exceeds limit, updating status to REJECTED.");
                     JsonUtil.sendErrorResponse(response, "Loan amount is greater than Limit!");
@@ -197,16 +214,13 @@ public class LoansHandler extends HttpServlet {
                 logger.warning("Unauthorized account access.");
                 JsonUtil.sendErrorResponse(response, "Unauthorized Account");
             }
-        } catch (SQLException e) {
-            logger.log(Level.SEVERE, "Error updating loan: " + e.getMessage(), e);
-            JsonUtil.sendErrorResponse(response, "Error updating loan: " + e.getMessage());
         } finally {
             if (jedis != null) jedis.close();
             dbUtil.close(conn, null, null);
         }
     }
 
-    private boolean checkAccountStatus(Connection conn, Loan loan) {
+    private boolean checkAccountStatus(Connection conn, Loan loan) throws SQLException {
         HashMap<String, Integer> accountMap = new HashMap<>();
         accountMap.put("accounts", loan.getAcc_no());
         accountMap.put("a.acc_status", Status.ACTIVE.getValue());
@@ -215,9 +229,7 @@ public class LoansHandler extends HttpServlet {
 		try {
 			rs = accountDao.selectAllAccounts(conn, accountMap);
 			isActive= rs.next();
-		} catch (SQLException e) {
-			e.printStackTrace();
-		}
+		} 
 		finally {
 			dbUtil.close(null, null, rs);
 		}

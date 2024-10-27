@@ -7,11 +7,10 @@ import java.sql.SQLException;
 import java.text.ParseException;
 import java.util.List;
 import java.util.Set;
-import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 import javax.servlet.ServletException;
-import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
@@ -28,10 +27,8 @@ import servlets.ControllerServlet;
 import utility.DbUtil;
 import utility.JsonUtil;
 import utility.LoggerConfig;
-import utility.SessionUtil;
 
-@SuppressWarnings("serial")
-public class UsersHandler extends HttpServlet {
+public class UsersHandler  {
     private Logger logger = LoggerConfig.initializeLogger();
     private UserDAO userDAO = new UserDAO();
     private User user = new User();
@@ -40,8 +37,8 @@ public class UsersHandler extends HttpServlet {
     private DbUtil dbUtil = new DbUtil();
 
   
-    public void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        SessionUtil.doOptions(request, response);
+    public void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException, SQLException {
+
         String adminParam = request.getParameter("filter_admin");
         String managerParam = request.getParameter("filter_manager");
 
@@ -67,32 +64,39 @@ public class UsersHandler extends HttpServlet {
             ResultSet rs=null;
             try {
             	conn = dbUtil.connect();
+                  
                 JsonArray jsonArray = new JsonArray();
+                
                 if (managerParam != null) {
-                    logger.info("Fetching unassigned managers from the database.");
+                   logger.info("Fetching unassigned managers from the database.");
                    rs = userDAO.getUnassignedManagers(conn);
+                   List<User> users = JsonUtil.convertResultSetToList(rs, User.class);
 
-                    while (rs.next()) {
-                        JsonObject jsonResponse = new JsonObject();
-                        jsonResponse.addProperty("manager_id", rs.getInt("user_id"));
-                        jsonResponse.addProperty("manager_name", rs.getString("full_name"));
-                        jsonArray.add(jsonResponse);
+                   if (!users.isEmpty()) {
+                       for (User user : users) {
+	                        JsonObject jsonResponse = new JsonObject();
+	                        jsonResponse.addProperty("manager_id",user.getUser_id());
+	                        jsonResponse.addProperty("manager_name", user.getFullname());
+	                        jsonArray.add(jsonResponse);
+                       }
                     }
                 } else if (adminParam != null) {
                     logger.info("Fetching unassigned admins from the database.");
                     rs = userDAO.getUnassignedAdmins(conn);
-
-                    while (rs.next()) {
-                        JsonObject jsonResponse = new JsonObject();
-                        jsonResponse.addProperty("admin_id", rs.getInt("user_id"));
-                        jsonResponse.addProperty("admin_name", rs.getString("full_name"));
-                        jsonArray.add(jsonResponse);
+                    List<User> users = JsonUtil.convertResultSetToList(rs, User.class);
+                    
+                    if (!users.isEmpty()) {
+                        for (User user : users) {
+	                        JsonObject jsonResponse = new JsonObject();
+	                        jsonResponse.addProperty("admin_id", user.getUser_id());
+	                        jsonResponse.addProperty("admin_name", user.getFullname());
+	                        jsonArray.add(jsonResponse);
+                        }
                     }
                 } else {
                     logger.info("Fetching all users from the database.");
                     rs = userDAO.selectAllUsers(conn);
-                    List<User> users = userDAO.convertResultSetToList(rs);
-
+                    List<User> users = JsonUtil.convertResultSetToList(rs, User.class);
                     if (!users.isEmpty()) {
                         for (User user : users) {
                             if (user.getUser_role() != UserRole.SUPERADMIN.getValue()) {
@@ -118,10 +122,7 @@ public class UsersHandler extends HttpServlet {
                 response.setContentType("application/json");
                 JsonUtil.sendJsonResponse(response, jsonArray);
                 logger.info("Data fetched from the database and cached with key: " + cacheKey);
-            } catch (SQLException e) {
-                logger.log(Level.SEVERE, "Error fetching users data", e);
-                JsonUtil.sendErrorResponse(response, "Error fetching users data: " + e.getMessage());
-            }
+            } 
             finally {
             	dbUtil.close(conn, null, rs);
             }
@@ -135,16 +136,19 @@ public class UsersHandler extends HttpServlet {
     
 
    
-    public void doPut(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        SessionUtil.doOptions(request, response);
-        JsonObject jsonRequest = JsonUtil.parseJsonRequest(request);
-
+    public void doPut(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException, ParseException, SQLException 
+    {
+       
         try  {
         	conn = dbUtil.connect();
-            userDAO.extractUserDetails(jsonRequest, user);
+        	String body = request.getReader().lines().collect(Collectors.joining(System.lineSeparator()));
+            
+        	User user = (User) JsonUtil.parseRequest(body,User.class);
+           
             user.setUser_id(ControllerServlet.pathMap.get("users"));
 
-            if (userDAO.updateUser(conn, user)) {
+            if (userDAO.updateUser(conn, user)) 
+            {
                 jedis = ControllerServlet.pool.getResource();
                 Set<String> keys = jedis.keys("*users*");
                 if (!keys.isEmpty()) {
@@ -157,9 +161,6 @@ public class UsersHandler extends HttpServlet {
                 JsonUtil.sendErrorResponse(response, "Error updating user");
                 logger.warning("Failed to update user: " + user.getUser_id());
             }
-        } catch (SQLException | ParseException e) {
-            logger.log(Level.SEVERE, "Error updating user", e);
-            JsonUtil.sendErrorResponse(response, "Error updating user: " + e.getMessage());
         } finally {
             if (jedis != null) jedis.close();
             dbUtil.close(conn, null, null);
@@ -167,8 +168,8 @@ public class UsersHandler extends HttpServlet {
     }
 
    
-    public void doDelete(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        SessionUtil.doOptions(request, response);
+    public void doDelete(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException, SQLException {
+      
 
         try {
         	conn = dbUtil.connect();
@@ -187,9 +188,6 @@ public class UsersHandler extends HttpServlet {
                 JsonUtil.sendErrorResponse(response, "Error deleting user");
                 logger.warning("Failed to delete user: " + user.getUser_id());
             }
-        } catch (SQLException e) {
-            logger.log(Level.SEVERE, "Error deleting user", e);
-            JsonUtil.sendErrorResponse(response, "Error deleting user: " + e.getMessage());
         } finally {
             if (jedis != null) jedis.close();
             dbUtil.close(conn, null, null);

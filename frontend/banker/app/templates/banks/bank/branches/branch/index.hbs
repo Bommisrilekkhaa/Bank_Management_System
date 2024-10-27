@@ -29,7 +29,7 @@
         {{#unless (eq branch.branch_id branch.main_branch_id)}}
         {{#if (eq role userRole.MANAGER)}}
         <div >
-            <button class="view-btn" {{action "delete" branch}} >delete Branch</button>
+            <button class="view-btn" {{action "delete" branch}} ><i class="bi bi-trash-fill"></i> delete Branch</button>
         </div>
         {{/if}}
         {{/unless}}

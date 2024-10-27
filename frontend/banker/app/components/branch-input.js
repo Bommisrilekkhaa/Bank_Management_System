@@ -1,9 +1,8 @@
 import Ember from 'ember';
-
+import {methods} from '../utils/util';
 export default Ember.Component.extend({
   notification: Ember.inject.service('notify'),
-  usersService: Ember.inject.service('users'),
-  branchesService: Ember.inject.service('branches'),
+  fetchService: Ember.inject.service('fetch'),
   errorMessage: '',
   branchId: '',
   name: '',
@@ -19,8 +18,17 @@ export default Ember.Component.extend({
     this.loadManagers();
   },
   loadManagers() {
+    let bankId=localStorage.getItem('bankId');
+    let url = `http://localhost:8080/banker/api/v1`;
+    if(bankId!="*")
+    {
+      url=url +`/banks/${bankId}`;
+    }
+   
+    url=url+`/users?filter_manager=true`;
+
     // console.log(this.get('bankId'));
-    this.get('usersService').fetchManagers().then((response) => {
+    this.get('fetchService').fetch(url,methods.GET).then((response) => {
       this.set('availableManagers', response);
     }).catch((error) => {
       console.error("Failed to load managers:", error);
@@ -46,15 +54,26 @@ export default Ember.Component.extend({
       }
 
       const branchData = {
-        name: this.get('name'),
-        address: this.get('address'),
+        branch_name: this.get('name'),
+        branch_address: this.get('address'),
         manager_id: this.get('manager_id'),
         bankId: this.get('bankId'),
         branchId:this.get('branchId')
       };
 
       if (this.get('isEdit')) {
-        this.get('branchesService').updateBranch(branchData).then(() => {
+        let bankId=localStorage.getItem('bankId');
+        let url = `http://localhost:8080/banker/api/v1/`;
+        if(bankId!="*")
+        {
+          url=url +`banks/${bankId}`;
+        }
+        console.log(branchData);
+        if(branchData.branchId!='*')
+        {
+          url=url+`/branches/${branchData.branchId}`;
+        }
+        this.get('fetchService').fetch(url,methods.PUT,branchData).then(() => {
          
           console.log('Branch updated successfully!');
           this.resetForm();
@@ -67,7 +86,16 @@ export default Ember.Component.extend({
           console.error('Error updating branch:', error);
         });
       } else {
-        this.get('branchesService').createBranch(branchData).then(() => {
+
+        let bankId=localStorage.getItem('bankId');
+        let url = `http://localhost:8080/banker/api/v1/`;
+        if(bankId!="*")
+        {
+          url=url +`banks/${bankId}`;
+        }
+        url=url+`/branches`;
+
+        this.get('fetchService').fetch(url,methods.POST,branchData).then(() => {
           console.log('Branch created successfully!');
           this.resetForm();
           this.get('notification').showNotification('Branch Created successfully!', 'success');

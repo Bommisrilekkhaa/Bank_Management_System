@@ -1,7 +1,7 @@
 import Ember from 'ember';
-import { role } from '../../../../../utils/util';
+import { methods, role } from '../../../../../utils/util';
 export default Ember.Controller.extend({
-  branchesService: Ember.inject.service('branches'),
+  fetchService: Ember.inject.service('fetch'),
   sessionService: Ember.inject.service('session'),
   notification: Ember.inject.service('notify'),
   branch:[],
@@ -16,7 +16,19 @@ export default Ember.Controller.extend({
     }
   }),
   loadBranch(){
-    this.get('branchesService').fetchBranch(this.get('bankId')).then((response) => {
+    let bankId=localStorage.getItem('bankId');
+    let branchId = localStorage.getItem('branchId');
+    let url = `http://localhost:8080/banker/api/v1/`;
+    if(bankId!="*")
+      {
+        url=url +`banks/${bankId}`;
+      }
+      if(branchId!="*")
+        {
+          url=url +`/branches/${branchId}`;
+        }
+      
+    this.get('fetchService').fetch(url,methods.GET).then((response) => {
       this.set('branch', response);
       this.set('branch',this.get('branch')[0]);
       console.log(this.get('branch'));
@@ -38,8 +50,19 @@ export default Ember.Controller.extend({
     },
 
     delete(branch) {
-      if (confirm(`Are you sure you want to delete the branch: ${branch.branch_name}?`)) {
-        this.get('branchesService').deleteBranch(this.get('bankId'), branch.branch_id).then(() => {
+      let bankId=localStorage.getItem('bankId');
+      let url = `http://localhost:8080/banker/api/v1/`;
+      if(bankId!="*")
+      {
+        url=url +`banks/${bankId}`;
+      }
+      if(branch.branch_id!='*')
+      {
+        url=url+`/branches/${branch.branch_id}`;
+      }
+      if (confirm(`Are you sure you want to delete the branch: ${branch.branch_name}?`)) 
+      {
+        this.get('fetchService').fetch(url,methods.DELETE).then(() => {
           localStorage.setItem('branchId','*');
           this.get('notification').showNotification('Branch Deleted successfully!', 'success');
           Ember.run.later(() => {

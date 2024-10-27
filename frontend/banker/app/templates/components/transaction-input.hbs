@@ -43,7 +43,7 @@
       {{#if isDirect}}
         <div class="form-group">
           <label for="accNo">Account Number<span style="color:rgb(237, 69, 69);">*</span></label>
-          <select id="accNo" class="form-control" onchange={{action (mut accNo) value="target.value"}}>
+          <select id="accNo" class="form-control" value={{accNo}} onchange={{action (mut accNo) value="target.value"}}>
             <option value="">Select Account Number</option>
             {{#each accounts as |account|}}
               <option value={{account.acc_no}}>{{account.acc_no}}</option>

@@ -1,8 +1,8 @@
 import Ember from 'ember';
-
+import {methods} from '../../../../utils/util';
 export default Ember.Controller.extend({
   branchSelection: Ember.inject.service('branch-select'),
-  loansService: Ember.inject.service('loans'),
+  fetchService: Ember.inject.service('fetch'),
   
   init() {
     this._super(...arguments);
@@ -20,8 +20,25 @@ export default Ember.Controller.extend({
 
   loans: [],
   loadLoans() {
-    console.log(this.get('accNo'));
-    this.get('loansService').fetchLoans(localStorage.getItem('accNo'),localStorage.getItem('bankId')).then((response) => {
+    let url = `http://localhost:8080/banker/api/v1/`;
+    let bankId = localStorage.getItem("bankId");
+    let branchId = localStorage.getItem("branchId");
+    let accno = localStorage.getItem('accNo');
+    if(bankId!="*")
+    {
+      url=url +`banks/${bankId}`;
+    }
+    if(branchId!='*')
+    {
+      url=url+`/branches/${branchId}`;
+    }
+    if(accno!="*")
+    {
+      url = url+`/accounts/${accno}`;
+    }
+    url=url+`/loans`;
+    // console.log(this.get('accNo'));
+    this.get('fetchService').fetch(url,methods.GET).then((response) => {
       console.log(response);
       this.set('loans', response);
     }).catch((error) => {
@@ -63,6 +80,7 @@ export default Ember.Controller.extend({
 
     editLoan(isEdit,loan,branchId) {
       localStorage.setItem("accNo",loan.acc_number);
+      localStorage.setItem("loanId",loan.loan_id);
       this.transitionToRoute('banks.bank.loans.loan.edit',  loan.loan_id).then((newRoute) => {
         newRoute.controller.setProperties({
           isEdit: isEdit,

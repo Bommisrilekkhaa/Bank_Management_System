@@ -1,7 +1,7 @@
 import Ember from 'ember';
-import { status } from '../../utils/util';
+import { status,methods } from '../../utils/util';
 export default Ember.Controller.extend({
-  usersService: Ember.inject.service('users'),
+  fetchService: Ember.inject.service('fetch'),
   bankId: localStorage.getItem("bankId"),
   status:status,
   notification: Ember.inject.service('notify'),
@@ -27,7 +27,21 @@ export default Ember.Controller.extend({
   }),
 
   loadUsers() {
-    this.get('usersService').fetchUsers().then((response) => {
+    let bankId=localStorage.getItem('bankId');
+    let userId=localStorage.getItem('userId');
+    let url = `http://localhost:8080/banker/api/v1`;
+    if(bankId!="*")
+    {
+      url=url +`/banks/${bankId}`;
+    }
+   
+    url=url+`/users`;
+    if(userId!="*")
+    {
+      url=url+`/${userId}`;
+    }
+
+    this.get('fetchService').fetch(url,methods.GET).then((response) => {
       console.log(response);
       this.set('users', response);
     }).catch((error) => {
@@ -69,8 +83,21 @@ export default Ember.Controller.extend({
     },
 
     deleteUser(user) {
-      if (confirm(`Are you sure you want to delete the user: ${user.fullname}?`)) {
-        this.get('usersService').deleteUser(user.user_id).then(() => {
+      let bankId=localStorage.getItem('bankId');
+      let url = `http://localhost:8080/banker/api/v1`;
+      if(bankId!="*")
+      {
+        url=url +`/banks/${bankId}`;
+      }
+      if(user.user_id!="*")
+      {
+        url=url+`/users/${user.user_id}`;
+
+      }
+      if (confirm(`Are you sure you want to delete the user: ${user.fullname}?`)) 
+        {
+
+        this.get('fetchService').fetch(url,methods.DELETE,user.user_id).then(() => {
           console.log('User deleted successfully');
           this.get('notification').showNotification('User Deleted successfully!', 'success');
 

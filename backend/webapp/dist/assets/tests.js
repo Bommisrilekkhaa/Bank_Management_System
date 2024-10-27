@@ -12,7 +12,7 @@ define('banker/tests/app.lint-test', [], function () {
 
   QUnit.test('components/account-input.js', function (assert) {
     assert.expect(1);
-    assert.ok(false, 'components/account-input.js should pass ESLint\n\n85:15 - \'userData\' is assigned a value but never used. (no-unused-vars)');
+    assert.ok(false, 'components/account-input.js should pass ESLint\n\n91:15 - \'userData\' is assigned a value but never used. (no-unused-vars)');
   });
 
   QUnit.test('components/admin-dashboard.js', function (assert) {
@@ -615,6 +615,11 @@ define('banker/tests/app.lint-test', [], function () {
     assert.ok(true, 'routes/login.js should pass ESLint\n\n');
   });
 
+  QUnit.test('routes/not-found.js', function (assert) {
+    assert.expect(1);
+    assert.ok(true, 'routes/not-found.js should pass ESLint\n\n');
+  });
+
   QUnit.test('routes/register.js', function (assert) {
     assert.expect(1);
     assert.ok(true, 'routes/register.js should pass ESLint\n\n');
@@ -645,39 +650,14 @@ define('banker/tests/app.lint-test', [], function () {
     assert.ok(false, 'routes/users/user/index.js should pass ESLint\n\n23:33 - \'model\' is defined but never used. (no-unused-vars)');
   });
 
-  QUnit.test('services/accounts.js', function (assert) {
-    assert.expect(1);
-    assert.ok(false, 'services/accounts.js should pass ESLint\n\n7:17 - \'bankid\' is defined but never used. (no-unused-vars)\n49:21 - \'bankid\' is defined but never used. (no-unused-vars)\n88:14 - \'bankid\' is defined but never used. (no-unused-vars)');
-  });
-
-  QUnit.test('services/banks.js', function (assert) {
-    assert.expect(1);
-    assert.ok(false, 'services/banks.js should pass ESLint\n\n31:17 - \'bankid\' is defined but never used. (no-unused-vars)');
-  });
-
   QUnit.test('services/branch-select.js', function (assert) {
     assert.expect(1);
     assert.ok(true, 'services/branch-select.js should pass ESLint\n\n');
   });
 
-  QUnit.test('services/branches.js', function (assert) {
+  QUnit.test('services/fetch.js', function (assert) {
     assert.expect(1);
-    assert.ok(false, 'services/branches.js should pass ESLint\n\n8:17 - \'bankid\' is defined but never used. (no-unused-vars)\n44:15 - \'bankid\' is defined but never used. (no-unused-vars)');
-  });
-
-  QUnit.test('services/dashboard.js', function (assert) {
-    assert.expect(1);
-    assert.ok(true, 'services/dashboard.js should pass ESLint\n\n');
-  });
-
-  QUnit.test('services/emis.js', function (assert) {
-    assert.expect(1);
-    assert.ok(false, 'services/emis.js should pass ESLint\n\n44:17 - \'emiId\' is defined but never used. (no-unused-vars)');
-  });
-
-  QUnit.test('services/loans.js', function (assert) {
-    assert.expect(1);
-    assert.ok(false, 'services/loans.js should pass ESLint\n\n9:23 - \'bankid\' is defined but never used. (no-unused-vars)\n50:20 - \'bankid\' is defined but never used. (no-unused-vars)');
+    assert.ok(true, 'services/fetch.js should pass ESLint\n\n');
   });
 
   QUnit.test('services/notify.js', function (assert) {
@@ -688,16 +668,6 @@ define('banker/tests/app.lint-test', [], function () {
   QUnit.test('services/session.js', function (assert) {
     assert.expect(1);
     assert.ok(true, 'services/session.js should pass ESLint\n\n');
-  });
-
-  QUnit.test('services/transactions.js', function (assert) {
-    assert.expect(1);
-    assert.ok(false, 'services/transactions.js should pass ESLint\n\n8:28 - \'bankid\' is defined but never used. (no-unused-vars)');
-  });
-
-  QUnit.test('services/users.js', function (assert) {
-    assert.expect(1);
-    assert.ok(false, 'services/users.js should pass ESLint\n\n5:14 - \'bankid\' is defined but never used. (no-unused-vars)');
   });
 
   QUnit.test('utils/util.js', function (assert) {
@@ -1944,6 +1914,11 @@ define('banker/tests/tests.lint-test', [], function () {
     assert.ok(true, 'unit/routes/login-test.js should pass ESLint\n\n');
   });
 
+  QUnit.test('unit/routes/not-found-test.js', function (assert) {
+    assert.expect(1);
+    assert.ok(true, 'unit/routes/not-found-test.js should pass ESLint\n\n');
+  });
+
   QUnit.test('unit/routes/register-test.js', function (assert) {
     assert.expect(1);
     assert.ok(true, 'unit/routes/register-test.js should pass ESLint\n\n');
@@ -2002,6 +1977,11 @@ define('banker/tests/tests.lint-test', [], function () {
   QUnit.test('unit/services/emis-test.js', function (assert) {
     assert.expect(1);
     assert.ok(true, 'unit/services/emis-test.js should pass ESLint\n\n');
+  });
+
+  QUnit.test('unit/services/fetch-test.js', function (assert) {
+    assert.expect(1);
+    assert.ok(true, 'unit/services/fetch-test.js should pass ESLint\n\n');
   });
 
   QUnit.test('unit/services/loans-test.js', function (assert) {
@@ -3164,6 +3144,19 @@ define('banker/tests/unit/routes/login-test', ['ember-qunit'], function (_emberQ
     assert.ok(route);
   });
 });
+define('banker/tests/unit/routes/not-found-test', ['ember-qunit'], function (_emberQunit) {
+  'use strict';
+
+  (0, _emberQunit.moduleFor)('route:not-found', 'Unit | Route | not found', {
+    // Specify the other units that are required for this test.
+    // needs: ['controller:foo']
+  });
+
+  (0, _emberQunit.test)('it exists', function (assert) {
+    var route = this.subject();
+    assert.ok(route);
+  });
+});
 define('banker/tests/unit/routes/register-test', ['ember-qunit'], function (_emberQunit) {
   'use strict';
 
@@ -3316,6 +3309,20 @@ define('banker/tests/unit/services/emis-test', ['ember-qunit'], function (_ember
   'use strict';
 
   (0, _emberQunit.moduleFor)('service:emis', 'Unit | Service | emis', {
+    // Specify the other units that are required for this test.
+    // needs: ['service:foo']
+  });
+
+  // Replace this with your real tests.
+  (0, _emberQunit.test)('it exists', function (assert) {
+    var service = this.subject();
+    assert.ok(service);
+  });
+});
+define('banker/tests/unit/services/fetch-test', ['ember-qunit'], function (_emberQunit) {
+  'use strict';
+
+  (0, _emberQunit.moduleFor)('service:fetch', 'Unit | Service | fetch', {
     // Specify the other units that are required for this test.
     // needs: ['service:foo']
   });

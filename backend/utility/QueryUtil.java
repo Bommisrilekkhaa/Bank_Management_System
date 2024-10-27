@@ -1,5 +1,6 @@
 package utility;
 
+import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.Date;
 import java.sql.PreparedStatement;
@@ -186,6 +187,10 @@ public class QueryUtil
 	        		{
 	        			stmt.setTimestamp(i+1, (Timestamp) params[i]);
 	        		}
+	        		else if(params[i] instanceof BigDecimal)
+		        	{
+			            stmt.setBigDecimal(i+1, (BigDecimal) params[i]);
+		        	}
 	        		else
 	        		{
 	        			stmt.setDate(i+1, (Date) params[i]);
@@ -228,6 +233,10 @@ public class QueryUtil
 		            else if(params[i] instanceof Timestamp)
 	        		{
 	        			stmt.setTimestamp(i+1, (Timestamp) params[i]);
+	        		}
+		            else if(params[i] instanceof BigDecimal)
+	        		{
+		            	stmt.setBigDecimal(i+1, (BigDecimal) params[i]);
 	        		}
 		            else
 		            {

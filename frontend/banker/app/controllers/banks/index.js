@@ -1,14 +1,15 @@
-
-  import Ember from 'ember';
-
+import Ember from 'ember';
+import {methods} from '../../utils/util';
 export default Ember.Controller.extend({
-  banksService: Ember.inject.service('banks'),
+  fetchService: Ember.inject.service('fetch'),
   bankId: localStorage.getItem("bankId"),
   
   banks: [],
 
   loadBanks() {
-    this.get('banksService').fetchBanks().then((response) => {
+
+    let  url= `http://localhost:8080/banker/api/v1/banks`;
+    this.get('fetchService').fetch(url,methods.GET).then((response) => {
       console.log(response);
       this.set('banks', response);
     }).catch((error) => {

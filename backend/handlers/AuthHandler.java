@@ -7,13 +7,12 @@ import java.text.ParseException;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 import javax.servlet.ServletException;
-import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import com.google.gson.JsonObject;
 
 import DAO.UserDAO;
 import model.Bank;
@@ -25,21 +24,19 @@ import utility.JsonUtil;
 import utility.LoggerConfig;
 import utility.SessionUtil;
 
-public class AuthHandler extends HttpServlet {
+public class AuthHandler  {
 
-    private static final long serialVersionUID = 1L;
     private Logger logger=LoggerConfig.initializeLogger();
     private Jedis jedis = null;
     private SessionUtil sessionHandler = new SessionUtil();
     private UserDAO userDAO = new UserDAO();
-    private User user = new User();
     private Connection conn = null;
     private DbUtil dbUtil = new DbUtil();
     
     
    
-    public void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        SessionUtil.doOptions(request, response);
+    public void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException,SQLException {
+       
         String action = request.getParameter("action");
 
         if ("logout".equals(action)) {
@@ -53,8 +50,8 @@ public class AuthHandler extends HttpServlet {
     }
 
   
-    public void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        SessionUtil.doOptions(request, response);
+    public void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException ,SQLException{
+      
         String action = request.getParameter("action");
 
         try {
@@ -69,9 +66,6 @@ public class AuthHandler extends HttpServlet {
                 logger.warning("Invalid POST request action: " + action);
                 JsonUtil.sendErrorResponse(response, "Invalid request");
             }
-        } catch (SQLException e) {
-            logger.log(Level.SEVERE, "Database error: " + e.getMessage(), e);
-            JsonUtil.sendErrorResponse(response, "Error: " + e.getMessage());
         } catch (ParseException e) {
             logger.log(Level.SEVERE, "Parse error during registration: " + e.getMessage(), e);
             JsonUtil.sendErrorResponse(response, "Parse error: " + e.getMessage());
@@ -82,15 +76,16 @@ public class AuthHandler extends HttpServlet {
         }
     }
 
-    private void handleLogin(HttpServletRequest request, HttpServletResponse response, Connection conn) throws IOException, ServletException {
-        JsonObject jsonRequest = JsonUtil.parseJsonRequest(request);
-        user.setUsername(jsonRequest.get("username").getAsString());
-        user.setPassword(jsonRequest.get("password").getAsString());
+    private void handleLogin(HttpServletRequest request, HttpServletResponse response, Connection conn) throws IOException, ServletException,SQLException {
+    
+        String body = request.getReader().lines().collect(Collectors.joining(System.lineSeparator()));
+        
+        User user = (User) JsonUtil.parseRequest(body,User.class);  
+        Bank bank = (Bank) JsonUtil.parseRequest(body,Bank.class); 
 
         try {
-            Bank bank = new Bank();
-            if (request.getParameter("isSuperAdmin") == null) {
-                bank.setBank_id(jsonRequest.get("bank_id").getAsInt());
+            if (request.getParameter("isSuperAdmin") != null) {
+                bank=null;
             }
 
             if (userDAO.authenticateUser(conn, user, bank)) {
@@ -108,31 +103,43 @@ public class AuthHandler extends HttpServlet {
     }
 
     private void handleRegister(HttpServletRequest request, HttpServletResponse response, Connection conn) throws IOException, SQLException, ParseException {
-        JsonObject jsonRequest = JsonUtil.parseJsonRequest(request);
-        userDAO.extractUserDetails(jsonRequest, user);
+    	 
+    	String body = request.getReader().lines().collect(Collectors.joining(System.lineSeparator()));
+          
+          User user = new User();
+//          SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");  
+//          Date strDate = new java.sql.Date(formatter.parse(body.("date_of_birth").getAsString()).getTime());
 
-        if (userDAO.isUsernameTaken(conn, user)) {
-            logger.warning("Username already exists: " + user.getUsername());
-            JsonUtil.sendErrorResponse(response, "Username already exists");
-            return;
+//          user.setDate_of_birth(strDate);
+          user = (User) JsonUtil.parseRequest(body,User.class);  
+          try {
+        	
+        	if (userDAO.isUsernameTaken(conn, user)) {
+        		logger.warning("Username already exists: " + user.getUsername());
+        		JsonUtil.sendErrorResponse(response, "Username already exists");
+        		return;
+        	}
+        	
+        	boolean success = userDAO.registerUser(conn, user);
+        	
+        	if (success) {
+        		jedis = ControllerServlet.pool.getResource();
+        		Set<String> keys = jedis.keys("*users*");
+        		if (!keys.isEmpty()) {
+        			jedis.del(keys.toArray(new String[0]));
+        		}
+        		logger.info("User registered successfully: " + user.getUsername());
+        		JsonUtil.sendSuccessResponse(response, "User registered successfully");
+        	} else {
+        		logger.warning("Registration failed for user: " + user.getUsername());
+        		JsonUtil.sendErrorResponse(response, "Registration failed");
+        	}
         }
-
-        boolean success = userDAO.registerUser(conn, user);
-
-        if (success) {
-        	jedis = ControllerServlet.pool.getResource();
-            Set<String> keys = jedis.keys("*users*");
-            if (!keys.isEmpty()) {
-                jedis.del(keys.toArray(new String[0]));
-            }
-            logger.info("User registered successfully: " + user.getUsername());
-            JsonUtil.sendSuccessResponse(response, "User registered successfully");
-        } else {
-            logger.warning("Registration failed for user: " + user.getUsername());
-            JsonUtil.sendErrorResponse(response, "Registration failed");
-        }
-        if (jedis != null) {
-            jedis.close();
+        finally {
+        	
+        	if (jedis != null) {
+        		jedis.close();
+        	}
         }
     }
 }

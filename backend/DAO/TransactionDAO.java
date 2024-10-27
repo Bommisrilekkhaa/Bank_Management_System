@@ -1,20 +1,16 @@
 package DAO;
 
+import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Timestamp;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import javax.servlet.ServletException;
 
-import com.google.gson.JsonObject;
 
 import enums.TransactionStatus;
-import enums.TransactionType;
 import model.Transaction;
 import utility.DbUtil;
 import utility.QueryUtil;
@@ -22,7 +18,6 @@ import utility.QueryUtil;
 public class TransactionDAO {
 
     private DbUtil db = new DbUtil();
-    private Transaction transaction = new Transaction();
 
     public boolean insertTransaction(Connection conn, Transaction transaction) throws SQLException 
     {
@@ -36,10 +31,10 @@ public class TransactionDAO {
         return query.executeUpdate(conn, db) > 0;
     }
     
-    public boolean updateBalance(int type,double amount) throws SQLException, ServletException
+    public boolean updateBalance(int type,BigDecimal amount,int acc_number) throws SQLException, ServletException
     {
     	AccountDAO accountDAO = new AccountDAO();
-    	return accountDAO.updateBalance(db.connect(), type, amount, transaction.getAcc_number());
+    	return accountDAO.updateBalance(db.connect(), type, amount, acc_number);
     }
 
     public ResultSet selectAllTransactions(Connection conn, HashMap<String, Integer> pathMap) throws SQLException 
@@ -81,33 +76,21 @@ public class TransactionDAO {
     	return "b."+key.substring(0, key.length() - 1) + "_id";
     }
 
-    public List<Transaction> convertResultSetToList(ResultSet rs) throws SQLException 
+   
+    public ResultSet lastTransaction(Connection conn, HashMap<String, Integer> pathMap) throws SQLException 
     {
-        List<Transaction> transactionList = new ArrayList<>();
+        Map<String,Object[]> conditions = new HashMap<>();
+    	
+        conditions.put("acc_number", new Object[] {"=", pathMap.get("accounts")});
         
-        while (rs.next()) 
-        {
-            Transaction transaction = new Transaction();
-            transaction.setTransaction_id(rs.getInt("transaction_id"));
-            transaction.setTransaction_datetime(rs.getTimestamp("transaction_datetime"));
-            transaction.setTransaction_type(rs.getInt("transaction_type"));
-            transaction.setTransaction_status(rs.getInt("transaction_status"));
-            transaction.setTransaction_amount(rs.getDouble("transaction_amount"));
-            transaction.setAcc_number(rs.getInt("acc_number"));
-            transactionList.add(transaction);
-        }
-        return transactionList;
-    }
 
-    
+        QueryUtil query = QueryUtil.create()
+        		.select("MAX(transaction_id) AS transactionId")
+        		.from("transaction")
+    			.where(conditions);
 
-    
-    public Transaction extractTransactionDetails(JsonObject jsonRequest) throws SQLException, ServletException 
-    {
-    	transaction.setTransaction_datetime(new Timestamp(System.currentTimeMillis()));
-        transaction.setTransaction_type(TransactionType.valueOf(jsonRequest.get("transaction_type").getAsString().toUpperCase()).getValue());
-        transaction.setTransaction_amount(jsonRequest.get("transaction_amount").getAsDouble());
-        transaction.setAcc_number(jsonRequest.get("acc_number").getAsInt());
-        return transaction;
+        return query.executeQuery(conn, db);
     }
+    
+   
 }

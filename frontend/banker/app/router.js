@@ -7,7 +7,7 @@ const Router = Ember.Router.extend({
 });
 
 Router.map(function() {
-  this.route('index', {path:"/banker"})
+  // this.route('index', {path:"/banker"})
   this.route('login',{path:"/banker/login"});
   this.route('register',{path:"/banker/register"});
 
@@ -68,6 +68,7 @@ Router.map(function() {
     this.route('new');
   });
 
+  this.route('not-found',{path:"/*path"});
 });
 
 export default Router;

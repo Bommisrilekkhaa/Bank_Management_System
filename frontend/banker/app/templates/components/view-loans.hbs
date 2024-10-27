@@ -19,7 +19,7 @@
       <option value="closed">Closed</option>
     </select>
 
-    <button class="clear" {{action (mut selectedLoanType) ''}} {{action (mut selectedLoanStatus) ''}} >Clear</button>
+    <button class="clear" {{action (mut selectedLoanType) ''}} {{action (mut selectedLoanStatus) ''}} >Reset</button>
   </div>
 
   <table class="loans-table">
@@ -45,7 +45,7 @@
           <td>Rs.{{loan.loan_amount}}</td>
           {{#unless (eq role userRole.CUSTOMER)}}
             <td>
-              <button class="view-btn" {{action "editLoan" loan}}>Edit</button>
+              <button class="view-btn" {{action "editLoan" loan}}><i class="bi bi-pencil"></i> Edit</button>
             </td>
           {{/unless}}
         </tr>

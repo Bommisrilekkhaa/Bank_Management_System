@@ -1,5 +1,6 @@
 package model;
 
+import java.math.BigDecimal;
 import java.sql.Timestamp;
 
 public class Transaction {
@@ -8,7 +9,7 @@ public class Transaction {
     private Timestamp transaction_datetime;
     private int transaction_type;
     private int transaction_status;
-    private double transaction_amount;
+    private BigDecimal transaction_amount;
     private int acc_number;
 
     public int getTransaction_id() {
@@ -43,11 +44,11 @@ public class Transaction {
         this.transaction_status = transaction_status;
     }
 
-    public double getTransaction_amount() {
+    public BigDecimal getTransaction_amount() {
         return transaction_amount;
     }
 
-    public void setTransaction_amount(double transaction_amount) {
+    public void setTransaction_amount(BigDecimal transaction_amount) {
         this.transaction_amount = transaction_amount;
     }
 

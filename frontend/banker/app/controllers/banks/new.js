@@ -1,9 +1,8 @@
 import Ember from 'ember';
-
+import {methods} from '../../utils/util';
 export default Ember.Controller.extend({
   notification: Ember.inject.service('notify'),
-  banksService: Ember.inject.service('banks'),
-  usersService: Ember.inject.service('users'),
+  fetchService: Ember.inject.service('fetch'),
   errorMessage: '',
 
 
@@ -13,8 +12,16 @@ export default Ember.Controller.extend({
   },
 
   loadAdmins() {
+    let bankId=localStorage.getItem('bankId');
+    let url = `http://localhost:8080/banker/api/v1`;
+    if(bankId!="*")
+    {
+      url=url +`/banks/${bankId}`;
+    }
+   
+    url=url+`/users?filter_admin=true`;
 
-    this.get('usersService').fetchAdmins().then((response) => {
+    this.get('fetchService').fetch(url,methods.GET).then((response) => {
       this.set('admins', response);
     }).catch((error) => {
       console.error("Failed to load admins:", error);
@@ -52,8 +59,9 @@ export default Ember.Controller.extend({
         admin_id: this.get('admin_id'),
       };
 
-     
-        this.get('banksService').createBank(bankData).then(() => {
+      let url = `http://localhost:8080/banker/api/v1/banks`;
+
+        this.get('fetchService').fetch(url,methods.POST,bankData).then(() => {
           this.resetForm();
           this.get('notification').showNotification('Bank created successfully!', 'success');
           Ember.run.later(() => {

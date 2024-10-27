@@ -1,6 +1,12 @@
 package utility;
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.lang.reflect.Field;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
@@ -23,8 +29,48 @@ public class JsonUtil {
 	public static JsonObject parseJsonRequest(HttpServletRequest request) throws IOException 
 	{
 	    BufferedReader reader = request.getReader();
+	    
 	    return gson.fromJson(reader, JsonObject.class);
 	}
+	
+	 public static <T> T parseRequest(String body, Class<T> clazz) throws IOException {
+		 return gson.fromJson(body, clazz);
+
+	 }
+	 
+	 
+	
+	     public static <T> List<T> convertResultSetToList(ResultSet rs, Class<T> clazz) throws SQLException {
+	         List<T> resultList = new ArrayList<>();
+	         
+	         try {
+	             while (rs.next()) {
+	                 T instance = clazz.getDeclaredConstructor().newInstance();
+	                 
+	                 for (Field field : clazz.getDeclaredFields()) {
+	                     field.setAccessible(true);
+	                     
+	                     try {
+	                         Object value = rs.getObject(field.getName());
+	                         if (value != null) {
+	                             field.set(instance, value);
+//	                             System.out.println(field.get(instance));
+	                         }
+	                     } catch (SQLException e) {
+	                         System.err.println("No column found in ResultSet for field: " + field.getName());
+	                     }
+	                 }
+	                 
+	                 resultList.add(instance);
+	             }
+	         } catch (Exception e) {
+	             throw new SQLException("Error converting ResultSet to List: " + e.getMessage(), e);
+	         }
+	         
+	         return resultList;
+	     }
+	 
+
 
 	public static void sendSuccessResponse(HttpServletResponse response, String message) throws IOException 
 	{
@@ -51,7 +97,5 @@ public class JsonUtil {
 	        response.setCharacterEncoding("UTF-8");
 	        response.getWriter().write(gson.toJson(jsonArray));
 	}
-	
-	
 
 }

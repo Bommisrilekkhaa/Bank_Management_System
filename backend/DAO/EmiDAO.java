@@ -3,9 +3,7 @@ package DAO;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import model.Emi;
@@ -41,24 +39,21 @@ public class EmiDAO {
 
         return query.executeQuery(conn, db);
     }
+    
+    public ResultSet getEmiNumber(Connection conn, int loanId) throws SQLException {
+        Map<String, Object[]> conditions = new HashMap<>();
 
+       conditions.put("loan_id", new Object[] { "=", loanId});
+        
 
-    public List<Emi> convertResultSetToList(ResultSet rs) throws SQLException {
-        List<Emi> emiList = new ArrayList<>();
+        QueryUtil query = QueryUtil.create()
+        		.select("MAX(emi_number) AS emiNumber")
+        		.from("emi")
+                .where(conditions);
 
-        while (rs.next()) {
-            Emi emi = new Emi();
-            emi.setEmi_id(rs.getInt("emi_id"));
-            emi.setEmi_number(rs.getInt("emi_number"));
-            emi.setTransaction_id(rs.getInt("transaction_id"));
-            emi.setLoan_id(rs.getInt("loan_id"));
-            emi.setTransaction_datetime(rs.getTimestamp("transaction_datetime"));
-            emi.setLoan_duration(rs.getInt("loan_duration"));
-            emi.setLoan_availed_date(rs.getDate("loan_availed_date"));
-            emiList.add(emi);
-        }
-        return emiList;
+        return query.executeQuery(conn, db);
     }
+
 
     
 }

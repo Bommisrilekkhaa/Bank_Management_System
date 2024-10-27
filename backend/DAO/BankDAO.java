@@ -6,7 +6,6 @@ import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
 
-import com.google.gson.JsonObject;
 
 import model.Bank;
 import utility.DbUtil;
@@ -106,17 +105,5 @@ public class BankDAO {
     }
     
    
-    public Bank extractBankDetails(JsonObject jsonRequest) 
-    {
-        bank.setBank_name(jsonRequest.get("bank_name").getAsString());
-        bank.setBank_code(jsonRequest.get("bank_code").getAsString());
-        bank.setAdmin_id(jsonRequest.get("admin_id").getAsInt());
-        if(jsonRequest.has("main_branch_id"))
-        {
-        	
-        	bank.setMain_branch_id(jsonRequest.get("main_branch_id").getAsInt());
-        }
-        
-        return bank;
-    }
+    
 }

@@ -7,7 +7,10 @@ export default Ember.Service.extend({
   login(credentials) {
     let bankId=localStorage.getItem('bankId');
       const { username, password, isSuperAdmin} = credentials;
-
+    if(isSuperAdmin)
+    {
+      bankId=-1;
+    }
       // console.log(credentials);
 
       let url = `http://localhost:8080/banker/api/v1/auth?action=login`;
@@ -36,7 +39,7 @@ export default Ember.Service.extend({
   },
 
   signup(credentials) {
-      const { username, password, selectedRole, name, dob, pno, addr } = credentials;
+      const { username, password, user_role,   full_name, date_of_birth,  user_phonenumber,   user_address  } = credentials;
 
       // console.log(credentials+'signup');
      
@@ -47,11 +50,11 @@ export default Ember.Service.extend({
         data: JSON.stringify({ 
           username, 
           password, 
-          user_role: selectedRole, 
-          full_name:name, 
-          date_of_birth:dob, 
-          user_phonenumber: pno, 
-          user_address: addr 
+          user_role,
+          full_name, 
+          date_of_birth, 
+          user_phonenumber, 
+          user_address 
         }),
         success: (response) => {
           return response;

@@ -4,11 +4,9 @@ import java.io.IOException;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import javax.servlet.ServletException;
-import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
@@ -25,8 +23,7 @@ import utility.DbUtil;
 import utility.JsonUtil;
 import utility.LoggerConfig;
 
-@SuppressWarnings("serial")
-public class DashboardHandler extends HttpServlet {
+public class DashboardHandler  {
 	private Logger logger=LoggerConfig.initializeLogger(); 
     private AccountDAO accountDAO = new AccountDAO();
     private BranchDAO branchDAO = new BranchDAO();
@@ -34,7 +31,7 @@ public class DashboardHandler extends HttpServlet {
     private DbUtil dbUtil = new DbUtil();
 
     
-    public void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+    public void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException, SQLException {
         String role = (String) request.getSession(false).getAttribute("user_role");
         
         logger.info("Dashboard request initiated for role: " + role);
@@ -121,9 +118,6 @@ public class DashboardHandler extends HttpServlet {
             JsonUtil.sendJsonResponse(response, jsonArray);
             logger.info("Dashboard data sent successfully.");
 
-        } catch (SQLException e) {
-            logger.log(Level.SEVERE, "Error fetching dashboard data", e);
-            JsonUtil.sendErrorResponse(response, "Error fetching dashboard data: " + e.getMessage());
         }
         finally {
         	dbUtil.close(conn, null, resultSet);

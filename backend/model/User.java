@@ -4,17 +4,16 @@ import java.util.Date;
 
 public class User {
 	
-	private int user_id;
-	private String fullname;
-	private Date date_of_birth;
-	private String user_phonenumber;
-	private String user_address;
-	private int  user_role;
-	private String username;
-	private String password;
-	private int user_status;
-	private String session_id;
-	
+	private int user_id;               
+	private String full_name;          
+	private Date date_of_birth;        
+	private String user_phonenumber;   
+	private String user_address;        
+	private int user_role;             
+	private String username;            
+	private String password;           
+	private int user_status;    
+
 	
 	public int getUser_id() {
 		return user_id;
@@ -23,10 +22,10 @@ public class User {
 		this.user_id = user_id;
 	}
 	public String getFullname() {
-		return fullname;
+		return full_name;
 	}
 	public void setFullname(String fullname) {
-		this.fullname = fullname;
+		this.full_name = fullname;
 	}
 	public Date getDate_of_birth() {
 		return date_of_birth;
@@ -69,12 +68,6 @@ public class User {
 	}
 	public void setUser_status(int user_status) {
 		this.user_status = user_status;
-	}
-	public String getSession_id() {
-		return session_id;
-	}
-	public void setSession_id(String session_id) {
-		this.session_id = session_id;
 	}
 	
 	

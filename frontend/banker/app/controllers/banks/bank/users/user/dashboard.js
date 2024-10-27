@@ -1,8 +1,8 @@
 import Ember from 'ember';
-import { role } from '../../../../../utils/util';
+import { methods, role } from '../../../../../utils/util';
 export default Ember.Controller.extend({
 
-  dashboardService: Ember.inject.service('dashboard'),
+  fetchService: Ember.inject.service('fetch'),
   userRole:role,
   getSessionData(){
     let value = `; ${document.cookie}`;
@@ -16,7 +16,10 @@ export default Ember.Controller.extend({
 
   fetchAdminDashboard() {
     this.getSessionData();
-    this.get('dashboardService').fetchAdminDashboard().then((response) => {
+    let bankId=localStorage.getItem('bankId');
+    let url = `http://localhost:8080/banker/api/v1/banks/${bankId}/users/${this.get('sessionData').user_id}/dashboard`;
+ 
+    this.get('fetchService').fetch(url,methods.GET).then((response) => {
       this.set('branches', response);
     }).catch((error) => {
       console.error("Failed to load dashboard:", error);
@@ -24,7 +27,10 @@ export default Ember.Controller.extend({
   },
   fetchManagerDashboard() {
     this.getSessionData();
-    this.get('dashboardService').fetchManagerDashboard().then((response) => {
+    let bankId=localStorage.getItem('bankId');
+    let url = `http://localhost:8080/banker/api/v1/banks/${bankId}/users/${this.get('sessionData').user_id}/dashboard`;
+ 
+    this.get('fetchService').fetch(url,methods.GET).then((response) => {
       this.set('branches', response);
       let array = this.get('branches');
       for (let i = 0; i < array.length; i++) {
@@ -45,8 +51,11 @@ export default Ember.Controller.extend({
 
   fetchCustomerDashboard(){
     this.getSessionData();
-    this.get('dashboardService').fetchCustomerDashboard().then((response) => {
-      console.log(response);
+    let bankId=localStorage.getItem('bankId');
+    let url = `http://localhost:8080/banker/api/v1/banks/${bankId}/users/${this.get('sessionData').user_id}/dashboard`;
+     
+    this.get('fetchService').fetch(url,methods.GET).then((response) => {
+      // console.log(response);
            
       let accounts = [];
       for (let i = 0; i < response.length; i++) {

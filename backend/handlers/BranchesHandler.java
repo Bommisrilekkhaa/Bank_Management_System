@@ -4,12 +4,12 @@ import java.io.IOException;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.List;
 import java.util.Set;
-import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 import javax.servlet.ServletException;
-import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
@@ -28,11 +28,9 @@ import servlets.ControllerServlet;
 import utility.DbUtil;
 import utility.JsonUtil;
 import utility.LoggerConfig;
-import utility.SessionUtil;
 
-public class BranchesHandler extends HttpServlet {
-
-    private static final long serialVersionUID = 1L;
+public class BranchesHandler {
+	
 	private Logger logger=LoggerConfig.initializeLogger(); 
 
     private BranchDAO branchDAO = new BranchDAO();
@@ -43,9 +41,8 @@ public class BranchesHandler extends HttpServlet {
     private DbUtil dbUtil = new DbUtil();
 
    
-    public void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException 
+    public void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException, SQLException 
     {
-        SessionUtil.doOptions(request, response);
 
         String path = request.getRequestURI();
         String cacheKey = path.substring(path.indexOf("/banks"));
@@ -59,41 +56,41 @@ public class BranchesHandler extends HttpServlet {
             logger.info("Data fetched from Redis cache for key: " + cacheKey);
         } else {
             logger.info("Cache miss for key: " + cacheKey);
-            Branch branch = new Branch();
+           
             ResultSet rs = null;
             try {
             	conn = dbUtil.connect();
                 if (request.getSession(false).getAttribute("user_role").equals(UserRole.MANAGER.toString())) {
                     rs = branchDAO.selectBranchByManager(conn, (int) request.getSession(false).getAttribute("user_id"));
                 } else if (!ControllerServlet.pathMap.containsKey("branches")) {
-                    branch.setBank_id(ControllerServlet.pathMap.get("banks"));
-                    rs = branchDAO.selectBranches(conn, branch);
+                    
+                    rs = branchDAO.selectBranches(conn, ControllerServlet.pathMap.get("banks"));
                 } else {
                     rs = branchDAO.selectBranchById(conn, ControllerServlet.pathMap.get("branches"));
                 }
-
+                List<Branch> branches = JsonUtil.convertResultSetToList(rs, Branch.class);
                 JsonArray jsonArray = new JsonArray();
-                while (rs.next()) {
+
+                if (!branches.isEmpty()) {
+                    for (Branch branch : branches) {
                     JsonObject jsonResponse = new JsonObject();
-                    jsonResponse.addProperty("branch_id", rs.getInt("branch_id"));
-                    jsonResponse.addProperty("branch_name", rs.getString("branch_name"));
-                    jsonResponse.addProperty("branch_address", rs.getString("branch_address"));
-                    jsonResponse.addProperty("branch_number", rs.getInt("branch_number"));
-                    jsonResponse.addProperty("bank_id", rs.getInt("bank_id"));
-                    Bank bank=bankDao.getBankById(conn, rs.getInt("bank_id"));
+                    jsonResponse.addProperty("branch_id", branch.getBranch_id());
+                    jsonResponse.addProperty("branch_name", branch.getName());
+                    jsonResponse.addProperty("branch_address", branch.getAddress());
+                    jsonResponse.addProperty("branch_number", branch.getBranch_number());
+                    jsonResponse.addProperty("manager_id", branch.getManager_id());
+                    jsonResponse.addProperty("bank_id", branch.getBank_id());
+                    Bank bank=bankDao.getBankById(conn, branch.getBank_id());
                     jsonResponse.addProperty("bank_name", bank.getBank_name());
                     jsonResponse.addProperty("main_branch_id", bank.getMain_branch_id());
-                    jsonResponse.addProperty("manager_id", rs.getInt("manager_id"));
-                    jsonResponse.addProperty("manager_name", userDao.getUsername(conn, rs.getInt("manager_id")).getFullname());
+                    jsonResponse.addProperty("manager_name", userDao.getUsername(conn, branch.getManager_id()).getFullname());
                     jsonArray.add(jsonResponse);
+                    }
                 }
 
                 jedis.set(cacheKey, jsonArray.toString());
                 JsonUtil.sendJsonResponse(response, jsonArray);
                 logger.info("Data fetched from DB and cached in Redis for key: " + cacheKey);
-            } catch (SQLException e) {
-                logger.log(Level.SEVERE, "Error fetching branch data from DB", e);
-                JsonUtil.sendErrorResponse(response, "Error fetching branch: " + e.getMessage());
             } finally {
                 
                 dbUtil.close(conn, null, rs);
@@ -105,15 +102,14 @@ public class BranchesHandler extends HttpServlet {
     }
 
    
-    public void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException 
+    public void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException, SQLException 
     {
-        SessionUtil.doOptions(request, response);
         String cacheKey = "/banks/"+ControllerServlet.pathMap.get("banks")+"/branches";
-
-        JsonObject jsonRequest = JsonUtil.parseJsonRequest(request);
-        Branch branch = new Branch();
+        String body = request.getReader().lines().collect(Collectors.joining(System.lineSeparator()));
+        
+        Branch branch = (Branch) JsonUtil.parseRequest(body,Branch.class);
+       
         branch.setBank_id(ControllerServlet.pathMap.get("banks"));
-        branchDAO.extractBranchDetails(jsonRequest, branch);
 
         try {
         	conn = dbUtil.connect();
@@ -131,9 +127,6 @@ public class BranchesHandler extends HttpServlet {
                 JsonUtil.sendErrorResponse(response, "Error inserting branch");
                 logger.warning("Error inserting branch");
             }
-        } catch (SQLException e) {
-            logger.log(Level.SEVERE, "Error inserting branch", e);
-            JsonUtil.sendErrorResponse(response, "Error inserting branch: " + e.getMessage());
         } finally {
             if (jedis != null) {
                 jedis.close();
@@ -143,16 +136,17 @@ public class BranchesHandler extends HttpServlet {
     }
 
    
-    public void doPut(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException 
+    public void doPut(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException, SQLException 
     {
-        SessionUtil.doOptions(request, response);
         String cacheKey1 = "/banks/"+ControllerServlet.pathMap.get("banks")+"/branches";
         String cacheKey2 = "/banks/"+ControllerServlet.pathMap.get("banks")+"/branches/"+ControllerServlet.pathMap.get("branches");
-        JsonObject jsonRequest = JsonUtil.parseJsonRequest(request);
-        Branch branch = new Branch();
+       
+        String body = request.getReader().lines().collect(Collectors.joining(System.lineSeparator()));
+        
+        Branch branch = (Branch) JsonUtil.parseRequest(body,Branch.class);
+       
         branch.setBank_id(ControllerServlet.pathMap.get("banks"));
         branch.setBranch_id(ControllerServlet.pathMap.get("branches"));
-        branchDAO.extractBranchDetails(jsonRequest, branch);
 
         try  {
         	 conn = dbUtil.connect();
@@ -171,9 +165,6 @@ public class BranchesHandler extends HttpServlet {
                 JsonUtil.sendErrorResponse(response, "Error updating branch");
                 logger.warning("Error updating branch");
             }
-        } catch (SQLException e) {
-            logger.log(Level.SEVERE, "Error updating branch", e);
-            JsonUtil.sendErrorResponse(response, "Error updating branch: " + e.getMessage());
         } finally {
             if (jedis != null) {
                 jedis.close();
@@ -183,9 +174,8 @@ public class BranchesHandler extends HttpServlet {
     }
 
  
-    public void doDelete(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException 
+    public void doDelete(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException, SQLException 
     {
-        SessionUtil.doOptions(request, response);
         String cacheKey1 = "/banks/"+ControllerServlet.pathMap.get("banks")+"/branches";
         String cacheKey2 = "/banks/"+ControllerServlet.pathMap.get("banks")+"/branches/"+ControllerServlet.pathMap.get("branches");
        
@@ -201,15 +191,17 @@ public class BranchesHandler extends HttpServlet {
                     jedis.del(keys.toArray(new String[0]));
                     logger.info("Deleted cache keys: " + keys);
                 }
+                keys = jedis.keys("*accounts*");
+                if (!keys.isEmpty()) {
+                    jedis.del(keys.toArray(new String[0]));
+                    logger.info("Deleted cache keys: " + keys);
+                }
                 JsonUtil.sendSuccessResponse(response, "Branch deleted successfully");
                 logger.info("Branch deleted successfully and cache invalidated for keys: " + cacheKey1+","+cacheKey2);
             } else {
                 JsonUtil.sendErrorResponse(response, "Error deleting branch");
                 logger.warning("Error deleting branch");
             }
-        } catch (SQLException e) {
-            logger.log(Level.SEVERE, "Error deleting branch", e);
-            JsonUtil.sendErrorResponse(response, "Error deleting branch: " + e.getMessage());
         } finally {
             if (jedis != null) {
                 jedis.close();

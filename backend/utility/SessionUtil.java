@@ -8,7 +8,6 @@ import java.security.NoSuchAlgorithmException;
 import java.sql.Connection;
 import java.sql.SQLException;
 
-import javax.servlet.ServletException;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -110,17 +109,5 @@ public class SessionUtil {
             }
         }
 
-        
-
-       
-    
-        public static void doOptions(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-            response.setHeader("Access-Control-Allow-Origin", "http://localhost:4200");
-            response.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
-            response.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With,XSet-Cookie"); // Allow Content-Type
-            response.setHeader("Access-Control-Allow-Credentials", "true");
-
-            response.setStatus(HttpServletResponse.SC_OK);
-//            System.out.println("CORS preflight response sent.");
-        }
+      
 }

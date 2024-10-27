@@ -3,9 +3,14 @@
     <h2>Edit Bank</h2>
     
     <form {{action "submitForm" on="submit"}}>
-      <div class="form-group">
+      {{!-- <div class="form-group">
         <label for="bankId">Bank ID<span style="color:rgb(237, 69, 69);">*</span></label>
         <input type="text" id="bankId" value={{bankId}} class="form-control" disabled>
+      </div> --}}
+
+      <div class="form-group">
+        <label for="bankId">Bank Name<span style="color:rgb(237, 69, 69);">*</span></label>
+        <input type="text" id="bankId" value={{bank.bank_name}} class="form-control" disabled>
       </div>
 
       <div class="form-group">

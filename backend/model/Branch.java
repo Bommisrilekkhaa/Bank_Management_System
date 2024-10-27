@@ -2,12 +2,14 @@ package model;
 
 public class Branch 
 {
-	 private int branch_id;
-	 private String name;
-	 private String address;
-	 private String branch_number;
-	 private int bank_id;
-	 private int manager_id;
+	private int branch_id;
+	private String branch_name;
+	private String branch_address;
+	private int branch_number;
+	private int bank_id;
+	private int manager_id;
+
+
 	public int getBranch_id() {
 		return branch_id;
 	}
@@ -15,21 +17,21 @@ public class Branch
 		this.branch_id = branch_id;
 	}
 	public String getName() {
-		return name;
+		return branch_name;
 	}
 	public void setName(String name) {
-		this.name = name;
+		this.branch_name = name;
 	}
 	public String getAddress() {
-		return address;
+		return branch_address;
 	}
 	public void setAddress(String address) {
-		this.address = address;
+		this.branch_address = address;
 	}
-	public String getBranch_number() {
+	public int getBranch_number() {
 		return branch_number;
 	}
-	public void setBranch_number(String branch_number) {
+	public void setBranch_number(int branch_number) {
 		this.branch_number = branch_number;
 	}
 	public int getBank_id() {

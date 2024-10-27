@@ -1,19 +1,13 @@
 package DAO;
 
+import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-
-import com.google.gson.JsonObject;
-
-import enums.AccountType;
 import enums.Status;
 import enums.TransactionType;
 import model.Account;
@@ -24,7 +18,6 @@ public class AccountDAO {
 
     private DbUtil dbUtil = new DbUtil();
     private Account account = new Account();
-    private UserDAO userDAO = new UserDAO();
 
     public boolean insertAccount(Connection conn, Account account) throws SQLException 
     {
@@ -37,7 +30,7 @@ public class AccountDAO {
         return query.executeUpdate(conn, dbUtil) > 0;
     }
     
-    public boolean checkAccount(Account account) throws  ServletException
+    public boolean checkAccount(Account account) throws  ServletException, SQLException
     {
     	
     	Map<String,Object[]> conditions = new HashMap<>();
@@ -49,14 +42,9 @@ public class AccountDAO {
     			.select("*")
     			.from("account")
     			.where(conditions);
-    	ResultSet rs;
-		try {
-			rs = query.executeQuery(dbUtil.connect(), dbUtil);
-			return rs.next();
-		} catch (SQLException | ServletException e) {
-			e.printStackTrace();
-		}
-		return false;
+    	ResultSet rs = query.executeQuery(dbUtil.connect(), dbUtil);
+		return rs.next();
+		
     }
     public ResultSet selectAllAccounts(Connection conn,HashMap<String, Integer> pathMap) throws SQLException 
     {
@@ -98,25 +86,6 @@ public class AccountDAO {
     }
     
    
-    
-    public List<Account> convertResultSetToList(ResultSet rs) throws SQLException 
-    {
-        List<Account> accountList = new ArrayList<>();
-        
-        while (rs.next()) 
-        {
-            Account account = new Account();
-            account.setAccNo(rs.getInt("acc_number"));
-            account.setAccType(rs.getInt("acc_type"));
-            account.setAccBalance(rs.getDouble("acc_balance"));
-            account.setAccStatus(rs.getInt("acc_status"));
-            account.setUserId(rs.getInt("user_id"));
-            account.setBranchId(rs.getInt("branch_id"));
-            accountList.add(account);
-        }
-        return accountList;
-    }
-
    
    public ResultSet accountsAndLoans(Connection conn,HashMap<String, Integer> pathMap) throws SQLException
    {
@@ -157,7 +126,7 @@ public class AccountDAO {
     	Map<String,Object> conditions = new HashMap<>();
     	if(account.getAccStatus() == Status.INACTIVE.getValue())
     	{
-    		if(!updateBalance(conn,TransactionType.DEBIT.getValue(),1000,account.getAccNo()))
+    		if(!updateBalance(conn,TransactionType.DEBIT.getValue(),BigDecimal.valueOf(1000.0),account.getAccNo()))
     		{
     			return false;
     		}
@@ -176,7 +145,7 @@ public class AccountDAO {
     
     
 
-    public boolean updateBalance(Connection conn, int type,double amount,int acc_no) throws SQLException
+    public boolean updateBalance(Connection conn, int type,BigDecimal amount,int acc_no) throws SQLException
     {
     	HashMap<String, Integer> pathMap = new HashMap<>();
     	pathMap.put("accounts", acc_no);
@@ -185,10 +154,8 @@ public class AccountDAO {
 			rs = selectAllAccounts(conn,pathMap);
 			if(rs.next())
 			{
-				account.setAccBalance(rs.getDouble("acc_balance"));
+				account.setAccBalance(rs.getBigDecimal("acc_balance"));
 			}
-		} catch (SQLException e) {
-			e.printStackTrace();
 		}
 		finally {
 			dbUtil.close(null, null, rs);
@@ -198,13 +165,13 @@ public class AccountDAO {
     	
     	if(type==TransactionType.CREDIT.getValue())
     	{
-    		amount = account.getAccBalance() + amount;
+    		amount = account.getAccBalance().add(amount);
     	}
     	else if(type==TransactionType.DEBIT.getValue())
     	{
-    		if(account.getAccBalance() >= amount)
+    		if(account.getAccBalance().compareTo(amount) >=0)
     		{
-    			amount = account.getAccBalance() - amount;
+    			amount = account.getAccBalance().subtract(amount);
     		}
     		else
     		{
@@ -223,33 +190,5 @@ public class AccountDAO {
         return query.executeUpdate(conn, dbUtil) > 0;
     }
     
-    
-    public Account extractAccountDetails(JsonObject jsonRequest,HttpServletRequest request) throws SQLException, ServletException 
-    {
-    	if(!request.getSession(false).getAttribute("user_role").equals("CUSTOMER"))
-    	account.setUserId(userDAO.getUserId(dbUtil.connect(), jsonRequest.get("username").getAsString()).getUser_id());
-    	
-    	  
-        account.setAccType((AccountType.valueOf(jsonRequest.get("acc_type").getAsString().toUpperCase())).getValue());
-        
-        if(!jsonRequest.has("acc_status"))
-        {
-        	account.setAccStatus(Status.PENDING.getValue());
-
-        }
-        else
-        {
-        	if(jsonRequest.get("acc_status").getAsString().equals(""))
-        	{
-        		account.setAccStatus(Status.PENDING.getValue());
-        	}
-        	else
-        	{
-        		
-        		account.setAccStatus(Status.valueOf(jsonRequest.get("acc_status").getAsString().toUpperCase()).getValue());
-        	}
-        	
-        }
-        return account;
-    }
+   
 }

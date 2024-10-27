@@ -1,3 +1,9 @@
+const methods = {
+    GET:'GET',
+    POST:'POST',
+    PUT:'PUT',
+    DELETE:'DELETE'
+};
 const role = {
     ADMIN: 'ADMIN',
     MANAGER: 'MANAGER',
@@ -49,4 +55,4 @@ let getSessionData = () => {
     }
     return null;
   };
-export { role, status, accountType, loanStatus, loanType, transactionStatus, transactionType,getSessionData };
+export { role, status, accountType, loanStatus, loanType, transactionStatus, transactionType,methods,getSessionData };

@@ -3,18 +3,13 @@ package DAO;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
 
-import com.google.gson.JsonObject;
 
 import enums.LoanStatus;
-import enums.LoanType;
 import model.Loan;
 import utility.DbUtil;
 import utility.QueryUtil;
@@ -22,7 +17,6 @@ import utility.QueryUtil;
 public class LoanDAO {
 
     private DbUtil dbUtil = new DbUtil();
-    private Loan loan = new Loan();
 
     public boolean insertLoan(Connection conn, Loan loan) throws SQLException 
     {
@@ -36,7 +30,7 @@ public class LoanDAO {
         return query.executeUpdate(conn, dbUtil) > 0;
     }
     
-    public boolean isLoanExists() throws ServletException
+    public boolean isLoanExists(Loan loan) throws ServletException, SQLException
     {
     	 Map<String,Object[]> conditions = new HashMap<>();
      	
@@ -51,14 +45,10 @@ public class LoanDAO {
 		try {
 			rs = query.executeQuery(dbUtil.connect(),dbUtil);
 			return rs.next();
-		} catch (SQLException | ServletException e) {
-			e.printStackTrace();
 		} 
 		finally {
 			dbUtil.close(null, null, rs);
 		}
-		return false;
-    	 
     	 
     }
 
@@ -107,26 +97,7 @@ public class LoanDAO {
     	return key;
     }
 
-    public List<Loan> convertResultSetToList(ResultSet rs) throws SQLException 
-    {
-        List<Loan> loanList = new ArrayList<>();
-        
-        while (rs.next()) 
-        {
-            Loan loan = new Loan();
-            loan.setLoan_id(rs.getInt("loan_id"));
-            loan.setLoan_type(rs.getInt("loan_type"));
-            loan.setLoan_amount(rs.getDouble("loan_amount"));
-            loan.setLoan_interest(rs.getDouble("loan_interest"));
-            loan.setLoan_duration(rs.getInt("loan_duration"));
-            loan.setLoan_status(rs.getInt("loan_status"));
-            loan.setLoan_availed_date(rs.getDate("loan_availed_date"));
-            loan.setAcc_no(rs.getInt("acc_number"));
-            loanList.add(loan);
-        }
-        return loanList;
-    }
-
+  
    
     public boolean updateLoan(Connection conn, Loan loan) throws SQLException 
     {
@@ -150,7 +121,7 @@ public class LoanDAO {
         return query.executeUpdate(conn,dbUtil) > 0;
     }
 
-    private boolean checkLoans(int accNo) throws ServletException
+    public boolean checkLoans(int accNo) throws ServletException, SQLException
     {
     	Map<String,Object[]> whereconditions = new HashMap<>();
     	whereconditions.put("acc_number", new Object[] {"=", accNo});
@@ -164,59 +135,12 @@ public class LoanDAO {
 		try {
 			rs = query.executeQuery( dbUtil.connect(), dbUtil);
 			return rs.next();
-		} catch (SQLException | ServletException e) {
-			e.printStackTrace();
-		}
+		} 
 		finally {
 			dbUtil.close(null, null, rs);
 		}
-		return false;
     }
     	
 
-    						
-    
 
-    public Loan extractLoanDetails(JsonObject jsonRequest,HttpServletRequest request) throws SQLException, ServletException 
-    {
-        loan.setLoan_type(LoanType.valueOf(jsonRequest.get("loan_type").getAsString().toUpperCase()).getValue());
-        loan.setLoan_amount(jsonRequest.get("loan_amount").getAsDouble());
-        loan.setLoan_duration(Integer.valueOf(jsonRequest.get("loan_duration").getAsString().substring(0,2)));
-        if(!jsonRequest.has("loan_status"))
-        {
-        	loan.setLoan_status(LoanStatus.PENDING.getValue());
-
-        }
-        else
-        {
-        	if(jsonRequest.get("loan_status").getAsString().equals(""))
-        	{
-        		loan.setLoan_status(LoanStatus.PENDING.getValue());
-        	}
-        	else
-        	{
-        		
-        		loan.setLoan_status(LoanStatus.valueOf(jsonRequest.get("loan_status").getAsString().toUpperCase()).getValue());
-        	}
-        }
-        if(request.getMethod()!="PUT")
-        {
-        	
-        	if(checkLoans(loan.getAcc_no()))
-        	{
-        		loan.setLoan_interest(11.0);
-        	}
-        	else
-        	{
-        		
-        		loan.setLoan_interest(15.0);
-        	}
-        }
-        
-        
-        if(loan.getLoan_status() < 2)
-        	loan.setLoan_availed_date(new java.sql.Date(System.currentTimeMillis()));
-        	
-        return loan;
-    }
 }

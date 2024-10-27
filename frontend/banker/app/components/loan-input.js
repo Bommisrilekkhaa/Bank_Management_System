@@ -1,9 +1,8 @@
 import Ember from 'ember';
-import { loanStatus,loanType ,role} from '../utils/util';
+import { loanStatus,loanType ,role,methods} from '../utils/util';
 export default Ember.Component.extend({
   notification: Ember.inject.service('notify'),
-  accountsService: Ember.inject.service('accounts'),
-  loansService: Ember.inject.service('loans'),
+  fetchService: Ember.inject.service('fetch'),
   errorMessage: '',
   accounts:[],
   loan_id: '',
@@ -59,7 +58,20 @@ export default Ember.Component.extend({
   }),
   
   loadAccounts() {
-    this.get('accountsService').fetchActiveAccounts(this.get('bankId')).then((response) => {
+  let url = `http://localhost:8080/banker/api/v1/`;
+  let branchId = localStorage.getItem("branchId");
+  let bankId = localStorage.getItem('bankId');
+  if(bankId!="*")
+  {
+    url=url +`banks/${bankId}`;
+  }
+  if(branchId!='*')
+  {
+    url=url+`/branches/${branchId}`;
+  }
+  url=url+`/accounts?acc_status=1`;
+
+    this.get('fetchService').fetch(url,methods.GET).then((response) => {
       console.log(response);
       this.set('accounts', response);
     }).catch((error) => {
@@ -97,19 +109,37 @@ export default Ember.Component.extend({
 
       
       const loanData = {
-        loan_id:this.get('loan_id'),
-        loan_type: this.get('loan_type'),
+        loan_type: (this.get('loan_type')==loanType.HOMELOAN)?0:((this.get('loan_type')==loanType.BUSINESSLOAN)?1:2),
         loan_amount: this.get('loan_amount'),
         loan_duration: this.get('loan_duration'),
-        loan_status: this.get('loan_status'),
-        userId: this.get('userId'),
-        branchId:localStorage.getItem('branchId'),
-        bankId:this.get('bankId'),
-        accNo: (this.get('isDirect'))?this.get('accNo'):localStorage.getItem('accNo')
+        loan_status:(this.get('loan_status')=='')?0:((this.get('loan_status')==loanStatus.PENDING)?0:((this.get('loan_status')==loanStatus.APPROVED)?1:((this.get('loan_status')==loanStatus.CLOSED)?2:3))),
+        acc_number: (this.get('isDirect'))?this.get('accNo'):localStorage.getItem('accNo')
       };
 
+      let url = `http://localhost:8080/banker/api/v1/`;
+      let bankId = localStorage.getItem("bankId");
+      let branchid = localStorage.getItem("branchId");
+      let accno = loanData.acc_number
+      let loanId = localStorage.getItem("loanId");
+      if(bankId!="*")
+      {
+        url=url +`banks/${bankId}`;
+      }
+      if(branchid!='*')
+      {
+        url=url+`/branches/${branchid}`;
+      }
+      if(accno!="*")
+      {
+        url = url+`/accounts/${accno}`;
+      }
+    
       if (this.get('isEdit')) {
-        this.get('loansService').updateLoan(loanData).then(() => {
+        if(loanId!="*")
+        {
+          url=url+`/loans/${loanId}`;
+        }
+        this.get('fetchService').fetch(url,methods.PUT,loanData).then(() => {
           console.log('Loan updated successfully!');
           this.resetForm();
           this.get('notification').showNotification('Loan Edited successfully!', 'success');
@@ -122,7 +152,8 @@ export default Ember.Component.extend({
         });
 
       } else {
-        this.get('loansService').createLoan(loanData).then(() => {
+        url=url+`/loans`;
+        this.get('fetchService').fetch(url,methods.POST,loanData).then(() => {
           console.log('Loan created successfully!');
           this.resetForm();
           this.get('notification').showNotification('Loan Created successfully!', 'success');

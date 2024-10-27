@@ -17,9 +17,9 @@
           <td {{action "viewBranch" branch}}>{{branch.branch_number}}</td>
           <td {{action "viewBranch" branch}}>{{branch.manager_name}}</td>
           <td>
-            <button {{action "editBranch" branch}}>Edit</button>
+            <button {{action "editBranch" branch}}><i class="bi bi-pencil"></i> Edit</button>
             {{#unless (eq branch.branch_id branch.main_branch_id)}}
-            <button {{action "deleteBranch" branch}}>Delete</button>
+            <button {{action "deleteBranch" branch}}><i class="bi bi-trash-fill"></i> Delete</button>
             {{/unless}}
           </td>
         </tr>

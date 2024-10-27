@@ -1,8 +1,8 @@
 import Ember from 'ember';
-import { role } from '../utils/util';
+import { role,methods } from '../utils/util';
 export default Ember.Component.extend({
   branchSelection: Ember.inject.service('branch-select'),
-  branchesService: Ember.inject.service('branches'),
+  fetchService: Ember.inject.service('fetch'),
   session: Ember.inject.service(),
   bankId: localStorage.getItem('bankId'),
   branches: [],
@@ -38,9 +38,17 @@ export default Ember.Component.extend({
   }, 
    
   loadBranches() {
-    console.log(this.get('bankId'));
-    Ember.run.later(() => {
-    this.get('branchesService').fetchBranches(this.get('bankId')).then((response) => {
+    let bankId=localStorage.getItem('bankId');
+      let url = `http://localhost:8080/banker/api/v1/`;
+        if(bankId!="*")
+        {
+          url=url +`banks/${bankId}`;
+        }
+        
+        url=url+`/branches`;
+    // console.log(this.get('bankId'));
+    Ember.run.later(() => { 
+      this.get('fetchService').fetch(url,methods.GET).then((response) => {
       console.log(response);
       this.set('branches', response);
     }).catch((error) => {
@@ -108,7 +116,6 @@ export default Ember.Component.extend({
       if(branch_name=='all')
       {
         localStorage.setItem('branchId', '*');
-        this.get('branchesService').set('branchId','*');
         this.changeBranch("*");
       }
       else
@@ -117,7 +124,6 @@ export default Ember.Component.extend({
         
         if (selectedBranch) {
           localStorage.setItem('branchId', selectedBranch.branch_id);
-          this.get('branchesService').set('branchId',selectedBranch.branch_id);
           this.changeBranch(selectedBranch.branch_id);
           // console.log('Branch ID set to:', selectedBranch.branch_id);
         } else {
