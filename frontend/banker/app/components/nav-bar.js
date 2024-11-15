@@ -1,21 +1,14 @@
 import Ember from 'ember';
-import { role,methods } from '../utils/util';
+import { role,methods ,getSessionData} from '../utils/util';
 export default Ember.Component.extend({
   branchSelection: Ember.inject.service('branch-select'),
   fetchService: Ember.inject.service('fetch'),
   session: Ember.inject.service(),
-  bankId: localStorage.getItem('bankId'),
+  sharedData:Ember.inject.service('shared-data'),
   branches: [],
   userRole:role,
-  role:Ember.computed(()=>{
-    let value = `; ${document.cookie}`;
-    let parts = value.split(`; ${'sessionData'}=`);
-    if (parts.length === 2) {
-        let cookieData = decodeURIComponent(parts.pop().split(';').shift());
-        let sessionData = JSON.parse(cookieData);  
-        return sessionData.user_role;  
-    }
-  }),
+  role:getSessionData().user_role,
+    
   init() {
     this._super(...arguments);
     if(this.get('role')==role.ADMIN || this.get('role')==role.CUSTOMER)
@@ -23,22 +16,22 @@ export default Ember.Component.extend({
         this.loadBranches();
         
       }
-    if(localStorage.getItem('branchId')==null)
-    {
-      localStorage.setItem('branchId', '*');
-    }
-    if(localStorage.getItem('accNo')==null)
-    {
-      localStorage.setItem('accNo','*');  
-    }
-    if(localStorage.getItem('loanId')==null)
-    {
-      localStorage.setItem('loanId','*');
-    }
+    // if(localStorage.getItem('branchId')==null)
+    // {
+    //   localStorage.setItem('branchId', '*');
+    // }
+    // if(localStorage.getItem('accNo')==null)
+    // {
+    //   localStorage.setItem('accNo','*');  
+    // }
+    // if(localStorage.getItem('loanId')==null)
+    // {
+    //   localStorage.setItem('loanId','*');
+    // }
   }, 
    
   loadBranches() {
-    let bankId=localStorage.getItem('bankId');
+    let bankId=this.get('sharedData').get('bankId');
       let url = `http://localhost:8080/banker/api/v1/`;
         if(bankId!="*")
         {
@@ -49,8 +42,8 @@ export default Ember.Component.extend({
     // console.log(this.get('bankId'));
     Ember.run.later(() => { 
       this.get('fetchService').fetch(url,methods.GET).then((response) => {
-      console.log(response);
-      this.set('branches', response);
+      // console.log(response);
+      this.set('branches', response[0].data);
     }).catch((error) => {
       console.error("Failed to load branches:", error);
     });
@@ -63,48 +56,14 @@ export default Ember.Component.extend({
     this.get('branchSelection').changeBranch(branchId);
   },
   actions: {
+    navigate(routeName) {
+      this.set('currentRoute',routeName);
+      routeName=routeName+"Route"
+      this.get(routeName)();
+    },
     logout() {
-      localStorage.clear();
+      // localStorage.clear();
       this.get('logout')();
-    },
-    toUsers()
-    {
-      this.get('toUsers')();
-    },
-    toBranch()
-    {
-      this.get('toBranch')();
-    },
-    todashboard()
-    {
-      this.set('branch_name','all');
-      this.get('todashboard')();
-    },
-    toBanks()
-    {
-      this.get('toBanks')();
-    },
-    toBank()
-    {
-      this.get('toBank')();
-    },
-    toBranches()
-    {
-      this.get('toBranches')();
-    },
-    toAccounts()
-    {
-      this.get('toAccounts')();
-    }, 
-    
-    toTransactions()
-    {
-      this.get('toTransactions')();
-    }, 
-    
-    toLoans()
-    {
-      this.get('toLoans')();
     },
     setbranch(branch_name) {
       let array = this.get('branches');
@@ -115,7 +74,7 @@ export default Ember.Component.extend({
       }
       if(branch_name=='all')
       {
-        localStorage.setItem('branchId', '*');
+        this.get('sharedData').set('branchId', '*');
         this.changeBranch("*");
       }
       else
@@ -123,7 +82,7 @@ export default Ember.Component.extend({
         let selectedBranch = array.find((item) => item.branch_name === branch_name);
         
         if (selectedBranch) {
-          localStorage.setItem('branchId', selectedBranch.branch_id);
+          this.get('sharedData').set('branchId', selectedBranch.branch_id);
           this.changeBranch(selectedBranch.branch_id);
           // console.log('Branch ID set to:', selectedBranch.branch_id);
         } else {

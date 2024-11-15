@@ -2,14 +2,14 @@ import Ember from 'ember';
 import {methods} from '../../../../../../../utils/util';
 export default Ember.Controller.extend({
     fetchService: Ember.inject.service('fetch'),
-    bankId: localStorage.getItem('bankId'),
+    sharedData:Ember.inject.service('shared-data'),
     emis: [],
     generatedEmis: [],
     
     loadEmis() {
         
-        let bankId = localStorage.getItem('bankId');
-        let loanId=localStorage.getItem('loanId');
+        let bankId = this.get('sharedData').get('bankId');
+        let loanId=this.get('sharedData').get('loanId');
         let url = `http://localhost:8080/banker/api/v1/`;
     
         if(bankId!="*")
@@ -104,7 +104,7 @@ export default Ember.Controller.extend({
 
         addNewEmi()
         {
-            this.transitionToRoute('banks.bank.accounts.account.transactions.new',this.get('bankId'),this.get('loan').acc_number)
+            this.transitionToRoute('banks.bank.accounts.account.transactions.new',this.get('sharedData').get('bankId'),this.get('loan').acc_number)
             .then((newRoute) => {
                 newRoute.controller.setProperties({
                     transaction_type:'emi',

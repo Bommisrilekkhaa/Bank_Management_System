@@ -1,25 +1,45 @@
-<div class="filters">
-  <label for="userRole">Role</label>
-  <select id="userRole" value={{selectedUserRole}} onchange={{action "updateUserRole" value="target.value"}}>
-    <option value="">All</option>
-    <option value="admin">Admin</option>
-    <option value="customer">Customer</option>
-    <option value="manager">Manager</option>
-  </select>
-
-  <label for="userStatus">Status</label>
-  <select id="userStatus" value={{selectedUserStatus}} onchange={{action "updateUserStatus" value="target.value"}}>
-    <option value="">All</option>
-     <option value="pending">Pending</option>
-    <option value="active">Active</option>
-    <option value="inactive">Inactive</option>
-   
-  </select>
-   <button class="clear" {{action (mut selectedUserRole) ''}} {{action (mut selectedUserStatus) ''}}>Reset</button>
-  
-</div>
-
 <div class="users-list">
+  <div class="filters">
+    <label for="userRole">Role</label>
+    <select id="userRole" value={{selectedUserRole}} oninput={{action "UserRole" value="target.value"}}>
+      <option value="">All</option>
+      <option value="admin">Admin</option>
+      <option value="customer">Customer</option>
+      <option value="manager">Manager</option>
+    </select>
+
+    <label for="userStatus">Status</label>
+    <select id="userStatus" value={{selectedUserStatus}} oninput={{action "UserStatus" value="target.value"}}>
+      <option value="">All</option>
+      <option value="pending">Pending</option>
+      <option value="active">Active</option>
+      <option value="inactive">Inactive</option>
+    
+    </select>
+    <button class="clear" style="margin-top:5px;padding:10px 15px 10px 15px" {{action "UserRole" ''}} {{action "UserStatus" ''}}>Reset</button>
+    
+  </div>
+
+ <div class="search-container" style="margin-top:-70px;margin-left:71%;width:29%;">
+    <input 
+      style="width:170px;"
+      type="text" 
+      class="search-input" 
+      placeholder="Search Username" 
+      value={{searchQuery}} 
+      oninput={{action "updateSearchQuery" value="target.value"}}
+    />
+    <button {{action "performSearch"}} class="new-branch-btn" style="padding:10px;margin-top:-3px">Search</button>
+
+    {{#if searchSuggestions.length}}
+      <ul class="suggestions-list" style="width:170px;">
+        {{#each searchSuggestions as |suggestion|}}
+          <li {{action "selectSuggestion" suggestion}}>{{suggestion}}</li>
+        {{/each}}
+      </ul>
+    {{/if}}
+  </div>
+
   <table class="users-table">
     <thead>
       <tr>
@@ -30,7 +50,8 @@
       </tr>
     </thead>
     <tbody>
-      {{#each filteredUsers as |user|}}
+      {{#unless (eq users.length 0)}}
+      {{#each users as |user|}}
         <tr {{action "viewUser" user}}>
           <td>{{user.username}}</td>
           <td>{{user.user_role}}</td>
@@ -43,8 +64,46 @@
           </td>
         </tr>
       {{/each}}
+      {{/unless}}
     </tbody>
   </table>
+   {{#if (eq users.length 0)}}
+         <button style="margin-top:60px;cursor:default;margin-right:40%;" class="new-account-btn">No Users Found!</button>
+    {{/if}}
+
+  {{#unless (eq users.length 0)}}
+    <div class="pagination-controls">
+      <button {{action "previousPage"}} disabled={{if (eq currentPage 1) "disabled"}}>Previous</button>
+
+      {{#if showFirstPage}}
+        <button {{action "goToPage" 1}} class="page-number {{if (eq currentPage 1) 'active' ''}}">1</button>
+      {{/if}}
+
+      {{#if showLeftEllipsis}}
+        <span class="ellipsis">...</span>
+      {{/if}}
+
+      {{#each visiblePages as |page|}}
+        <button 
+          {{action "goToPage" page}} 
+          class="page-number {{if (eq page currentPage) 'active' ''}}">
+          {{page}}
+        </button>
+      {{/each}}
+
+      {{#if showRightEllipsis}}
+        <span class="ellipsis">...</span>
+      {{/if}}
+
+      {{#if showLastPage}}
+        <button {{action "goToPage" totalPages}} class="page-number {{if (eq currentPage totalPages) 'active' ''}}">
+          {{totalPages}}
+        </button>
+      {{/if}}
+
+      <button {{action "nextPage"}} disabled={{if (eq currentPage totalPages) "disabled"}}>Next</button>
+    </div>
+  {{/unless}}
 </div>
  {{notify-box message=notification.message type=notification.type}}
 

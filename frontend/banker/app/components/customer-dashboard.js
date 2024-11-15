@@ -22,13 +22,10 @@ export default Ember.Component.extend({
         return emiSchedule;
     },
     actions: {
-        showEmiModal(loanId) {
-            let account = this.get('accountList').find(accountItem => {
-                return accountItem.loan_details && accountItem.loan_details.loan_id === loanId;
-            });
+        showEmiModal(loanDetails) {
+           
 
-            if (account && account.loan_details) {
-                let loanDetails = account.loan_details;
+            if (loanDetails) {
                 let loanAmount = loanDetails.loan_amount;
                 let interestRate = loanDetails.loan_interest;
                 let tenureMonths = loanDetails.loan_duration;
@@ -36,7 +33,7 @@ export default Ember.Component.extend({
 
                 let emiSchedule = this.calculateEMI(loanAmount, interestRate, tenureMonths, loanAvailedDate);
                 this.set('emiSchedule', emiSchedule);
-                this.set('selectedLoanId', loanId);
+                this.set('selectedLoanId',loanDetails.loan_id);
                 this.set('emi', emiSchedule[0]);
                 document.getElementById('emiModal').style.display = 'flex';
             } else {

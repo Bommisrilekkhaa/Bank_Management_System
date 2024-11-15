@@ -3,6 +3,7 @@ import {status,accountType,role,methods} from '../utils/util';
 export default Ember.Component.extend({
   notification: Ember.inject.service('notify'),
   fetchService: Ember.inject.service('fetch'),
+  sharedData:Ember.inject.service('shared-data'),
   errorMessage: '',
   branchNames: [],
   userRole:role,
@@ -20,7 +21,7 @@ export default Ember.Component.extend({
   
   init() {
     this._super(...arguments);
-    console.log("init...");
+    // console.log("init...");
     this.loadBranches();
   }, 
   userId: Ember.computed(()=>{
@@ -41,11 +42,10 @@ export default Ember.Component.extend({
   username: '',
   fullname:'',
   branch_name: '',
-  bankId: localStorage.getItem("bankId"),
   isEdit: false,  
   branchId:'',
   loadBranches() {
-    let bankId=localStorage.getItem('bankId');
+    let bankId=this.get('sharedData').get('bankId');
     let url = `http://localhost:8080/banker/api/v1/`;
       if(bankId!="*")
       {
@@ -54,7 +54,7 @@ export default Ember.Component.extend({
       
       url=url+`/branches`;
     this.get('fetchService').fetch(url,methods.GET).then((response) => {
-      this.set('branchNames', response);
+      this.set('branchNames', response[0].data);
      
     }).catch((error) => {
       console.error("Failed to load branches:", error);
@@ -79,33 +79,30 @@ export default Ember.Component.extend({
       let item = array[i];
       if(item['branch_name']==this.get('branch_name'))
       {
-        this.branchId = item['branch_id'];
+        this.set('branchId',item['branch_id']);
       }
     }
       
       if(this.get('role')!='MANAGER')
       {
-
-        localStorage.setItem('branchId',this.get('branchId'));
+        this.get('sharedData').set('branchId',this.get('branchId'));
       }
-        const userData={
-          fullname:this.get('fullname'),
-          userId:this.get('userId')
-        }
+        
         const accountData = {
           acc_type: (this.get('acc_type')==accountType.BUSINESS)?0:1,
           // acc_balance: this.get('acc_balance'),
           username:this.get('username'),
           acc_status: (this.get('acc_status')=='')?0:((this.get('acc_status')==status.PENDING)?0:((this.get('acc_status')==status.ACTIVE)?1:2)),
-          bank_id:this.get('bankId'),
+          bank_id:this.get('sharedData').get('bankId'),
+          user_id:this.get('user_id')
         };
 
 
   let url = `http://localhost:8080/banker/api/v1/`;
-  let bankId = localStorage.getItem('bankId');
-  let branchId = localStorage.getItem("branchId");
+  let bankId = this.get('sharedData').get('bankId');
+  let branchId = this.get('sharedData').get("branchId");
     if (this.get('isEdit')) {
-      let accNo = localStorage.getItem('accNo');
+      let accNo = this.get('sharedData').get('accNo');
       if(bankId!="*")
       {
         url=url +`banks/${bankId}`;

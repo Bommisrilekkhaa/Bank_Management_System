@@ -3,11 +3,11 @@ import {methods} from '../../../../../utils/util';
 export default Ember.Controller.extend({
   acc:[],
   fetchService: Ember.inject.service('fetch'),
-  loadAccount() {
+  sharedData:Ember.inject.service('shared-data'),
+  loadAccount(accNo) {
     let url = `http://localhost:8080/banker/api/v1/`;
-  let bankId = localStorage.getItem('bankId');
-    let branchId = localStorage.getItem("branchId");
-    let accNo = localStorage.getItem('accNo');
+  let bankId = this.get('sharedData').get('bankId');
+    let branchId = this.get('sharedData').get('branchId');
     if(bankId!="*")
     {
       url=url +`banks/${bankId}`;
@@ -22,8 +22,8 @@ export default Ember.Controller.extend({
     }
 
     this.get('fetchService').fetch(url,methods.GET).then((response) => {
-      console.log(response);
-      this.set('acc', response);
+      // console.log(response);
+      this.set('acc', response[0].data);
       this.set('acc',this.get('acc')[0]);
     }).catch((error) => {
       console.error("Failed to load account:", error);
@@ -32,11 +32,11 @@ export default Ember.Controller.extend({
   actions:{
     toLoans()
     {
-      this.transitionToRoute('banks.bank.accounts.account.loans',localStorage.getItem('accNo')).then((newRoute)=>{
+      this.transitionToRoute('banks.bank.accounts.account.loans',this.get('sharedData').get('accNo')).then((newRoute)=>{
              
         newRoute.controller.setProperties({
-          bankId:localStorage.getItem('bankId'),
-          branchId:localStorage.getItem('branchId')
+          bankId:this.get('sharedData').get('bankId'),
+          branchId:this.get('sharedData').get('branchId')
         });
       }).catch((error) => {
         console.error("Transition failed", error);
@@ -44,11 +44,11 @@ export default Ember.Controller.extend({
     },
     toTransactions()
     {
-      this.transitionToRoute('banks.bank.accounts.account.transactions',localStorage.getItem('accNo')).then((newRoute)=>{
+      this.transitionToRoute('banks.bank.accounts.account.transactions',this.get('sharedData').get('accNo')).then((newRoute)=>{
              
         newRoute.controller.setProperties({
-          bankId:localStorage.getItem('bankId'),
-          branchId:localStorage.getItem('branchId')
+          bankId:this.get('sharedData').get('bankId'),
+          branchId:this.get('sharedData').get('branchId')
         });
       }).catch((error) => {
         console.error("Transition failed", error);

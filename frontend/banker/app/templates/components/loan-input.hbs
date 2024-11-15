@@ -40,7 +40,7 @@
 
     <div class="form-group">
       <label for="loan_duration">Loan Duration<span style="color:rgb(237, 69, 69);">*</span></label>
-      <select id="loan_duration" class="form-control" onchange={{action (mut loan_duration) value="target.value"}}>
+      <select id="loan_duration" class="form-control" value="{{loan_duration}}" onchange={{action (mut loan_duration) value="target.value"}}>
         <option value="">Select duration</option>
         {{#each durations as |duration|}}
           <option value={{duration}} selected={{if (eq duration loan_duration) "selected"}}>{{duration}} Months</option>

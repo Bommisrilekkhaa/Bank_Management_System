@@ -5,14 +5,13 @@ export default Ember.Controller.extend({
 
     fetchService: Ember.inject.service('fetch'),
     transaction: [],
-    bankId:localStorage.getItem('bankId'),
-    loadTransaction() {
+    sharedData:Ember.inject.service('shared-data'),
+    loadTransaction(transactionId) {
 
       let url = `http://localhost:8080/banker/api/v1/`;
-      let bankId =localStorage.getItem('bankId');
-      let branchId = localStorage.getItem("branchId");
-      let accno = localStorage.getItem('accNo');
-      let transactionId = localStorage.getItem("transactionId");
+      let bankId =this.get('sharedData').get('bankId');
+      let branchId = this.get('sharedData').get("branchId");
+      let accno = this.get('sharedData').get('accNo');
       if(bankId!="*")
       {
         url=url +`banks/${bankId}`;
@@ -34,7 +33,7 @@ export default Ember.Controller.extend({
       this.get('fetchService').fetch(url,methods.GET)
         .then((response) => {
           // console.log(response);
-          this.set('transaction', response);
+          this.set('transaction', response[0].data);
           this.set('transaction',this.get('transaction')[0]);
         })
         .catch((error) => {

@@ -1,18 +1,19 @@
 import Ember from 'ember';
 import {status} from '../utils/util'
 export default Ember.Component.extend({
-   accNo:localStorage.getItem("accNo"),
+
+  sharedData:Ember.inject.service('shared-data'),
     status:status,
     actions:{
         loans()
         {
-            this.sendAction("toLoans",this.accNo);
+            this.sendAction("toLoans",this.get('sharedData').get('accNo'));
             
           
         },
         transactions()
         {
-            this.sendAction("toTransactions",this.accNo);
+            this.sendAction("toTransactions",this.get('sharedData').get('accNo'));
         }
     }
 

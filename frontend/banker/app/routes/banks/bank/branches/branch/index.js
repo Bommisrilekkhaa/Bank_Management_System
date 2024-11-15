@@ -1,8 +1,11 @@
 import Ember from 'ember';
 import { getSessionData,role } from '../../../../../utils/util';
 export default Ember.Route.extend({
+
+  sharedData:Ember.inject.service('shared-data'),
   beforeModel()
   {
+    let bankId = this.get('sharedData').get('bankId');
     let sessionData = getSessionData();
 
     if (!sessionData) {
@@ -25,6 +28,6 @@ export default Ember.Route.extend({
   },
     setupController(controller, model) {
       this._super(controller, model);
-      controller.loadBranch();
+      controller.loadBranch(this.get('sharedData').get('branchId'));
     }
 });

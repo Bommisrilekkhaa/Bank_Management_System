@@ -17,7 +17,9 @@
   body {
     font-family: Arial, sans-serif;
     background: linear-gradient(to bottom, #0d1b2a, black);
-    height: 100vh;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+    // height: 100vh;
     width: 100vw; 
     display: flex !important;
     flex-direction: column;
@@ -31,7 +33,7 @@
     width: 100%;
 }
 html,body{
-  height: 100%;
+  // height: 100%;
     margin: 0;
 }
 .appname{
@@ -55,4 +57,90 @@ html,body{
   border-color: #ced4da; 
 }
 
+
+.pagination-controls {
+  margin-top: 2%;
+  display: flex;
+  justify-content:center;
+  gap: 5px;
+}
+
+.pagination-controls button {
+  background-color: #508C9B;
+  color: white;
+  border: none;
+  padding: 5px 10px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  border-radius: 3px;
+}
+
+.pagination-controls button:disabled {
+  background-color: #524d4d;
+  cursor: not-allowed;
+}
+
+.pagination-controls .page-number.active {
+  background-color: #134B70;
+  font-weight: bold;
+}
+
+.pagination-controls button:hover:not(:disabled) {
+  background-color: #30b8da;
+}
+
+.ellipsis{
+  color:white;
+  font-weight:bold;
+}
+
+.search-container {
+  position: relative;
+  margin-bottom: 20px;
+  width: 80%;
+}
+
+.search-input {
+  width: 300px;
+  padding: 8px;
+  font-size: 16px;
+  background-color: #a2cbd5a5;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+}
+.search-input::placeholder
+{
+  color: black;
+  font-size:0.9em;
+
+}
+.search-button {
+  padding: 8px 12px;
+  font-size: 16px;
+  margin-left: 10px;
+}
+
+.suggestions-list {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  width: 300px;
+  background: white;
+  border: 1px solid #ccc;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  max-height: 150px;
+  overflow-y: auto;
+  z-index: 1000;
+}
+
+.suggestions-list li {
+  padding: 8px;
+  cursor: pointer;
+}
+
+.suggestions-list li:hover {
+  background: #f0f0f0;
+}
 

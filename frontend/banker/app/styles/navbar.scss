@@ -43,11 +43,19 @@
     bottom: -3px;
     left: 50%;
     transform: translateX(-50%);
-    width: 30%;
+    width: 0;
     height: 3px;
-    background: linear-gradient(49deg, black, rgb(198, 96, 12), #134b70, #000000);
+    background:  linear-gradient(49deg, black, rgb(198, 96, 12),  #000000);
     border-radius: 10px;
     transition: width 0.3s ease;
+  }
+  
+  .nav-items li.active a {
+    color: rgb(198, 96, 12);
+  }
+  
+  .nav-items li.active a::before {
+    width: 100%; 
   }
   
   .nav-items li a:hover::before {

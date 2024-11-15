@@ -3,15 +3,15 @@
 
     {{nav-bar 
     logout=(action "logout") 
-     toAccounts=(action "toAccounts")
-     todashboard=(action "todashboard")
-     toBranch=(action "toBranch")
-     toBranches=(action "toBranches")
-     toTransactions=(action "toTransactions")
-     toLoans=(action "toLoans")
-     toBank=(action "toBank")
-     toBanks=(action "toBanks")
-     toUsers=(action "toUsers")
+     branchesRoute =(action "toBranches")
+     accountsRoute=(action "toAccounts")
+     dashboardRoute=(action "todashboard")
+     transactionsRoute=(action "toTransactions")
+     loansRoute=(action "toLoans")
+     bankRoute=(action "toBank")
+     banksRoute=(action "toBanks")
+     branchRoute=(action "toBranch")
+     usersRoute=(action "toUsers")
      }}
   {{/unless}}
   {{outlet}}

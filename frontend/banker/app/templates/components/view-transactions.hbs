@@ -3,7 +3,7 @@
 
   <div class="filters">
     <label for="transactionType">Type</label>
-    <select id="transactionType" value={{selectedTransactionType}} onchange={{action (mut selectedTransactionType) value="target.value"}}>
+    <select id="transactionType" value={{selectedTransactionType}} oninput={{action "TransactionType" value="target.value"}}>
       <option value="">All</option>
       <option value="emi">EMI</option>
       <option value="debit">Debit</option>
@@ -11,15 +11,34 @@
     </select>
 
     <label for="transactionStatus">Status</label>
-    <select id="transactionStatus"  value={{selectedTransactionStatus}}  onchange={{action (mut selectedTransactionStatus) value="target.value"}}>
+    <select id="transactionStatus"  value={{selectedTransactionStatus}}  oninput={{action "TransactionStatus" value="target.value"}}>
       <option value="">All</option>
       <option value="success">Success</option>
       <option value="pending">Pending</option>
     </select>
     
-    <button class="clear" {{action (mut selectedTransactionType) ''}} {{action (mut selectedTransactionStatus) ''}} >Reset</button>
+    <button class="clear" style="margin-top:7px;padding: 8px 10px 8px 10px;" {{action "TransactionType" ""}} {{action "TransactionStatus" ""}} >Reset</button>
   </div>
+{{#if isDirect}}
+  <div class="search-container">
+    <input 
+      type="text" 
+      class="search-input" 
+      placeholder="Search Account Number" 
+      value={{searchQuery}} 
+      oninput={{action "updateSearchQuery" value="target.value"}}
+    />
+    <button {{action "performSearch"}} class="new-branch-btn" style="margin-right: 42%;padding:10px;margin-top:-3px">Search</button>
 
+    {{#if searchSuggestions.length}}
+      <ul class="suggestions-list">
+        {{#each searchSuggestions as |suggestion|}}
+          <li {{action "selectSuggestion" suggestion}}>{{suggestion}}</li>
+        {{/each}}
+      </ul>
+    {{/if}}
+  </div>
+{{/if}}
   <table class="transactions-table">
     <thead>
       <tr>
@@ -31,15 +50,55 @@
       </tr>
     </thead>
     <tbody>
-      {{#each filteredTransactions as |transaction|}}
-        <tr {{action "viewTransaction" transaction}}>
-           <td>{{transaction.transaction_id}}</td>
-          <td>{{transaction.transaction_type}}</td>
-          <td>{{transaction.acc_number}}</td>
-          <td>Rs.{{transaction.transaction_amount}}</td>
-          <td>{{transaction.transaction_datetime}}</td>
-        </tr>
-      {{/each}}
+      {{#unless (eq transactions.length 0)}}
+        {{#each transactions as |transaction|}}
+          <tr {{action "viewTransaction" transaction}}>
+            <td>{{transaction.transaction_id}}</td>
+            <td>{{transaction.transaction_type}}</td>
+            <td>{{transaction.acc_number}}</td>
+            <td>Rs.{{transaction.transaction_amount}}</td>
+            <td>{{transaction.transaction_datetime}}</td>
+          </tr>
+        {{/each}}
+      {{/unless}}
     </tbody>
   </table>
+
+  {{#if (eq transactions.length 0)}}
+    <button style="margin-top:60px;cursor:default;margin-right:40%;" class="new-transaction-btn">No Transactions Found!</button>
+  {{/if}}
+
+  {{#unless (eq transactions.length 0)}}
+    <div class="pagination-controls">
+      <button {{action "previousPage"}} disabled={{if (eq currentPage 1) "disabled"}}>Previous</button>
+
+      {{#if showFirstPage}}
+        <button {{action "goToPage" 1}} class="page-number {{if (eq currentPage 1) 'active' ''}}">1</button>
+      {{/if}}
+
+      {{#if showLeftEllipsis}}
+        <span class="ellipsis">...</span>
+      {{/if}}
+
+      {{#each visiblePages as |page|}}
+        <button 
+          {{action "goToPage" page}} 
+          class="page-number {{if (eq page currentPage) 'active' ''}}">
+          {{page}}
+        </button>
+      {{/each}}
+
+      {{#if showRightEllipsis}}
+        <span class="ellipsis">...</span>
+      {{/if}}
+
+      {{#if showLastPage}}
+        <button {{action "goToPage" totalPages}} class="page-number {{if (eq currentPage totalPages) 'active' ''}}">
+          {{totalPages}}
+        </button>
+      {{/if}}
+
+      <button {{action "nextPage"}} disabled={{if (eq currentPage totalPages) "disabled"}}>Next</button>
+    </div>
+  {{/unless}}
 </div>

@@ -2,6 +2,7 @@ import Ember from 'ember';
 import { status,methods } from '../../../utils/util';
 export default Ember.Controller.extend({
 
+  sharedData:Ember.inject.service('shared-data'),
   notification: Ember.inject.service('notify'),
     fetchService: Ember.inject.service('fetch'),
     statuses: [status.PENDING,status.ACTIVE,status.INACTIVE],
@@ -10,9 +11,9 @@ export default Ember.Controller.extend({
 
         submitForm() {
             
-          let userId = localStorage.getItem('userId');
+          let userId = this.get('sharedData').get('userId');
           let url = `http://localhost:8080/banker/api/v1`;
-          let bankId=localStorage.getItem('bankId');
+          let bankId= this.get('sharedData').get('bankId');
           if(bankId!="*")
           {
             url=url +`/banks/${bankId}`;
@@ -29,7 +30,7 @@ export default Ember.Controller.extend({
               };
 
               this.get('fetchService').fetch(url,methods.PUT,userData).then(() => {
-                console.log("User updated successfully!");
+                // console.log("User updated successfully!");
                 this.resetForm();
                 this.get('notification').showNotification('User Edited successfully!', 'success');
                 Ember.run.later(() => {
@@ -42,7 +43,7 @@ export default Ember.Controller.extend({
       
         toUsers()
         {
-            this.transitionToRoute("banks.bank.users",localStorage.getItem("bankId"));
+            this.transitionToRoute("banks.bank.users",this.get('sharedData').get("bankId"));
         }
       },
       resetForm() {

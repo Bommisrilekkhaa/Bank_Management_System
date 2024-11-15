@@ -2,6 +2,7 @@ import Ember from 'ember';
 
 export default Ember.Controller.extend({
   session: Ember.inject.service(),
+  sharedData:Ember.inject.service('shared-data'),
   username: '',
   password: '',
   selectedRole: '',
@@ -29,7 +30,7 @@ export default Ember.Controller.extend({
           this.set('userId',this.getUserIdFromCookie());
           if (this.get('userId')) {
             
-              this.transitionToRoute('banks.bank.users.user.dashboard',localStorage.getItem('bankId'), this.get('userId')); 
+              this.transitionToRoute('banks.bank.users.user.dashboard',this.get('sharedData').get('bankId'), this.get('userId')); 
               
             
           } else {

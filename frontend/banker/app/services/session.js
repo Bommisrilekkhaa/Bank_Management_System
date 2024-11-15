@@ -3,9 +3,9 @@ import $ from 'jquery';
 
 export default Ember.Service.extend({
   ajax: Ember.inject.service(),
-
+  sharedData:Ember.inject.service('shared-data'),
   login(credentials) {
-    let bankId=localStorage.getItem('bankId');
+    let bankId=this.get('sharedData').get('bankId');
       const { username, password, isSuperAdmin} = credentials;
     if(isSuperAdmin)
     {
@@ -28,7 +28,7 @@ export default Ember.Service.extend({
           withCredentials:true
         },
         success: (response,txtStatus, xhr) => {
-          console.log(xhr);
+          // console.log(xhr);
           return response;
         },
         error: (error) => {

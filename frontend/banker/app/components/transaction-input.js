@@ -3,18 +3,18 @@ import { transactionStatus,transactionType,methods } from '../utils/util';
 export default Ember.Component.extend({
   notification: Ember.inject.service('notify'),
   fetchService: Ember.inject.service('fetch'),
+  sharedData:Ember.inject.service('shared-data'),
   errorMessage: '',
   statuses: [transactionStatus.PENDING,transactionStatus.SUCCESS],
   types: [transactionType.CREDIT,transactionType.DEBIT],
   isDirect:false,
   accounts:[],
-  bankId:localStorage.getItem('bankId'),
   isEmi: Ember.computed('transaction_type', function() {
     return this.get('transaction_type') == transactionType.EMI;
   }),
   init() {
     this._super(...arguments);
-    console.log("Transaction form initialized...");
+    // console.log("Transaction form initialized...");
     if(this.get('isDirect'))
     {
       this.loadAccounts();
@@ -33,8 +33,8 @@ export default Ember.Component.extend({
   
   loadAccounts() {
     let url = `http://localhost:8080/banker/api/v1/`;
-    let branchId = localStorage.getItem("branchId");
-    let bankId = localStorage.getItem('bankId');
+    let branchId = this.get('sharedData').get("branchId");
+    let bankId = this.get('sharedData').get('bankId');
     if(bankId!="*")
     {
       url=url +`banks/${bankId}`;
@@ -46,8 +46,8 @@ export default Ember.Component.extend({
     url=url+`/accounts?acc_status=1`;
   
     this.get('fetchService').fetch(url,methods.GET).then((response) => {
-      console.log(response);
-      this.set('accounts', response);
+      // console.log(response);
+      this.set('accounts', response[0].data);
     }).catch((error) => {
       console.error("Failed to load accounts:", error);
     });
@@ -92,12 +92,12 @@ export default Ember.Component.extend({
         transaction_datetime: new Date(formattedDate),
         transaction_type:  (this.get('transaction_type')==transactionType.CREDIT)?0:((this.get('transaction_type')==transactionType.DEBIT)?1:2),
         transaction_amount: this.get('transaction_amount'),
-        acc_number: (this.get('isDirect'))?this.get('accNo'):localStorage.getItem('accNo'),
+        acc_number: (this.get('isDirect'))?this.get('accNo'):this.get('sharedData').get('accNo'),
       };
 
       let url = `http://localhost:8080/banker/api/v1/`;
-      let bankId = localStorage.getItem('bankId');
-      let branchId =localStorage.getItem('branchId');
+      let bankId = this.get('sharedData').get('bankId');
+      let branchId =this.get('sharedData').get('branchId');
       let accno = transactionData.acc_number;
       if(bankId!="*")
       {
@@ -114,7 +114,7 @@ export default Ember.Component.extend({
       url=url+`/transactions`;
 
         this.get('fetchService').fetch(url,methods.POST,transactionData).then(() => {
-          console.log('Transaction created successfully!');
+          // console.log('Transaction created successfully!');
           this.resetForm();
           this.get('notification').showNotification('Transaction Created successfully!', 'success');
 

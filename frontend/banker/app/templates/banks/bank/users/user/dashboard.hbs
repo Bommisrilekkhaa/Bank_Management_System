@@ -18,7 +18,9 @@
 {{/if}}
 {{#if (eq sessionData.user_role userRole.CUSTOMER)}}
     {{customer-dashboard
-    accountList = accountList}}
+    accountList = this.accountList
+    loanList = this.loanList
+    transactionList =  this.transactionList}}
 
 {{/if}}
 

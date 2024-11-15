@@ -1,6 +1,8 @@
 import Ember from 'ember';
 import { getSessionData,role } from '../../../utils/util';
 export default Ember.Route.extend({
+
+sharedData:Ember.inject.service('shared-data'),
   beforeModel() {
     
     let sessionData = getSessionData();
@@ -10,17 +12,17 @@ export default Ember.Route.extend({
       return;
     }
 
-
-    localStorage.setItem('accNo', '*');
-    localStorage.setItem('loanId', '*');
-    localStorage.setItem('transactionId', '*');
+    this.get('sharedData').set('accNo', '*');
+    this.get('sharedData').set('loanId', '*');
+    this.get('sharedData').set('transactionId', '*');
     if(sessionData.user_role != role.MANAGER)
     {
-      localStorage.setItem('branchId', '*');
+      this.get('sharedData').set('branchId', '*');
     }
   },
-  setupController(controller, model) {
-    controller.loadBanks();
+  setupController(controller) {
+    // console.log(this.get('sharedData'));
+    controller.loadBanks(this.get('sharedData').get('bankId'));
   }
 
 });

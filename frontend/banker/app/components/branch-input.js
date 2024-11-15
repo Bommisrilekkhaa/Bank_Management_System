@@ -8,17 +8,17 @@ export default Ember.Component.extend({
   name: '',
   address: '',
   branch_number: '',
-  bankId: localStorage.getItem("bankId"),
+  sharedData:Ember.inject.service('shared-data'),
   manager_id: '',
   isEdit: false,  
   availableManagers:[],
   init() {
     this._super(...arguments);
-    console.log("init...");
-    this.loadManagers();
+    // console.log("init...");
+    this.loadManagers(); 
   },
   loadManagers() {
-    let bankId=localStorage.getItem('bankId');
+    let bankId= this.get('sharedData').get('bankId');
     let url = `http://localhost:8080/banker/api/v1`;
     if(bankId!="*")
     {
@@ -57,25 +57,25 @@ export default Ember.Component.extend({
         branch_name: this.get('name'),
         branch_address: this.get('address'),
         manager_id: this.get('manager_id'),
-        bankId: this.get('bankId'),
+        bankId:  this.get('sharedData').get('bankId'),
         branchId:this.get('branchId')
       };
 
       if (this.get('isEdit')) {
-        let bankId=localStorage.getItem('bankId');
+        let bankId= this.get('sharedData').get('bankId');
         let url = `http://localhost:8080/banker/api/v1/`;
         if(bankId!="*")
         {
           url=url +`banks/${bankId}`;
         }
-        console.log(branchData);
+        // console.log(branchData);
         if(branchData.branchId!='*')
         {
           url=url+`/branches/${branchData.branchId}`;
         }
         this.get('fetchService').fetch(url,methods.PUT,branchData).then(() => {
          
-          console.log('Branch updated successfully!');
+          // console.log('Branch updated successfully!');
           this.resetForm();
           this.get('notification').showNotification('Branch Edited successfully!', 'success');
 
@@ -87,7 +87,7 @@ export default Ember.Component.extend({
         });
       } else {
 
-        let bankId=localStorage.getItem('bankId');
+        let bankId= this.get('sharedData').get('bankId');
         let url = `http://localhost:8080/banker/api/v1/`;
         if(bankId!="*")
         {
@@ -96,7 +96,7 @@ export default Ember.Component.extend({
         url=url+`/branches`;
 
         this.get('fetchService').fetch(url,methods.POST,branchData).then(() => {
-          console.log('Branch created successfully!');
+          // console.log('Branch created successfully!');
           this.resetForm();
           this.get('notification').showNotification('Branch Created successfully!', 'success');
 

@@ -18,4 +18,36 @@
       {{/each}}
     </tbody>
   </table>
+
+   <div class="pagination-controls">
+    <button {{action "previousPage"}} disabled={{if (eq currentPage 1) "disabled"}}>Previous</button>
+
+    {{#if showFirstPage}}
+      <button {{action "goToPage" 1}} class="page-number {{if (eq currentPage 1) 'active' ''}}">1</button>
+    {{/if}}
+
+    {{#if showLeftEllipsis}}
+      <span class="ellipsis">...</span>
+    {{/if}}
+
+    {{#each visiblePages as |page|}}
+      <button 
+        {{action "goToPage" page}} 
+        class="page-number {{if (eq page currentPage) 'active' ''}}">
+        {{page}}
+      </button>
+    {{/each}}
+
+    {{#if showRightEllipsis}}
+      <span class="ellipsis">...</span>
+    {{/if}}
+
+    {{#if showLastPage}}
+      <button {{action "goToPage" totalPages}} class="page-number {{if (eq currentPage totalPages) 'active' ''}}">
+        {{totalPages}}
+      </button>
+    {{/if}}
+
+    <button {{action "nextPage"}} disabled={{if (eq currentPage totalPages) "disabled"}}>Next</button>
+  </div>
 </div>

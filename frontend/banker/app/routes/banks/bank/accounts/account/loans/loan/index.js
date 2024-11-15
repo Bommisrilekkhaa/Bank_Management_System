@@ -1,7 +1,8 @@
 import Ember from 'ember';
 import { getSessionData,role } from '../../../../../../../utils/util';
 export default Ember.Route.extend({
-   
+  sharedData:Ember.inject.service('shared-data'),
+  
     beforeModel()
     {
           let sessionData = getSessionData();
@@ -20,6 +21,6 @@ export default Ember.Route.extend({
     },
     setupController(controller, model) {
         this._super(controller, model);
-        controller.loadLoan();
+        controller.loadLoan(this.get('sharedData').get('loanId'));
       }
 });

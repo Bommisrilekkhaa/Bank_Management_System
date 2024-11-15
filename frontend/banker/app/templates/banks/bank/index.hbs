@@ -18,11 +18,11 @@
    
      <div class="bank-field">
       <span class="field-label">Main Branch Name:</span>
-      <span class="field-value">{{branch.branch_name}}</span>
+      <span class="field-value">{{if branch.branch_name branch.branch_name "Not Assigned"}}</span>
     </div>
      <div class="bank-field">
       <span class="field-label">Main Branch Address:</span>
-      <span class="field-value">{{branch.branch_address}}</span>
+      <span class="field-value">{{if branch.branch_address branch.branch_address "Not Assigned"}}</span>
     </div>
     {{#if (eq role userRole.ADMIN)}}
     

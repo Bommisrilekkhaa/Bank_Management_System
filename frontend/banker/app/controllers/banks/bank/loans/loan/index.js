@@ -1,15 +1,14 @@
 import Ember from 'ember';
 import { methods } from '../../../../../utils/util';
 export default Ember.Controller.extend({
-    bankId:localStorage.getItem('bankId'),
     fetchService: Ember.inject.service('fetch'),
+    sharedData:Ember.inject.service('shared-data'),
     loan:[],
-    loadLoan() {
-      let bankId = localStorage.getItem("bankId");
+    loadLoan(loanId) {
+      let bankId = this.get('sharedData').get('bankId');
       let url = `http://localhost:8080/banker/api/v1/`;
-      let branchId = localStorage.getItem("branchId");
-      let accno = localStorage.getItem('accNo');
-      let loanId = localStorage.getItem('loanId');
+      let branchId = this.get('sharedData').get("branchId");
+      let accno = this.get('sharedData').get('accNo');
       if(bankId!="*")
       {
         url=url +`banks/${bankId}`;
@@ -28,7 +27,7 @@ export default Ember.Controller.extend({
         }
         this.get('fetchService').fetch(url,methods.GET).then((response) => {
           // console.log(response);
-          this.set('loan', response);
+          this.set('loan', response[0].data);
           this.set('loan',this.get('loan')[0]);
         }).catch((error) => {
           console.error("Failed to load loan:", error);
@@ -37,8 +36,8 @@ export default Ember.Controller.extend({
     actions:{
         toEmis(loan,emiAmount)
         {
-
-            this.transitionToRoute("banks.bank.loans.loan.emi",this.get('bankId'),loan.loan_id).then((newRoute)=>{
+          let bankId = this.get('sharedData').get('bankId');
+            this.transitionToRoute("banks.bank.loans.loan.emi",bankId,loan.loan_id).then((newRoute)=>{
 
                 newRoute.controller.setProperties({
                   loan:loan,

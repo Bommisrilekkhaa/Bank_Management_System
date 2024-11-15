@@ -2,6 +2,7 @@ import Ember from 'ember';
 import {methods,role} from '../utils/util';
 export default Ember.Component.extend({
   fetchService: Ember.inject.service('fetch'),
+  sharedData:Ember.inject.service('shared-data'),
   username: '',
   password: '',
   selectedRole: '',
@@ -32,7 +33,7 @@ export default Ember.Component.extend({
   loadBanks() {
     let  url= `http://localhost:8080/banker/api/v1/banks`;
     this.get('fetchService').fetch(url,methods.GET).then((response) => {
-      this.set('bankNames', response);
+      this.set('bankNames', response[0].data);
     }).catch((error) => {
       console.error("Failed to load banks:", error);
     });
@@ -50,10 +51,11 @@ export default Ember.Component.extend({
   },
 
   checkStorage() {
-    if (localStorage.length !== 0) {
-      localStorage.clear();
-    }
-    localStorage.setItem('bankId', this.get('BankId'));
+    // if (localStorage.length !== 0) {
+    //   localStorage.clear();
+    // }
+    // localStorage.setItem('bankId', this.get('BankId'));
+    this.get('sharedData').set('bankId', this.get('BankId'));
   },
 
   actions: {

@@ -54,15 +54,9 @@
   
       <button type="submit" class="btn-primary">Proceed</button>
       
-      {{#unless isEmi}}
-        {{#link-to "banks.bank.transactions" bankId}}
-          <button class="btn-secondary">Cancel</button>
-        {{/link-to}}
-      {{/unless}}
-      
-      {{#if isEmi}}
+      {{!-- {{#if isEmi}} --}}
         <button {{action "cancel"}} class="btn-secondary">Cancel</button>
-      {{/if}}
+      {{!-- {{/if}} --}}
   
       {{#if errorMessage}}
         <div class="error-message">* {{errorMessage}}</div>

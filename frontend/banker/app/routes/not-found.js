@@ -1,11 +1,12 @@
 import Ember from 'ember';
 import { getSessionData ,role} from '../utils/util';
 export default Ember.Route.extend({
+  sharedData:Ember.inject.service('shared-data'),
   model(params) {
     console.log('Attempted to access unknown path:', params.path);
   },
   redirect() {
-    let bankId = localStorage.getItem('bankId');
+    let bankId = this.get('sharedData').get('bankId');
     
     let sessionData = getSessionData();
 

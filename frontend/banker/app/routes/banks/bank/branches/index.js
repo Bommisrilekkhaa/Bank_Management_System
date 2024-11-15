@@ -1,9 +1,11 @@
 import Ember from 'ember';
 import { getSessionData,role } from '../../../../utils/util';
 export default Ember.Route.extend({
+  sharedData:Ember.inject.service('shared-data'),
   beforeModel()
   {
  
+    let bankId = this.get('sharedData').get('bankId');
     let sessionData = getSessionData();
 
     if (!sessionData) {
@@ -24,14 +26,14 @@ export default Ember.Route.extend({
         return;
     }
 
-    localStorage.setItem('accNo','*'); 
-    localStorage.setItem('loanId','*'); 
-    localStorage.setItem('transactionId','*');
-    localStorage.setItem('branchId','*');
+    this.get('sharedData').set('accNo','*'); 
+    this.get('sharedData').set('loanId','*'); 
+    this.get('sharedData').set('transactionId','*');
+    this.get('sharedData').set('branchId','*');
   },
       setupController(controller, model) {
         this._super(controller, model);
-        controller.loadBranches();
+        controller.loadBranches(1);
       }
     
 });

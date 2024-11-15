@@ -3,16 +3,17 @@ import {methods} from '../../utils/util';
 export default Ember.Controller.extend({
   notification: Ember.inject.service('notify'),
   fetchService: Ember.inject.service('fetch'),
+  sharedData:Ember.inject.service('sharedData'),
   errorMessage: '',
 
 
   init() {
     this._super(...arguments);
-    console.log("init...");
+    // console.log("init...");
   },
 
   loadAdmins() {
-    let bankId=localStorage.getItem('bankId');
+    let bankId=this.get('sharedData').get('bankId');
     let url = `http://localhost:8080/banker/api/v1`;
     if(bankId!="*")
     {

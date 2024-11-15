@@ -3,27 +3,26 @@ import {methods} from '../../../../utils/util';
 export default Ember.Controller.extend({
   branchSelection: Ember.inject.service('branch-select'),
   fetchService: Ember.inject.service('fetch'),
-  bankId: localStorage.getItem('bankId'),
-
+  sharedData:Ember.inject.service('shared-data'),
   init() {
     this._super(...arguments);
     
     this.get('branchSelection').on('branchChanged', this, this.handleBranchChange);
   },
 
-  handleBranchChange(newBranchId,currentRouteName) {
-    console.log(currentRouteName);
+  handleBranchChange(currentRouteName) {
+    // console.log(currentRouteName);
     if(currentRouteName=='banks.bank.accounts.index')
     {
-      this.loadAccounts();
+      this.loadAccounts(1);
     }
   },
-  accounts: [],
+  accounts: [], 
 
-  loadAccounts() {
+  loadAccounts(page,selectedType,selectedStatus,searchQuery) {
     let url = `http://localhost:8080/banker/api/v1/`;
-    let branchId = localStorage.getItem("branchId");
-    let bankId = localStorage.getItem('bankId');
+    let branchId = this.get('sharedData').get('branchId');
+    let bankId = this.get('sharedData').get('bankId');
     if(bankId!="*")
     {
       url=url +`banks/${bankId}`;
@@ -32,11 +31,24 @@ export default Ember.Controller.extend({
     {
       url=url+`/branches/${branchId}`;
     }
-    url=url+`/accounts`;
+    url=url+`/accounts?page=${page}`;
+    if(selectedType && selectedType!='')
+    {
+      url=url+`&filtertype=${selectedType}`;
+    }
+    if(selectedStatus && selectedStatus!='')
+    {
+      url=url+`&filterstatus=${selectedStatus}`;
+    }
+    if(searchQuery && searchQuery!='')
+    {
+      url=url+`&searchitem=${searchQuery}`;
+    }
 
     this.get('fetchService').fetch(url,methods.GET).then((response) => {
-      console.log(response);
-      this.set('accounts', response);
+      // console.log(response[0].data);
+      this.set('accounts', response[0].data);
+      this.set('totalAccounts',response[0].totalAccounts);
     }).catch((error) => {
       this.set('accounts', []);
       console.error("Failed to load accounts:", error);
@@ -48,13 +60,13 @@ export default Ember.Controller.extend({
 
     viewaccount(account)
     {
-      localStorage.setItem('branchId',account.branch_id);
-      localStorage.setItem('accNo',account.acc_no);
+      let bankId = this.get('sharedData').get('bankId');
       // console.log("view...."+this.get('bankId'));
 
-        this.transitionToRoute('banks.bank.accounts.account',this.get('bankId'),account.acc_no).then((newRoute)=>{
+      this.get('sharedData').set('branchId',account.branch_id);
+        this.transitionToRoute('banks.bank.accounts.account',bankId,account.acc_no).then((newRoute)=>{
           newRoute.controller.setProperties({
-            bankId:this.get('bankId'),
+            bankId:bankId,
             branchId:account.branch_id,
             account:account
           });
@@ -63,11 +75,13 @@ export default Ember.Controller.extend({
         });
     },
     addNewAccount() {
-      console.log(this.get('bankId'));
+
+    let bankId = this.get('sharedData').get('bankId');
+      // console.log(this.get('bankId'));
       this.transitionToRoute('banks.bank.accounts.new').then((newRoute)=>{
 
         newRoute.controller.setProperties({
-          bankId:this.get('bankId')
+          bankId:bankId
         });
         
       }).catch((error) => {
@@ -77,9 +91,10 @@ export default Ember.Controller.extend({
     },
 
     editAccount(isEdit,account,branchId) {
-      localStorage.setItem('branchId',branchId);
-      localStorage.setItem('accNo',account.acc_no);
-      this.transitionToRoute('banks.bank.accounts.account.edit',this.get('bankId'),account.acc_no).then((newRoute)=>{
+
+    let bankId = this.get('sharedData').get('bankId');
+    this.get('sharedData').set('branchId',branchId);
+      this.transitionToRoute('banks.bank.accounts.account.edit',bankId,account.acc_no).then((newRoute)=>{
 
         newRoute.controller.setProperties({
           isEdit: isEdit,
@@ -91,13 +106,18 @@ export default Ember.Controller.extend({
           fullname: account.user_fullname,
           branch_name: account.branch_name,
           branch_Id:branchId,
-          bankId:this.get('bankId'),
+          bankId:bankId,
           userId:account.user_id
         });
       }).catch((error) => {
         console.error("Transition failed", error);
       });
     },
+
+    changeAccounts(page,selectedType,selectedStatus,searchQuery)
+    {
+      this.loadAccounts(page,selectedType,selectedStatus,searchQuery);
+    }
    
   },
   willDestroy() {

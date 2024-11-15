@@ -2,32 +2,35 @@
     <div class="dashboard-section section-1">
         <h2>Loans Overview</h2>
         <div class="loan-card-container">
-            {{#each accountList as |item|}}
-                {{#if item.loan_details}}
+            {{#if (eq loanList.length 0)}}
+            <button style="margin-top:60px;cursor:default" class="new-account-btn">No Loans Found!</button>
+            {{else}}
+                {{#each loanList as |item|}}
                     <div class="loan-card-dash">
-                        <h3>Loan ID: {{item.loan_details.loan_id}}</h3>
+                        <h3>Loan ID: {{item.loan_id}}</h3>
                         <div class="loan-field">
                             <span class="field-label-dash">Loan Type:</span>
-                            <span class="field-value-dash">{{item.loan_details.loan_type}}</span>
+                            <span class="field-value-dash">{{item.loan_type}}</span>
                         </div>
                         <div class="loan-field">
                             <span class="field-label-dash">Loan Amount:</span>
-                            <span class="field-value-dash">Rs.{{item.loan_details.loan_amount}}</span>
+                            <span class="field-value-dash">Rs.{{item.loan_amount}}</span>
                         </div>
                         <div class="loan-field">
                             <span class="field-label-dash">Loan Duration:</span>
-                            <span class="field-value-dash">{{item.loan_details.loan_duration}} months</span>
+                            <span class="field-value-dash">{{item.loan_duration}} months</span>
                         </div>
                         <div class="loan-field">
                             <span class="field-label-dash">Availed Date:</span>
-                            <span class="field-value-dash">{{item.loan_details.loan_availed_date}}</span>
+                            <span class="field-value-dash">{{item.loan_availed_date}}</span>
                         </div>
                         <div class="view-wrap">
-                            <button class="view-btn" {{action "showEmiModal" item.loan_details.loan_id}}>Emi Schedule</button>
+                            <button class="view-btn" {{action "showEmiModal" item}}>Emi Schedule</button>
                         </div>
                     </div>
-                {{/if}}
-            {{/each}}
+                
+                {{/each}}
+            {{/if}}
         </div>
     </div>
 
@@ -35,8 +38,10 @@
         <div class="dashboard-section section-2">
             <h2>Transactions Overview</h2>
             <div class="transaction-card-container">
-                {{#each accountList as |item|}}
-                    {{#each item.transactions as |transaction|}}
+            {{#if (eq transactionList.length 0)}}
+            <button style="margin-top:60px;cursor:default" class="new-account-btn">No Transactions Found!</button>
+            {{else}}
+                    {{#each transactionList as |transaction|}}
                         <div class="transaction-card-dash">
                             <h3>Transaction ID: {{transaction.transaction_id}}</h3>
                             <div class="transaction-field">
@@ -49,22 +54,26 @@
                             </div>
                         </div>
                     {{/each}}
-                {{/each}}
+                {{/if}}
             </div>
         </div>
 
         <div class="dashboard-section section-3">
             <h2>Accounts Overview</h2>
             <div class="account-card-container">
+            {{#if (eq accountList.length 0)}}
+            <button style="margin-top:60px;cursor:default" class="new-account-btn">No Accounts Found!</button>
+            {{else}}
                 {{#each accountList as |item|}}
                     <div class="account-card-dash">
-                        <h3>Account Number: {{item.account.acc_no}}</h3>
+                        <h3>Account Number: {{item.acc_no}}</h3>
                         <div class="account-field">
                             <span class="field-label-dash">Balance:</span>
-                            <span class="field-value-dash">Rs.{{item.account.acc_balance}}</span>
+                            <span class="field-value-dash">Rs.{{item.acc_balance}}</span>
                         </div>
                     </div>
                 {{/each}}
+            {{/if}}
             </div>
         </div>
     </div>

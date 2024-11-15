@@ -3,6 +3,7 @@ import { methods, role } from '../../../../../utils/util';
 export default Ember.Controller.extend({
 
   fetchService: Ember.inject.service('fetch'),
+  sharedData:Ember.inject.service('shared-data'),
   userRole:role,
   getSessionData(){
     let value = `; ${document.cookie}`;
@@ -16,7 +17,7 @@ export default Ember.Controller.extend({
 
   fetchAdminDashboard() {
     this.getSessionData();
-    let bankId=localStorage.getItem('bankId');
+    let bankId=this.get('sharedData').get('bankId');
     let url = `http://localhost:8080/banker/api/v1/banks/${bankId}/users/${this.get('sessionData').user_id}/dashboard`;
  
     this.get('fetchService').fetch(url,methods.GET).then((response) => {
@@ -27,7 +28,7 @@ export default Ember.Controller.extend({
   },
   fetchManagerDashboard() {
     this.getSessionData();
-    let bankId=localStorage.getItem('bankId');
+    let bankId=this.get('sharedData').get('bankId');
     let url = `http://localhost:8080/banker/api/v1/banks/${bankId}/users/${this.get('sessionData').user_id}/dashboard`;
  
     this.get('fetchService').fetch(url,methods.GET).then((response) => {
@@ -37,7 +38,7 @@ export default Ember.Controller.extend({
         let item = array[i];
         if (item['manager_id'] == this.get('sessionData').user_id) {
           this.set('branch', item);
-          localStorage.setItem('branchId', this.get('branch').branch_id)
+          this.get('sharedData').set('branchId', this.get('branch').branch_id);
           // console.log(this.get('branch'));
           break;
         }
@@ -51,13 +52,15 @@ export default Ember.Controller.extend({
 
   fetchCustomerDashboard(){
     this.getSessionData();
-    let bankId=localStorage.getItem('bankId');
+    let bankId=this.get('sharedData').get('bankId');
     let url = `http://localhost:8080/banker/api/v1/banks/${bankId}/users/${this.get('sessionData').user_id}/dashboard`;
      
     this.get('fetchService').fetch(url,methods.GET).then((response) => {
       // console.log(response);
            
       let accounts = [];
+      let loans=[];
+      let transactions=[];
       for (let i = 0; i < response.length; i++) {
           let account = response[i];
               let accountData = {
@@ -68,18 +71,21 @@ export default Ember.Controller.extend({
               };
 
               let loanDetails = account.loan_details || null; 
-              let transactions = account.transactions || [];
+              let transaction = account.transactions || [];
 
              
-              accounts.push({
-                  account: accountData,
-                  loan_details: loanDetails,
-                  transactions: transactions
-              });
+              accounts.push(accountData);
+              loans.push(loanDetails);
+              for (let i = 0; i < transaction.length; i++)
+              {
+                let transac = transaction[i];
+                transactions.push(transac);
+              }
           }
 
-        
+          this.set('loanList',loans);
           this.set('accountList', accounts);
+          this.set('transactionList',transactions);
 
         }).catch((error) => {
           console.error("Failed to load dashboard:", error);
