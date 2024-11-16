@@ -6,7 +6,7 @@ fetchService: Ember.inject.service('fetch'),
 branch:[],
 banks:[], 
 userRole:role,      
-role:Ember.computed(()=>{
+role:Ember.computed('banks',()=>{
   let value = `; ${document.cookie}`;
   let parts = value.split(`; ${'sessionData'}=`);
   if (parts.length === 2) {
@@ -23,7 +23,7 @@ loadBanks(bankId){
   }
     this.get('fetchService').fetch(url,methods.GET).then((response) => {
         // console.log(response);
-        this.set('banks', response[0].data);
+        this.set('banks', response.data);
         let branchId = this.get('banks')[0].main_branch_id;
         if(branchId!="*")
           {
@@ -31,7 +31,7 @@ loadBanks(bankId){
           }
           
         this.get('fetchService').fetch(url,methods.GET).then((response) => {
-          this.set('branch', response[0].data);
+          this.set('branch', response.data);
           this.set('branch',this.get('branch')[0]);
         }).catch((error) => {
           console.error("Failed to load banks:", error);

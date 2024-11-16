@@ -47,7 +47,7 @@ export default Ember.Component.extend({
   
     this.get('fetchService').fetch(url,methods.GET).then((response) => {
       // console.log(response);
-      this.set('accounts', response[0].data);
+      this.set('accounts', response.data);
     }).catch((error) => {
       console.error("Failed to load accounts:", error);
     });

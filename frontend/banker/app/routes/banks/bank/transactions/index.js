@@ -29,9 +29,9 @@ export default Ember.Route.extend({
 
 
 
-  setupController(controller, model) {
+  setupController(controller) {
 
-    this._super(controller, model);
+    
     controller.loadTransactions(1);
   }
 

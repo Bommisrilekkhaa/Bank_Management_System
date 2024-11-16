@@ -24,13 +24,13 @@ export default Ember.Controller.extend({
 
       if(searchQuery && searchQuery!='')
         {
-          url=url+`&searchitem=${searchQuery}`;
+          url=url+`&search_item=${searchQuery}`;
         }
 
     this.get('fetchService').fetch(url,methods.GET).then((response) => {
       // console.log(response);
-      this.set('branches', response[0].data);
-      this.set('totalBranches',response[0].totalBranches);
+      this.set('branches', response.data);
+      this.set('totalBranches',response.totalBranches);
     }).catch((error) => {
       this.set('branches', []);
       console.error("Failed to load branches:", error);

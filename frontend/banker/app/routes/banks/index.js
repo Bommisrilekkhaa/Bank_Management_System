@@ -28,7 +28,7 @@ export default Ember.Route.extend({
     this.get('sharedData').set('branchId', '*');
   },
 
-  setupController(controller, model) {
+  setupController(controller) {
     controller.loadBanks(1);
   }
 });

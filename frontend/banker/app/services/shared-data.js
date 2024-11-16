@@ -6,5 +6,15 @@ export default Ember.Service.extend({
     accNo:'*',
     transactionId:'*',
     loanId:'*',
-    userId:'*'
+    userId:'*',
+    
+    // changedBranchId() {
+    //     if(this.get('branchId')=='*')
+    //     {
+    //         let targetController = this.controllerFor('application');
+    //         targetController.set('branch_name', 'all');
+
+    //     }
+    // }
+  
 });

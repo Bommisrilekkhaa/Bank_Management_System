@@ -54,7 +54,7 @@ export default Ember.Component.extend({
       
       url=url+`/branches`;
     this.get('fetchService').fetch(url,methods.GET).then((response) => {
-      this.set('branchNames', response[0].data);
+      this.set('branchNames', response.data);
      
     }).catch((error) => {
       console.error("Failed to load branches:", error);

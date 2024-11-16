@@ -22,21 +22,21 @@ export default Ember.Controller.extend({
     url=url+`/users?page=${page}`;
     if(selectedRole && selectedRole!='')
       {
-        url=url+`&filterrole=${selectedRole}`;
+        url=url+`&filter_role=${selectedRole}`;
       }
       if(selectedStatus && selectedStatus!='')
       {
-        url=url+`&filterstatus=${selectedStatus}`;
+        url=url+`&filter_status=${selectedStatus}`;
       }
       if(searchQuery && searchQuery!='')
       {
-        url=url+`&searchitem=${searchQuery}`;
+        url=url+`&search_item=${searchQuery}`;
       }
 
     this.get('fetchService').fetch(url,methods.GET).then((response) => {
       // console.log(response);
-      this.set('totalUsers', response[0].totalUsers);
-      this.set('users', response[0].data);
+      this.set('totalUsers', response.totalUsers);
+      this.set('users', response.data);
     }).catch((error) => {
       this.set('users', []);
       console.error("Failed to load users:", error);
@@ -122,6 +122,11 @@ export default Ember.Controller.extend({
     }
   },
   actions: {
+    FilterReset(){
+      this.set('selectedUserRole','');
+      this.set('selectedUserStatus','');
+      this.FilteredUsers();
+    },
     UserRole(value){
       this.set('selectedUserRole',value);
       this.FilteredUsers();

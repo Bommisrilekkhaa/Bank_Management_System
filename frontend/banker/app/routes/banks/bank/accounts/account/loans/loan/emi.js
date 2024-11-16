@@ -17,8 +17,7 @@ export default Ember.Route.extend({
         return;
       }
     },
-    setupController(controller, model) {
-        this._super(controller, model);
+    setupController(controller) {
         controller.loadEmis();
       }
 });

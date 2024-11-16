@@ -27,7 +27,7 @@ export default Ember.Controller.extend({
         }
         this.get('fetchService').fetch(url,methods.GET).then((response) => {
           // console.log(response);
-          this.set('loan', response[0].data);
+          this.set('loan', response.data);
           this.set('loan',this.get('loan')[0]);
         }).catch((error) => {
           console.error("Failed to load loan:", error);

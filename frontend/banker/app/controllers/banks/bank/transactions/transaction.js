@@ -31,7 +31,7 @@ export default Ember.Controller.extend({
       this.get('fetchService').fetch(url,methods.GET)
         .then((response) => {
           // console.log(response);
-          this.set('transaction', response[0].data);
+          this.set('transaction', response.data);
           this.set('transaction',this.get('transaction')[0]);
         })
         .catch((error) => {

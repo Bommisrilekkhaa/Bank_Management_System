@@ -20,8 +20,7 @@ export default Ember.Route.extend({
     this.get('sharedData').set('transactionId', '*');
   },
 
-  setupController(controller, model) {
-    this._super(controller, model);
+  setupController(controller) {
     controller.loadAccount(this.get('sharedData').get('accNo'));
   }
 });

@@ -99,6 +99,11 @@ export default Ember.Component.extend({
     }
   },
   actions: {
+    FilterReset(){
+      this.set('selectedLoanType','');
+      this.set('selectedLoanStatus','');
+      this.FilteredLoans();
+    },
     LoanType(value){
       this.set('selectedLoanType',value);
       this.FilteredLoans();

@@ -24,7 +24,7 @@
     </div>
     <div class="view-wrap">
         <div >
-            <button class="view-btn"  {{action "viewAccounts" branch}}>View Accounts</button>
+            <button class="view-btn"  {{action "viewAccounts"}}>View Accounts</button>
         </div>
         {{#unless (eq branch.branch_id branch.main_branch_id)}}
         {{#if (eq role userRole.MANAGER)}}

@@ -6,6 +6,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.text.ParseException;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -35,39 +36,62 @@ public class UsersHandler  {
     private Jedis jedis = null;
     private Connection conn = null;
     private DbUtil dbUtil = new DbUtil();
-
+    public static int offset=-1;
   
     public void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException, SQLException {
 
-        String adminParam = request.getParameter("filter_admin");
-        String managerParam = request.getParameter("filter_manager");
-
         String path = request.getRequestURI();
         String cacheKey = path.substring(path.indexOf("/users"));
-
-        if (managerParam != null) {
-            cacheKey = path.substring(path.indexOf("/banks")) + "_filter_manager";
-        } else if (adminParam != null) {
-            cacheKey += "_filter_admin";
+        Map<String,String[]> queryParamMap = request.getParameterMap();
+        String searchParam=null;
+        cacheKey = JsonUtil.keyGenerate(cacheKey, queryParamMap);
+       
+        if(queryParamMap.containsKey("filter_role"))
+        {
+        	ControllerServlet.pathMap.put("user_role", Integer.valueOf(UserRole.valueOf(queryParamMap.get("filter_role")[0].toUpperCase()).getValue()));
+        	
         }
-
+        if(queryParamMap.containsKey("filter_status"))
+        {
+        	ControllerServlet.pathMap.put("user_status", Integer.valueOf(Status.valueOf(queryParamMap.get("filter_status")[0].toUpperCase()).getValue()));
+        	
+        }
+        if(queryParamMap.containsKey("search_item"))
+        {
+        	searchParam = queryParamMap.get("search_item")[0];
+        	
+        }
+        if(queryParamMap.containsKey("page"))
+        {
+        	offset = (Integer.valueOf(queryParamMap.get("page")[0])-1)* UserDAO.itemsPerPage;
+        
+        }
+        
         jedis = ControllerServlet.pool.getResource();
         String cachedData = jedis.get(cacheKey);
 
         if (cachedData != null) {
             logger.info("Cache hit for key: " + cacheKey);
-            JsonArray jsonArray = JsonParser.parseString(cachedData).getAsJsonArray();
             response.setContentType("application/json");
-            JsonUtil.sendJsonResponse(response, jsonArray);
+            if(queryParamMap.containsKey("filter_manager") || queryParamMap.containsKey("filter_admin"))
+            {
+            	JsonArray jsonArray = JsonParser.parseString(cachedData).getAsJsonArray();
+            	JsonUtil.sendJsonResponse(response, jsonArray);
+            }
+            else
+            {
+            	 JsonObject jsonObject = JsonParser.parseString(cachedData).getAsJsonObject();
+                 JsonUtil.sendJsonResponse(response, jsonObject);
+            }
         } else {
             logger.info("Cache miss for key: " + cacheKey);
             ResultSet rs=null;
             try {
             	conn = dbUtil.connect();
-                  
+
                 JsonArray jsonArray = new JsonArray();
                 
-                if (managerParam != null) {
+                if (queryParamMap.containsKey("filter_manager")) {
                    logger.info("Fetching unassigned managers from the database.");
                    rs = userDAO.getUnassignedManagers(conn);
                    List<User> users = JsonUtil.convertResultSetToList(rs, User.class);
@@ -80,7 +104,12 @@ public class UsersHandler  {
 	                        jsonArray.add(jsonResponse);
                        }
                     }
-                } else if (adminParam != null) {
+
+                   JsonUtil.sendJsonResponse(response, jsonArray);
+                   jedis.set(cacheKey,  jsonArray.toString());
+                   
+                } 
+                else if (queryParamMap.containsKey("filter_admin")) {
                     logger.info("Fetching unassigned admins from the database.");
                     rs = userDAO.getUnassignedAdmins(conn);
                     List<User> users = JsonUtil.convertResultSetToList(rs, User.class);
@@ -93,10 +122,25 @@ public class UsersHandler  {
 	                        jsonArray.add(jsonResponse);
                         }
                     }
+
+                    JsonUtil.sendJsonResponse(response, jsonArray);
+                    jedis.set(cacheKey,  jsonArray.toString());
                 } else {
-                    logger.info("Fetching all users from the database.");
-                    rs = userDAO.selectAllUsers(conn);
+                	int totalUsers = userDAO.totalUsers(conn, ControllerServlet.pathMap,searchParam);
+                	logger.info("Fetching all users from the database.");
+                     
+                	if(!ControllerServlet.pathMap.containsKey("users"))
+                	{
+                		rs = userDAO.selectPageWise(conn, ControllerServlet.pathMap,searchParam);
+                	}
+                	else {
+                		
+                		rs = userDAO.selectAllUsers(conn);
+                	}
                     List<User> users = JsonUtil.convertResultSetToList(rs, User.class);
+                    JsonObject objectJson = new JsonObject();
+                    objectJson.addProperty("totalUsers", totalUsers);
+                   
                     if (!users.isEmpty()) {
                         for (User user : users) {
                             if (user.getUser_role() != UserRole.SUPERADMIN.getValue()) {
@@ -117,10 +161,12 @@ public class UsersHandler  {
                         JsonUtil.sendSuccessResponse(response, "No matching users found.");
                         return;
                     }
+                    objectJson.add("data", jsonArray);
+                    JsonUtil.sendJsonResponse(response, objectJson);
+                    jedis.set(cacheKey, objectJson.toString());
                 }
-                jedis.set(cacheKey, jsonArray.toString());
+                
                 response.setContentType("application/json");
-                JsonUtil.sendJsonResponse(response, jsonArray);
                 logger.info("Data fetched from the database and cached with key: " + cacheKey);
             } 
             finally {

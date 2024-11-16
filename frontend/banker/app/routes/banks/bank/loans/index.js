@@ -26,8 +26,8 @@ export default Ember.Route.extend({
     }
   },
 
-  setupController(controller, model) {
-    this._super(controller, model);
+  setupController(controller) {
+    
     controller.loadLoans(1);
   }
 

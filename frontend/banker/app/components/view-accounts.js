@@ -102,7 +102,12 @@ export default Ember.Component.extend({
     }
   },
   
-  actions: {
+  actions: { 
+    FilterReset(){
+    this.set('selectedAccountType','');
+    this.set('selectedAccountStatus','');
+    this.FilteredAccounts();
+  },
     AccountType(value){
       this.set('selectedAccountType',value);
       this.FilteredAccounts();

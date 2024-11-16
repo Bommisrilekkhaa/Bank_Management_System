@@ -6,7 +6,7 @@ import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
 
-
+import handlers.BranchesHandler;
 import model.Account;
 import model.Branch;
 import servlets.ControllerServlet;
@@ -15,6 +15,7 @@ import utility.QueryUtil;
 
 public class BranchDAO {
 
+	public final static int itemsPerPage = 8;
     private DbUtil dbUtil = new DbUtil();
     
     
@@ -29,15 +30,28 @@ public class BranchDAO {
         return query.executeUpdate(conn, dbUtil) > 0;
     }
 
-    public ResultSet selectBranches(Connection conn,int bankId) throws SQLException 
+    public ResultSet selectBranches(Connection conn,int bankId,String searchParam) throws SQLException 
     {
     	Map<String,Object[]> conditions = new HashMap<>();
     	conditions.put("bank_id", new Object[] {"=",bankId});
-    	
+
+        String searchQuery="";
+    	if(searchParam!=null)
+    	{
+    		 searchQuery = "AND (b.branch_name ILIKE '"+searchParam+"%' OR u.username ILIKE '"+searchParam+"%')";
+    	}
         QueryUtil query = QueryUtil.create()
                 .select("*")
-                .from("branch")
-                .where(conditions);
+                .from("branch b")
+            	.join("users u", "u.user_id = b.manager_id", "INNER")
+                .where(conditions)
+                .append(searchQuery)
+                .orderBy("branch_id", "DESC");
+         if( BranchesHandler.offset!=-1)
+         {
+        	 query.limitOffset(itemsPerPage, BranchesHandler.offset);
+        	 
+         }
 
        return query.executeQuery(conn, dbUtil); 
     }
@@ -138,6 +152,37 @@ public class BranchDAO {
     	}
     	else
     		return key;
+    }
+    
+    public int totalBranches(Connection conn,HashMap<String, Integer> pathMap,String searchParam) throws SQLException
+    {
+
+    	Map<String,Object[]> conditions = new HashMap<>();
+    	conditions.put("bank_id", new Object[] {"=",pathMap.get("banks")});
+    	  String searchQuery="";
+      	if(searchParam!=null)
+      	{
+      	   searchQuery = "AND (b.branch_name ILIKE '" + searchParam + "%' OR u.username ILIKE '" + searchParam + "%')";
+      	}
+          QueryUtil query = QueryUtil.create()
+                  .select("COUNT(b.branch_id) AS TotalBranches")
+                  .from("branch b")
+              	  .join("users u", "u.user_id = b.manager_id", "INNER")
+                  .where(conditions)
+                  .append(searchQuery);
+    	ResultSet rs = null;
+        try{
+        	rs = query.executeQuery(conn, new DbUtil());
+        	if(rs.next())
+        	{
+        		return rs.getInt("TotalBranches");
+        	}
+        	
+        }
+        finally {
+        	dbUtil.close(null, null, rs);
+        }
+        return -1;
     }
     
     public int getBranchId(Connection conn, String branch_name) throws SQLException 

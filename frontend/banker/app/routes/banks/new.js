@@ -22,7 +22,7 @@ export default Ember.Route.extend({
 
 
   },
-  setupController(controller, model) {
+  setupController(controller) {
     controller.loadAdmins();
   }
 });

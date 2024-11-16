@@ -18,7 +18,7 @@
       <option value="rejected">Rejected</option>
       <option value="closed">Closed</option>
     </select>
-    <button class="clear" style="margin-top:7px;padding: 8px 10px 8px 10px;" {{action "LoanType" ''}} {{action "LoanStatus" ''}}>Reset</button>
+    <button class="clear" style="margin-top:7px;padding: 8px 10px 8px 10px;" {{action "FilterReset"}}>Reset</button>
   </div>
 
   {{#if isDirect}}

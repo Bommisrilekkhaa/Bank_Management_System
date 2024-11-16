@@ -6,6 +6,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -47,6 +48,7 @@ public class TransactionsHandler  {
     private Jedis jedis = null;
     private Connection conn = null;
     private DbUtil dbUtil = new DbUtil();
+    public static int offset=-1;
     
    
     public void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException, SQLException {
@@ -54,10 +56,34 @@ public class TransactionsHandler  {
         String path = request.getRequestURI();
         String cacheKey = path.substring(path.indexOf("/banks"));
         jedis = ControllerServlet.pool.getResource();
-        
+        Map<String,String[]> queryParamMap = request.getParameterMap();
+        cacheKey = JsonUtil.keyGenerate(cacheKey, queryParamMap);
+        String cachedData = jedis.get(cacheKey);
         logger.info("GET request received for path: " + path);
         String role = request.getSession(false).getAttribute("user_role").toString();
-        String cachedData = jedis.get(cacheKey);
+        String searchParam=null;
+        
+        if(queryParamMap.containsKey("filter_type"))
+        {
+        	ControllerServlet.pathMap.put("t.transaction_type", Integer.valueOf(TransactionType.valueOf(queryParamMap.get("filter_type")[0].toUpperCase()).getValue()));
+        	
+        }
+        if(queryParamMap.containsKey("filter_status"))
+        {
+        	ControllerServlet.pathMap.put("t.transaction_status", Integer.valueOf(TransactionStatus.valueOf(queryParamMap.get("filter_status")[0].toUpperCase()).getValue()));
+        	
+        }
+        if(queryParamMap.containsKey("search_item"))
+        {
+        	searchParam = queryParamMap.get("search_item")[0];
+        	
+        }
+        
+        if(queryParamMap.containsKey("page"))
+        {
+        	offset = (Integer.valueOf(queryParamMap.get("page")[0])-1)* TransactionDAO.itemsPerPage;
+        
+        }
         
         if (role.equals(UserRole.CUSTOMER.toString())) {
             ControllerServlet.pathMap.put("user_id", (Integer) request.getSession(false).getAttribute("user_id"));
@@ -65,19 +91,30 @@ public class TransactionsHandler  {
         }
         
         if (cachedData != null) {
-            JsonArray jsonArray = JsonParser.parseString(cachedData).getAsJsonArray();
-            response.setContentType("application/json");
-            JsonUtil.sendJsonResponse(response, jsonArray);
+        	response.setContentType("application/json");
+
+            JsonObject jsonObject = JsonParser.parseString(cachedData).getAsJsonObject();
+            JsonUtil.sendJsonResponse(response, jsonObject);
             logger.info("Data fetched from Redis cache for key: " + cacheKey);
         } else {
         	 ResultSet rs=null;
             try  {
             	conn = dbUtil.connect();
-                rs = transactionDAO.selectAllTransactions(conn, ControllerServlet.pathMap);
+            	JsonArray jsonArray = new JsonArray();
+                int totalTransactions = transactionDAO.totalTransactions(conn, ControllerServlet.pathMap,searchParam);
+                if(ControllerServlet.pathMap.containsKey("transactions"))
+                {
+                	rs = transactionDAO.selectAllTransactions(conn, ControllerServlet.pathMap);
+                }
+                else
+                {
+                	rs = transactionDAO.selectPageWise(conn, ControllerServlet.pathMap,searchParam);
+                }
                 List<Transaction> transactions = JsonUtil.convertResultSetToList(rs, Transaction.class);
                 
-
-                JsonArray jsonArray = new JsonArray();
+                JsonObject objectJson = new JsonObject();
+                objectJson.addProperty("totalTransactions", totalTransactions);
+               
                 if (!transactions.isEmpty()) {
                     for (Transaction transaction : transactions) {
                         JsonObject transactionJson = new JsonObject();
@@ -89,20 +126,23 @@ public class TransactionsHandler  {
                         transactionJson.addProperty("acc_number", transaction.getAcc_number());
                         jsonArray.add(transactionJson);
                     }
+                    
                 } else {
                     logger.warning("No matching transactions found for path: " + path);
                     JsonUtil.sendErrorResponse(response, "No matching transactions found.");
                     return;
                 }
+                objectJson.add("data", jsonArray);
+               
                 if(!role.equals(UserRole.CUSTOMER.toString()))
                 {
-                	jedis.set(cacheKey, jsonArray.toString());
+                	jedis.set(cacheKey, objectJson.toString());
                 	logger.info("Transaction data fetched from DB and stored in Redis for key: " + cacheKey);
                 	
                 }
                 
                 response.setContentType("application/json");
-                JsonUtil.sendJsonResponse(response, jsonArray);
+                JsonUtil.sendJsonResponse(response, objectJson);
             } 
             finally {
             	dbUtil.close(conn, null, rs);
@@ -116,7 +156,9 @@ public class TransactionsHandler  {
     public void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException, SQLException {
       
         String[] path = request.getRequestURI().substring(request.getRequestURI().indexOf("banks")).split("/");
-        String cacheKey = "/" + path[0] + "/" + path[1] + "*/" + path[path.length - 1];
+        String[] cacheKeys =new String[]{ "/" + path[0] + "/" + path[1] + "*/" + path[path.length - 1],
+                "/" + path[0] + "/" + path[1] + "*/" + path[path.length - 1]+ "_*"};
+
 
         logger.info("POST request received for path: " + String.join("/", path));
 
@@ -132,11 +174,8 @@ public class TransactionsHandler  {
                 if (transactionDAO.insertTransaction(conn, newTransaction)) 
                 {
                     jedis = ControllerServlet.pool.getResource();
-                    Set<String> keys = jedis.keys(cacheKey);
-                    if (!keys.isEmpty()) {
-                        jedis.del(keys.toArray(new String[0]));
-                        logger.info("Deleted cache keys: " + keys);
-                    }
+
+                    JsonUtil.deleteCache(jedis,cacheKeys);
 
                     if (newTransaction.getTransaction_type() == TransactionType.EMI.getValue()) {
                         processEmiTransaction(conn, newTransaction);
@@ -261,16 +300,11 @@ public class TransactionsHandler  {
     }
 
     private void clearAccountCache() {
-        Set<String> accKeys = jedis.keys("/banks/" + ControllerServlet.pathMap.get("banks") + "*/accounts/" + ControllerServlet.pathMap.get("accounts"));
-        if (!accKeys.isEmpty()) {
-            jedis.del(accKeys.toArray(new String[0]));
-            logger.info("Deleted account cache keys: " + accKeys);
-        }
-       accKeys = jedis.keys("/banks/" + ControllerServlet.pathMap.get("banks") + "*/accounts");
-        if (!accKeys.isEmpty()) {
-            jedis.del(accKeys.toArray(new String[0]));
-            logger.info("Deleted account cache keys: " + accKeys);
-        }
+    	 String[] cacheKeys =new String[]{ "/banks/" + ControllerServlet.pathMap.get("banks") + "*/accounts",
+    			 						"/banks/" + ControllerServlet.pathMap.get("banks") + "*/accounts_*",
+    			 						"/banks/" + ControllerServlet.pathMap.get("banks") + "*/accounts/" + ControllerServlet.pathMap.get("accounts")};
+    	JsonUtil.deleteCache(jedis,cacheKeys);
+        
         
     }
 

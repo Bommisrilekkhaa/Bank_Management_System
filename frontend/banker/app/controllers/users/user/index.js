@@ -18,7 +18,7 @@ export default Ember.Controller.extend({
       }
         this.get('fetchService').fetch(url,methods.GET).then((response) => {
           console.log(response);
-          this.set('user', response[0].data[0]);
+          this.set('user', response.data[0]);
         }).catch((error) => {
           console.error("Failed to load users:", error);
         });

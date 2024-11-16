@@ -12,7 +12,7 @@ define('banker/tests/app.lint-test', [], function () {
 
   QUnit.test('components/account-input.js', function (assert) {
     assert.expect(1);
-    assert.ok(false, 'components/account-input.js should pass ESLint\n\n91:15 - \'userData\' is assigned a value but never used. (no-unused-vars)');
+    assert.ok(true, 'components/account-input.js should pass ESLint\n\n');
   });
 
   QUnit.test('components/admin-dashboard.js', function (assert) {
@@ -375,6 +375,11 @@ define('banker/tests/app.lint-test', [], function () {
     assert.ok(true, 'helpers/format-date.js should pass ESLint\n\n');
   });
 
+  QUnit.test('helpers/range.js', function (assert) {
+    assert.expect(1);
+    assert.ok(true, 'helpers/range.js should pass ESLint\n\n');
+  });
+
   QUnit.test('resolver.js', function (assert) {
     assert.expect(1);
     assert.ok(true, 'resolver.js should pass ESLint\n\n');
@@ -432,7 +437,7 @@ define('banker/tests/app.lint-test', [], function () {
 
   QUnit.test('routes/banks/bank/accounts/account/loans/loan/edit.js', function (assert) {
     assert.expect(1);
-    assert.ok(false, 'routes/banks/bank/accounts/account/loans/loan/edit.js should pass ESLint\n\n22:66 - \'bankId\' is not defined. (no-undef)');
+    assert.ok(true, 'routes/banks/bank/accounts/account/loans/loan/edit.js should pass ESLint\n\n');
   });
 
   QUnit.test('routes/banks/bank/accounts/account/loans/loan/emi.js', function (assert) {
@@ -492,32 +497,32 @@ define('banker/tests/app.lint-test', [], function () {
 
   QUnit.test('routes/banks/bank/branches/branch/edit.js', function (assert) {
     assert.expect(1);
-    assert.ok(false, 'routes/banks/bank/branches/branch/edit.js should pass ESLint\n\n22:64 - \'bankId\' is not defined. (no-undef)');
+    assert.ok(true, 'routes/banks/bank/branches/branch/edit.js should pass ESLint\n\n');
   });
 
   QUnit.test('routes/banks/bank/branches/branch/index.js', function (assert) {
     assert.expect(1);
-    assert.ok(false, 'routes/banks/bank/branches/branch/index.js should pass ESLint\n\n22:62 - \'bankId\' is not defined. (no-undef)');
+    assert.ok(true, 'routes/banks/bank/branches/branch/index.js should pass ESLint\n\n');
   });
 
   QUnit.test('routes/banks/bank/branches/index.js', function (assert) {
     assert.expect(1);
-    assert.ok(false, 'routes/banks/bank/branches/index.js should pass ESLint\n\n23:62 - \'bankId\' is not defined. (no-undef)');
+    assert.ok(true, 'routes/banks/bank/branches/index.js should pass ESLint\n\n');
   });
 
   QUnit.test('routes/banks/bank/branches/new.js', function (assert) {
     assert.expect(1);
-    assert.ok(false, 'routes/banks/bank/branches/new.js should pass ESLint\n\n23:62 - \'bankId\' is not defined. (no-undef)');
+    assert.ok(true, 'routes/banks/bank/branches/new.js should pass ESLint\n\n');
   });
 
   QUnit.test('routes/banks/bank/edit.js', function (assert) {
     assert.expect(1);
-    assert.ok(false, 'routes/banks/bank/edit.js should pass ESLint\n\n29:33 - \'model\' is defined but never used. (no-unused-vars)');
+    assert.ok(true, 'routes/banks/bank/edit.js should pass ESLint\n\n');
   });
 
   QUnit.test('routes/banks/bank/index.js', function (assert) {
     assert.expect(1);
-    assert.ok(false, 'routes/banks/bank/index.js should pass ESLint\n\n22:31 - \'model\' is defined but never used. (no-unused-vars)');
+    assert.ok(true, 'routes/banks/bank/index.js should pass ESLint\n\n');
   });
 
   QUnit.test('routes/banks/bank/loans.js', function (assert) {
@@ -537,7 +542,7 @@ define('banker/tests/app.lint-test', [], function () {
 
   QUnit.test('routes/banks/bank/loans/loan/edit.js', function (assert) {
     assert.expect(1);
-    assert.ok(false, 'routes/banks/bank/loans/loan/edit.js should pass ESLint\n\n22:60 - \'bankId\' is not defined. (no-undef)');
+    assert.ok(true, 'routes/banks/bank/loans/loan/edit.js should pass ESLint\n\n');
   });
 
   QUnit.test('routes/banks/bank/loans/loan/emi.js', function (assert) {
@@ -592,22 +597,22 @@ define('banker/tests/app.lint-test', [], function () {
 
   QUnit.test('routes/banks/bank/users/user/dashboard.js', function (assert) {
     assert.expect(1);
-    assert.ok(false, 'routes/banks/bank/users/user/dashboard.js should pass ESLint\n\n20:33 - \'model\' is defined but never used. (no-unused-vars)');
+    assert.ok(true, 'routes/banks/bank/users/user/dashboard.js should pass ESLint\n\n');
   });
 
   QUnit.test('routes/banks/bank/users/user/index.js', function (assert) {
     assert.expect(1);
-    assert.ok(false, 'routes/banks/bank/users/user/index.js should pass ESLint\n\n22:60 - \'bankId\' is not defined. (no-undef)');
+    assert.ok(true, 'routes/banks/bank/users/user/index.js should pass ESLint\n\n');
   });
 
   QUnit.test('routes/banks/index.js', function (assert) {
     assert.expect(1);
-    assert.ok(false, 'routes/banks/index.js should pass ESLint\n\n30:31 - \'model\' is defined but never used. (no-unused-vars)');
+    assert.ok(true, 'routes/banks/index.js should pass ESLint\n\n');
   });
 
   QUnit.test('routes/banks/new.js', function (assert) {
     assert.expect(1);
-    assert.ok(false, 'routes/banks/new.js should pass ESLint\n\n24:31 - \'model\' is defined but never used. (no-unused-vars)');
+    assert.ok(true, 'routes/banks/new.js should pass ESLint\n\n');
   });
 
   QUnit.test('routes/login.js', function (assert) {
@@ -632,7 +637,7 @@ define('banker/tests/app.lint-test', [], function () {
 
   QUnit.test('routes/users/index.js', function (assert) {
     assert.expect(1);
-    assert.ok(false, 'routes/users/index.js should pass ESLint\n\n31:35 - \'model\' is defined but never used. (no-unused-vars)');
+    assert.ok(true, 'routes/users/index.js should pass ESLint\n\n');
   });
 
   QUnit.test('routes/users/user.js', function (assert) {
@@ -647,7 +652,7 @@ define('banker/tests/app.lint-test', [], function () {
 
   QUnit.test('routes/users/user/index.js', function (assert) {
     assert.expect(1);
-    assert.ok(false, 'routes/users/user/index.js should pass ESLint\n\n23:33 - \'model\' is defined but never used. (no-unused-vars)');
+    assert.ok(true, 'routes/users/user/index.js should pass ESLint\n\n');
   });
 
   QUnit.test('services/branch-select.js', function (assert) {
@@ -668,6 +673,11 @@ define('banker/tests/app.lint-test', [], function () {
   QUnit.test('services/session.js', function (assert) {
     assert.expect(1);
     assert.ok(true, 'services/session.js should pass ESLint\n\n');
+  });
+
+  QUnit.test('services/shared-data.js', function (assert) {
+    assert.expect(1);
+    assert.ok(true, 'services/shared-data.js should pass ESLint\n\n');
   });
 
   QUnit.test('utils/util.js', function (assert) {
@@ -1353,6 +1363,26 @@ define('banker/tests/integration/helpers/format-date-test', ['ember-qunit'], fun
     assert.equal(this.$().text().trim(), '1234');
   });
 });
+define('banker/tests/integration/helpers/range-test', ['ember-qunit'], function (_emberQunit) {
+  'use strict';
+
+  (0, _emberQunit.moduleForComponent)('range', 'helper:range', {
+    integration: true
+  });
+
+  // Replace this with your real tests.
+  (0, _emberQunit.test)('it renders', function (assert) {
+    this.set('inputValue', '1234');
+
+    this.render(Ember.HTMLBars.template({
+      "id": "UJ7HN/VG",
+      "block": "{\"statements\":[[1,[33,[\"range\"],[[28,[\"inputValue\"]]],null],false]],\"locals\":[],\"named\":[],\"yields\":[],\"hasPartials\":false}",
+      "meta": {}
+    }));
+
+    assert.equal(this.$().text().trim(), '1234');
+  });
+});
 define('banker/tests/test-helper', ['banker/tests/helpers/resolver', 'ember-qunit', 'ember-cli-qunit'], function (_resolver, _emberQunit, _emberCliQunit) {
   'use strict';
 
@@ -1487,6 +1517,11 @@ define('banker/tests/tests.lint-test', [], function () {
   QUnit.test('integration/helpers/format-date-test.js', function (assert) {
     assert.expect(1);
     assert.ok(true, 'integration/helpers/format-date-test.js should pass ESLint\n\n');
+  });
+
+  QUnit.test('integration/helpers/range-test.js', function (assert) {
+    assert.expect(1);
+    assert.ok(true, 'integration/helpers/range-test.js should pass ESLint\n\n');
   });
 
   QUnit.test('test-helper.js', function (assert) {
@@ -1997,6 +2032,11 @@ define('banker/tests/tests.lint-test', [], function () {
   QUnit.test('unit/services/session-test.js', function (assert) {
     assert.expect(1);
     assert.ok(true, 'unit/services/session-test.js should pass ESLint\n\n');
+  });
+
+  QUnit.test('unit/services/shared-data-test.js', function (assert) {
+    assert.expect(1);
+    assert.ok(true, 'unit/services/shared-data-test.js should pass ESLint\n\n');
   });
 
   QUnit.test('unit/services/transactions-test.js', function (assert) {
@@ -3365,6 +3405,20 @@ define('banker/tests/unit/services/session-test', ['ember-qunit'], function (_em
   'use strict';
 
   (0, _emberQunit.moduleFor)('service:session', 'Unit | Service | session', {
+    // Specify the other units that are required for this test.
+    // needs: ['service:foo']
+  });
+
+  // Replace this with your real tests.
+  (0, _emberQunit.test)('it exists', function (assert) {
+    var service = this.subject();
+    assert.ok(service);
+  });
+});
+define('banker/tests/unit/services/shared-data-test', ['ember-qunit'], function (_emberQunit) {
+  'use strict';
+
+  (0, _emberQunit.moduleFor)('service:shared-data', 'Unit | Service | shared data', {
     // Specify the other units that are required for this test.
     // needs: ['service:foo']
   });

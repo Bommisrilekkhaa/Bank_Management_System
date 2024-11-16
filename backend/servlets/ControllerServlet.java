@@ -247,14 +247,14 @@ public class ControllerServlet extends HttpServlet {
     
     private boolean managerRouteAccess(String[] path,String method)
     {
-    	 if ( !path[path.length - 1].equals("banks") && !path[path.length - 1].equals("branches") && 
+    	 if ( !path[path.length - 1].equals("banks") && 
     			 !path[path.length - 1].equals("users") &&  !path[path.length - 2].equals("users")) 
          {
              if(path[path.length - 2].equals("branches"))
              {
              	return  method.equals("GET") || method.equals("DELETE");
              }
-             else if(path[path.length - 2].equals("banks"))
+             else if(path[path.length - 1].equals("branches"))
              {
             	 return  method.equals("GET");
              }

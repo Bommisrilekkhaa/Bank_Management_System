@@ -34,21 +34,21 @@ export default Ember.Controller.extend({
     url=url+`/accounts?page=${page}`;
     if(selectedType && selectedType!='')
     {
-      url=url+`&filtertype=${selectedType}`;
+      url=url+`&filter_type=${selectedType}`;
     }
     if(selectedStatus && selectedStatus!='')
     {
-      url=url+`&filterstatus=${selectedStatus}`;
+      url=url+`&filter_status=${selectedStatus}`;
     }
     if(searchQuery && searchQuery!='')
     {
-      url=url+`&searchitem=${searchQuery}`;
+      url=url+`&search_item=${searchQuery}`;
     }
 
     this.get('fetchService').fetch(url,methods.GET).then((response) => {
-      // console.log(response[0].data);
-      this.set('accounts', response[0].data);
-      this.set('totalAccounts',response[0].totalAccounts);
+      // console.log(response.data);
+      this.set('accounts', response.data);
+      this.set('totalAccounts',response.totalAccounts);
     }).catch((error) => {
       this.set('accounts', []);
       console.error("Failed to load accounts:", error);

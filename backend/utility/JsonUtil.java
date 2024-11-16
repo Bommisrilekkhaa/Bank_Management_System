@@ -6,6 +6,9 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.logging.Logger;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -14,8 +17,10 @@ import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 
-public class JsonUtil {
+import redis.clients.jedis.Jedis;
 
+public class JsonUtil {
+    private static Logger logger = LoggerConfig.initializeLogger();
 	private static Gson gson = new Gson(); 
 	
 	
@@ -96,6 +101,28 @@ public class JsonUtil {
 		  response.setContentType("application/json");
 	        response.setCharacterEncoding("UTF-8");
 	        response.getWriter().write(gson.toJson(jsonArray));
+	}
+	
+	public static String keyGenerate(String cacheKey,Map<String,String[]> params)
+	{
+		for(String key:params.keySet())
+		{
+			cacheKey+="_"+key+"="+params.get(key)[0];
+		}
+		return cacheKey;
+	}
+	
+	public static void deleteCache(Jedis jedis,String[] cacheKeys)
+	{
+		 for(String key : cacheKeys)
+         {
+         	
+         	Set<String> keys = jedis.keys(key);
+         	if (!keys.isEmpty()) {
+         		jedis.del(keys.toArray(new String[0]));
+         		logger.info("Deleted cache keys: " + keys);
+         	}
+         }
 	}
 
 }

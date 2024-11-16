@@ -7,21 +7,26 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 
 public class QueryUtil 
 {
-
 	    private StringBuilder query;
-	    private Object[] params;
+	    private List<Object> params;
 
 	    private QueryUtil() 
 	    {
 	        query = new StringBuilder();
+	        params = new ArrayList<>();
 	    }
 	    private QueryUtil(String queri) 
 	    {
 	        query = new StringBuilder(queri);
+	        params = new ArrayList<>();
 	    }
 	    public static QueryUtil create()
 	    {
@@ -66,24 +71,32 @@ public class QueryUtil
 	            Object[] condition = entry.getValue();
 	            String operator = (String) condition[0];
 	            Object value = condition[1];
+	            
+	            if ("IN".equalsIgnoreCase(operator)) {
+	            	
+	                Collection<?> values = (Collection<?>) value;
+	                String placeholders = String.join(", ", values.stream().map(v -> "?").toArray(String[]::new));
 
-	            if (index == 0) {
-	                query.append("WHERE ").append(column).append(" ").append(operator).append(" ? ");
-	            } else {
-	                query.append("AND ").append(column).append(" ").append(operator).append(" ? ");
+	                if (index == 0) {
+	                    query.append("WHERE ").append(column).append(" IN (").append(placeholders).append(") ");
+	                } else {
+	                    query.append("AND ").append(column).append(" IN (").append(placeholders).append(") ");
+	                }
+
+	                params.addAll(values);
+	            } 
+	            else {
+	            	
+	            	if (index == 0) {
+	            		query.append("WHERE ").append(column).append(" ").append(operator).append(" ? ");
+	            	} else {
+	            		query.append("AND ").append(column).append(" ").append(operator).append(" ? ");
+	            	}
+	            	
+	            	params.add(value);
 	            }
-
-	            if (params != null) 
-	            {
-	                Object[] newParams = new Object[params.length + 1];
-	                System.arraycopy(params, 0, newParams, 0, params.length);
-	                newParams[params.length] = value;
-	                this.params = newParams;
-	            } else {
-	                this.params = new Object[] { value };
-	            }
-
-	            index++;
+	           
+	            index=1;
 	        }
 
 	        return this;
@@ -108,7 +121,7 @@ public class QueryUtil
 //	        {
 //	        	System.out.println(values[i]);
 //	        }
-	        this.params = values;
+	        params.addAll(Arrays.asList(values));
 	        return this;
 	    }
 
@@ -134,17 +147,9 @@ public class QueryUtil
 	            }
 
 	            
-	            if (params != null) 
-	            {
-	                Object[] newParams = new Object[params.length + 1];
-	                System.arraycopy(params, 0, newParams, 0, params.length);
-	                newParams[params.length] = value;
-	                this.params = newParams;
-	            } else {
-	                this.params = new Object[] { value };
-	            }
+	            params.add(value);
 
-	            index++;
+	            index=1;
 	        }
 
 	        return this;
@@ -156,50 +161,24 @@ public class QueryUtil
 	        query.append("DELETE FROM ").append(table).append(" ");
 	        return this;
 	    }
+	    
+	    public QueryUtil orderBy(String column, String direction) {
+	        
+	        query.append(" ORDER BY ").append(column).append(" ").append(direction);
+	        return this;
+	    }
+
+	    public QueryUtil limitOffset(Object... values) {
+	        query.append(" LIMIT ?").append(" OFFSET ?");
+	        params.addAll(Arrays.asList(values));
+	        return this;
+	    }
 
 
 	    public ResultSet executeQuery(Connection conn, DbUtil dbConn) throws SQLException 
 	    {
-	        PreparedStatement stmt = conn.prepareStatement(query.toString());
-	        
-	        if(params!=null)
-	        {
-	        	for (int i = 0; i < params.length; i++) 
-	        	{
-	        		if(params[i] instanceof Integer) 
-	        		{
-//	        			System.out.println(params[i]);
-	        			stmt.setInt(i+1, (int) params[i]);
-	        		}
-	        		else if(params[i] instanceof String)
-	        		{
-	        			stmt.setString(i+1,  (String) params[i]);
-	        		}
-	        		else if(params[i] instanceof Double)
-	        		{
-	        			stmt.setDouble(i+1,(Double) params[i]);
-	        		}
-	        		else if(params[i] instanceof Boolean)
-	        		{
-	        			stmt.setBoolean(i+1, (Boolean) params[i]);
-	        		}
-	        		else if(params[i] instanceof Timestamp)
-	        		{
-	        			stmt.setTimestamp(i+1, (Timestamp) params[i]);
-	        		}
-	        		else if(params[i] instanceof BigDecimal)
-		        	{
-			            stmt.setBigDecimal(i+1, (BigDecimal) params[i]);
-		        	}
-	        		else
-	        		{
-	        			stmt.setDate(i+1, (Date) params[i]);
-	        		}
-	        		
-	        	}
-	        	
-	        }
-	        	
+	        PreparedStatement stmt = null;
+	        stmt = setParams(conn,stmt);
 	        
 //	        System.out.println(stmt);
 	        return stmt.executeQuery();
@@ -208,44 +187,55 @@ public class QueryUtil
 	    public int executeUpdate(Connection conn, DbUtil dbConn) throws SQLException 
 	    {
 	    	
-	        PreparedStatement stmt = conn.prepareStatement(query.toString());
-	        
-	        for (int i = 0; i < params.length; i++) 
-	        {
-//	        	System.out.println(params[i]);
-		            if(params[i] instanceof Integer) 
-		            {
-		            	stmt.setInt(i+1, (int) params[i]);
-		            }
-		            else if(params[i] instanceof String)
-		            {
-		            	stmt.setString(i+1,  (String) params[i]);
-//		            	System.out.println(params[i]);
-		            }
-		            else if(params[i] instanceof Double)
-		            {
-		            	stmt.setDouble(i+1,(Double) params[i]);
-		            }
-		            else if(params[i] instanceof Boolean)
-		            {
-		            	stmt.setBoolean(i+1, (Boolean) params[i]);
-		            }
-		            else if(params[i] instanceof Timestamp)
-	        		{
-	        			stmt.setTimestamp(i+1, (Timestamp) params[i]);
-	        		}
-		            else if(params[i] instanceof BigDecimal)
-	        		{
-		            	stmt.setBigDecimal(i+1, (BigDecimal) params[i]);
-	        		}
-		            else
-		            {
-		            	stmt.setDate(i+1, (Date) params[i]);
-		            }
-		            	
+	    	PreparedStatement stmt = null;
+	        stmt = setParams(conn,stmt);
 		        
-	        }
 	        return stmt.executeUpdate();
+	    }
+	    
+	    private PreparedStatement setParams(Connection conn,PreparedStatement stmt) throws SQLException
+	    {
+	    	stmt = conn.prepareStatement(query.toString());
+//	    	System.out.println(stmt);
+	    	 if(params!=null)
+		        {
+		        	for (int i = 0; i < params.size(); i++) 
+		        	{
+		        		if(params.get(i) instanceof Integer) 
+		        		{
+//		        			System.out.println(params.get(i));
+		        			stmt.setInt(i+1, (int) params.get(i));
+		        		}
+		        		else if(params.get(i) instanceof String)
+		        		{
+		        			stmt.setString(i+1,  (String) params.get(i));
+		        		}
+		        		else if(params.get(i) instanceof Double)
+		        		{
+		        			stmt.setDouble(i+1,(Double) params.get(i));
+		        		}
+		        		else if(params.get(i) instanceof Boolean)
+		        		{
+		        			stmt.setBoolean(i+1, (Boolean) params.get(i));
+		        		}
+		        		else if(params.get(i) instanceof Timestamp)
+		        		{
+		        			stmt.setTimestamp(i+1, (Timestamp) params.get(i));
+		        		}
+		        		else if(params.get(i) instanceof BigDecimal)
+			        	{
+				            stmt.setBigDecimal(i+1, (BigDecimal) params.get(i));
+			        	}
+		        		else
+		        		{
+		        			stmt.setDate(i+1, (Date) params.get(i));
+		        		}
+		        		
+		        	}
+		        	
+		        }
+	    	 
+	    	return stmt;
 	    }
 	
 

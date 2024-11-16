@@ -32,8 +32,9 @@ export default Ember.Component.extend({
 
   loadBanks() {
     let  url= `http://localhost:8080/banker/api/v1/banks`;
+    console.log(url);
     this.get('fetchService').fetch(url,methods.GET).then((response) => {
-      this.set('bankNames', response[0].data);
+      this.set('bankNames', response.data);
     }).catch((error) => {
       console.error("Failed to load banks:", error);
     });
@@ -51,10 +52,6 @@ export default Ember.Component.extend({
   },
 
   checkStorage() {
-    // if (localStorage.length !== 0) {
-    //   localStorage.clear();
-    // }
-    // localStorage.setItem('bankId', this.get('BankId'));
     this.get('sharedData').set('bankId', this.get('BankId'));
   },
 

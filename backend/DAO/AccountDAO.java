@@ -5,17 +5,20 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import javax.servlet.ServletException;
 import enums.Status;
 import enums.TransactionType;
+import handlers.AccountsHandler;
 import model.Account;
 import utility.DbUtil;
 import utility.QueryUtil;
 
 public class AccountDAO {
-
+	
+	public final static int itemsPerPage = 8;
     private DbUtil dbUtil = new DbUtil();
     private Account account = new Account();
 
@@ -46,6 +49,35 @@ public class AccountDAO {
 		return rs.next();
 		
     }
+    public ResultSet selectPageWise(Connection conn,HashMap<String, Integer> pathMap,String searchParam) throws SQLException 
+    {
+    	UserDAO userDAO = new UserDAO();
+    	Map<String,Object[]> conditions = new HashMap<>();
+    	
+    	for(String key:pathMap.keySet()) {
+    		conditions.put(changeName(key), new Object[] {"=",pathMap.get(key)});
+    	}
+    	if(searchParam!=null)
+    	{
+    		List<Integer> userId = userDAO.getUserId(conn,searchParam);
+
+    		conditions.put("a.user_id", new Object[] {"IN",userId});
+    		
+    	}
+    	
+    	 QueryUtil query = QueryUtil.create()
+    			 					.select("*")
+    			 					.from("branch b")
+    			 					.join("account a","b.branch_id=a.branch_id", "INNER")
+    			 					.where(conditions)
+    			 					.orderBy("a.acc_number", "DESC");
+    	 if(AccountsHandler.offset!=-1)
+    	 {
+    		 query.limitOffset(itemsPerPage, AccountsHandler.offset);	 
+    	 }
+        return query.executeQuery(conn, new DbUtil());
+    }
+    
     public ResultSet selectAllAccounts(Connection conn,HashMap<String, Integer> pathMap) throws SQLException 
     {
     	Map<String,Object[]> conditions = new HashMap<>();
@@ -59,6 +91,43 @@ public class AccountDAO {
     			 					.join("account a","b.branch_id=a.branch_id", "INNER")
     			 					.where(conditions);
         return query.executeQuery(conn, new DbUtil());
+    }
+    
+    public int totalAccounts(Connection conn,HashMap<String, Integer> pathMap,String searchParam) throws SQLException
+    {
+    	UserDAO userDAO = new UserDAO();
+
+    	Map<String,Object[]> conditions = new HashMap<>();
+    	
+    	for(String key:pathMap.keySet()) {
+    		conditions.put(changeName(key), new Object[] {"=",pathMap.get(key)});
+    	}
+    	if(searchParam!=null)
+    	{
+    		List<Integer> userId = userDAO.getUserId(conn,searchParam);
+
+    		conditions.put("a.user_id", new Object[] {"IN",userId});
+    		
+    	}
+    	
+    	 QueryUtil query = QueryUtil.create()
+    			 					.select("COUNT(a.acc_number) AS TotalAccounts")
+    			 					.from("branch b")
+    			 					.join("account a","b.branch_id=a.branch_id", "INNER")
+    			 					.where(conditions);
+        ResultSet rs = null;
+        try{
+        	rs = query.executeQuery(conn, new DbUtil());
+        	if(rs.next())
+        	{
+        		return rs.getInt("TotalAccounts");
+        	}
+        	
+        }
+        finally {
+        	dbUtil.close(null, null, rs);
+        }
+        return -1;
     }
     
     public String changeName(String key)
@@ -111,7 +180,7 @@ public class AccountDAO {
 			   .join("loan l", "a.acc_number = l.acc_number","LEFT")
 			   .join("transaction t", "a.acc_number = t.acc_number","LEFT")
 			   .where(conditions)
-			   .append("ORDER BY a.acc_number, l.loan_id, t.transaction_id");
+			   .orderBy("a.acc_number, l.loan_id, t.transaction_id", "ASC");
 	   return query.executeQuery(conn, new DbUtil());
 	   
    }

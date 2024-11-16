@@ -27,7 +27,7 @@ export default Ember.Service.extend({
         xhrFields:{
           withCredentials:true
         },
-        success: (response,txtStatus, xhr) => {
+        success: (response) => {
           // console.log(xhr);
           return response;
         },

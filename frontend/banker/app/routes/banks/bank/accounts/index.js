@@ -25,8 +25,7 @@ export default Ember.Route.extend({
     }
     this.get('sharedData').set('loanId', '*');
   },
-  setupController(controller, model) {
-    this._super(controller, model);
+  setupController(controller) {
     controller.loadAccounts(1);
   }
 });

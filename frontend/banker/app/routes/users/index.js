@@ -29,7 +29,7 @@ export default Ember.Route.extend({
    this.get('sharedData').set('userId',"*");
   },
    
-      setupController(controller, model) {
+      setupController(controller) {
         controller.loadUsers(1);
       }
     

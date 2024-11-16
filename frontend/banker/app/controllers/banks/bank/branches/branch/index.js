@@ -30,7 +30,7 @@ export default Ember.Controller.extend({
         }
       
     this.get('fetchService').fetch(url,methods.GET).then((response) => {
-      this.set('branch', response[0].data);
+      this.set('branch', response.data);
       this.set('branch',this.get('branch')[0]);
       // console.log(this.get('branch'));
     }).catch((error) => {
@@ -38,7 +38,7 @@ export default Ember.Controller.extend({
     });
   },
   actions: {
-    viewAccounts(branch) {
+    viewAccounts() {
       let bankId=this.get('sharedData').get('bankId');
       this.transitionToRoute('banks.bank.accounts', bankId).then((newRoute) => {
         newRoute.controller.setProperties({

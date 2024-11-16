@@ -26,8 +26,8 @@ export default Ember.Route.extend({
         return;
     }
   },
-    setupController(controller, model) {
-      this._super(controller, model);
+    setupController(controller) {
+      
       controller.loadBranch(this.get('sharedData').get('branchId'));
     }
 });

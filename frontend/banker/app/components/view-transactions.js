@@ -119,6 +119,11 @@ export default Ember.Component.extend({
   },
   
   actions: {
+    FilterReset(){
+      this.set('selectedTransactionType','');
+      this.set('selectedTransactionStatus','');
+      this.FilteredTransactions();
+    },
     TransactionType(value){
       this.set('selectedTransactionType',value);
       this.FilteredTransactions();

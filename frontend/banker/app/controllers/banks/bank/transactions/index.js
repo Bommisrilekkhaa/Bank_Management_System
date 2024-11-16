@@ -39,22 +39,22 @@ export default Ember.Controller.extend({
 
     if(selectedType && selectedType!='')
       {
-        url=url+`&filtertype=${selectedType}`;
+        url=url+`&filter_type=${selectedType}`;
       }
       if(selectedStatus && selectedStatus!='')
       {
-        url=url+`&filterstatus=${selectedStatus}`;
+        url=url+`&filter_status=${selectedStatus}`;
       }
       if(searchQuery && searchQuery!='')
       {
-        url=url+`&searchitem=${searchQuery}`;
+        url=url+`&search_item=${searchQuery}`;
       }
 
     this.get('fetchService').fetch(url,methods.GET)
       .then((response) => {
         // console.log(response);
-        this.set('transactions', response[0].data);
-        this.set('totalTransactions',response[0].totalTransactions);
+        this.set('transactions', response.data);
+        this.set('totalTransactions',response.totalTransactions);
       })
       .catch((error) => {
 

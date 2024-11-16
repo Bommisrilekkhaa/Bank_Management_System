@@ -10,12 +10,14 @@ import javax.servlet.ServletException;
 
 
 import enums.LoanStatus;
+import handlers.LoansHandler;
 import model.Loan;
 import utility.DbUtil;
 import utility.QueryUtil;
 
 public class LoanDAO {
 
+	public final static int itemsPerPage = 8;
     private DbUtil dbUtil = new DbUtil();
 
     public boolean insertLoan(Connection conn, Loan loan) throws SQLException 
@@ -52,6 +54,34 @@ public class LoanDAO {
     	 
     }
 
+    public ResultSet selectPageWise(Connection conn, HashMap<String, Integer> pathMap,String searchParam) throws SQLException 
+    {
+        Map<String,Object[]> conditions = new HashMap<>();
+    	
+        for(String key: pathMap.keySet()) {
+            conditions.put(changeName(key), new Object[] {"=", pathMap.get(key)});
+        }
+        String searchQuery="";
+    	if(searchParam!=null)
+    	{
+    		 conditions.put("l.acc_number",new Object[] {"=",Integer.valueOf(searchParam)});
+    	}
+    	
+        QueryUtil query = QueryUtil.create()
+						        .select("*")
+						        .from("loan l")
+						        .join("account a", "l.acc_number = a.acc_number", "INNER")
+						        .join("branch b", "a.branch_id = b.branch_id", "INNER")
+						        .where(conditions)
+						        .append(searchQuery)
+						        .orderBy("l.loan_id", "DESC");
+        if( LoansHandler.offset!=-1)
+        {
+        	query.limitOffset(itemsPerPage, LoansHandler.offset);
+        }
+  
+        return query.executeQuery(conn, dbUtil);
+    }
     
     public ResultSet selectAllLoans(Connection conn, HashMap<String, Integer> pathMap) throws SQLException 
     {
@@ -67,6 +97,7 @@ public class LoanDAO {
 						        .join("account a", "l.acc_number = a.acc_number", "INNER")
 						        .join("branch b", "a.branch_id = b.branch_id", "INNER")
 						        .where(conditions);
+  
 
         return query.executeQuery(conn, dbUtil);
     }
@@ -97,7 +128,43 @@ public class LoanDAO {
     	return key;
     }
 
-  
+    public int totalLoans(Connection conn,HashMap<String, Integer> pathMap,String searchParam) throws SQLException
+    {
+
+    	Map<String,Object[]> conditions = new HashMap<>();
+    	
+    	for(String key:pathMap.keySet()) {
+    		conditions.put(changeName(key), new Object[] {"=",pathMap.get(key)});
+    	}
+    	String searchQuery="";
+     	if(searchParam!=null)
+     	{
+     		 conditions.put("l.acc_number",new Object[] {"=",Integer.valueOf(searchParam)});
+       	}
+     	
+
+    	 QueryUtil query = QueryUtil.create()
+    			 					.select("COUNT(l.loan_id) AS TotalLoans")
+    			 					.from("loan l")
+    						        .join("account a", "l.acc_number = a.acc_number", "INNER")
+    						        .join("branch b", "a.branch_id = b.branch_id", "INNER")
+    						        .where(conditions)
+    						        .append(searchQuery);
+    						       
+        ResultSet rs = null;
+        try{
+        	rs = query.executeQuery(conn, new DbUtil());
+        	if(rs.next())
+        	{
+        		return rs.getInt("TotalLoans");
+        	}
+        	
+        }
+        finally {
+        	dbUtil.close(null, null, rs);
+        }
+        return -1;
+    }
    
     public boolean updateLoan(Connection conn, Loan loan) throws SQLException 
     {
@@ -107,10 +174,12 @@ public class LoanDAO {
     	Map<String,Object> conditions = new HashMap<>();
     	conditions.put("loan_type", loan.getLoan_type());
     	conditions.put("loan_amount", loan.getLoan_amount());
-    	conditions.put("loan_interest", loan.getLoan_interest());
     	conditions.put("loan_duration", loan.getLoan_duration());
     	conditions.put("loan_status", loan.getLoan_status());
-    	conditions.put("loan_availed_date", loan.getLoan_availed_date());
+    	if(loan.getLoan_status()!=LoanStatus.REJECTED.getValue())
+    	{
+    		conditions.put("loan_availed_date", loan.getLoan_availed_date());
+    	}
     	conditions.put("acc_number", loan.getAcc_no());
     	
         QueryUtil query = QueryUtil.create()

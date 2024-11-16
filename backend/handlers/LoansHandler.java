@@ -7,7 +7,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Set;
+import java.util.Map;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -39,7 +39,7 @@ public class LoansHandler{
     private Jedis jedis = null;
     private Connection conn = null;
     private DbUtil dbUtil = new DbUtil();
-
+    public static int offset=-1;
   
     public void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException ,SQLException{
         logger.info("GET request received for LoansServlet");
@@ -49,28 +49,66 @@ public class LoansHandler{
 
         String role = request.getSession(false).getAttribute("user_role").toString();
         jedis = ControllerServlet.pool.getResource();
+
+        Map<String,String[]> queryParamMap = request.getParameterMap();
+        cacheKey = JsonUtil.keyGenerate(cacheKey, queryParamMap);
         String cachedData = jedis.get(cacheKey);
+        String searchParam=null;
         
+        if(queryParamMap.containsKey("filter_type"))
+        {
+        	ControllerServlet.pathMap.put("l.loan_type", Integer.valueOf(LoanType.valueOf(queryParamMap.get("filter_type")[0].toUpperCase()).getValue()));
+        	
+        }
+        if(queryParamMap.containsKey("filter_status"))
+        {
+        	ControllerServlet.pathMap.put("l.loan_status", Integer.valueOf(LoanStatus.valueOf(queryParamMap.get("filter_status")[0].toUpperCase()).getValue()));
+        	
+        }
+        if(queryParamMap.containsKey("search_item"))
+        {
+        	searchParam = queryParamMap.get("search_item")[0];
+        	
+        }
+        if(queryParamMap.containsKey("page"))
+        {
+        	offset = (Integer.valueOf(queryParamMap.get("page")[0])-1)* LoanDAO.itemsPerPage;
+        
+        }
         if (role.equals(UserRole.CUSTOMER.toString())) {
             ControllerServlet.pathMap.put("user_id", (Integer) request.getSession(false).getAttribute("user_id"));
             cachedData = null;
         }
 
-        if (cachedData != null) {
+        if (cachedData != null) 
+        {
             logger.info("Fetching data from Redis cache for key: " + cacheKey);
-            JsonArray jsonArray = JsonParser.parseString(cachedData).getAsJsonArray();
             response.setContentType("application/json");
-            JsonUtil.sendJsonResponse(response, jsonArray);
-        } else {
+
+            JsonObject jsonObject = JsonParser.parseString(cachedData).getAsJsonObject();
+            JsonUtil.sendJsonResponse(response, jsonObject);
+        } 
+        else 
+        {
             logger.info("No cache found, querying database.");
             ResultSet rs=null;
             try {
             	conn = dbUtil.connect();
-                rs = loanDAO.selectAllLoans(conn, ControllerServlet.pathMap);
-                List<Loan> loans = JsonUtil.convertResultSetToList(rs, Loan.class);
-                
-                JsonArray jsonArray = new JsonArray();
 
+                JsonArray jsonArray = new JsonArray();
+                int totalLoans = loanDAO.totalLoans(conn, ControllerServlet.pathMap,searchParam);
+                if(ControllerServlet.pathMap.containsKey("loans"))
+                {
+                	rs = loanDAO.selectAllLoans(conn, ControllerServlet.pathMap);
+                }
+                else
+                {
+                	rs = loanDAO.selectPageWise(conn, ControllerServlet.pathMap,searchParam);
+                }
+                List<Loan> loans = JsonUtil.convertResultSetToList(rs, Loan.class);
+                JsonObject objectJson = new JsonObject();
+                objectJson.addProperty("totalLoans", totalLoans);
+                
                 if (!loans.isEmpty()) {
                     for (Loan loan : loans) {
                         JsonObject loanJson = new JsonObject();
@@ -84,14 +122,15 @@ public class LoansHandler{
                         loanJson.addProperty("acc_number", loan.getAcc_no());
                         jsonArray.add(loanJson);
                     }
+                    objectJson.add("data", jsonArray);
                     
                     if(!role.equals(UserRole.CUSTOMER.toString()))
                     {
-	                    jedis.set(cacheKey, jsonArray.toString());
+	                    jedis.set(cacheKey,objectJson.toString());
 	                    logger.info("Data cached with key: " + cacheKey);
                     }
                     response.setContentType("application/json");
-                    JsonUtil.sendJsonResponse(response, jsonArray);
+                    JsonUtil.sendJsonResponse(response, objectJson);
                 } else {
                     logger.warning("No matching loans found.");
                     JsonUtil.sendErrorResponse(response, "No matching loans found.");
@@ -112,7 +151,8 @@ public class LoansHandler{
         logger.info("POST request received for LoansServlet");
        
         String[] path = request.getRequestURI().substring(request.getRequestURI().indexOf("banks")).split("/");
-        String cacheKey = "/" + path[0] + "/" + path[1] + "*/" + path[path.length - 1];
+        String[] cacheKeys =new String[]{ "/" + path[0] + "/" + path[1] + "*/" + path[path.length - 1],
+                "/" + path[0] + "/" + path[1] + "*/" + path[path.length - 1]+ "_*"};
 
         try {
         	conn = dbUtil.connect();
@@ -141,11 +181,8 @@ public class LoansHandler{
                 if (!loanDAO.isLoanExists(newLoan)) {
                     if (loanDAO.insertLoan(conn, newLoan)) {
                         jedis = ControllerServlet.pool.getResource();
-                        Set<String> keys = jedis.keys(cacheKey);
-                        if (!keys.isEmpty()) {
-                            jedis.del(keys.toArray(new String[0]));
-                            logger.info("Deleted cache keys: " + keys);
-                        }
+
+                        JsonUtil.deleteCache(jedis,cacheKeys);
                         JsonUtil.sendSuccessResponse(response, "Loan inserted successfully");
                     } else {
                         logger.warning("Error inserting loan.");
@@ -170,8 +207,9 @@ public class LoansHandler{
         logger.info("PUT request received for LoansServlet");
      
         String[] path = request.getRequestURI().substring(request.getRequestURI().indexOf("banks")).split("/");
-        String cacheKey1 = "/" + path[0] + "/" + path[1] + "*/" + path[path.length - 2] + "/" + path[path.length - 1];
-        String cacheKey2 = "/" + path[0] + "/" + path[1] + "*/" + path[path.length - 2];
+        String[] cacheKeys = new String[]{"/" + path[0] + "/" + path[1] + "*/" + path[path.length - 2] + "/" + path[path.length - 1],
+				"/" + path[0] + "/" + path[1] + "*/" + path[path.length - 2],
+				"/" + path[0] + "/" + path[1] + "*/" + path[path.length - 2]+ "_*"};
 
         try  {
         	conn = dbUtil.connect();
@@ -195,16 +233,8 @@ public class LoansHandler{
 
                 if (loanDAO.updateLoan(conn, updatedLoan)) {
                     jedis = ControllerServlet.pool.getResource();
-                    Set<String> keys = jedis.keys(cacheKey1);
-                    if (!keys.isEmpty()) {
-                        jedis.del(keys.toArray(new String[0]));
-                        logger.info("Deleted cache keys: " + keys);
-                    }
-                    keys = jedis.keys(cacheKey2);
-                    if (!keys.isEmpty()) {
-                        jedis.del(keys.toArray(new String[0]));
-                        logger.info("Deleted cache keys: " + keys);
-                    }
+
+    	            JsonUtil.deleteCache(jedis, cacheKeys);
                     JsonUtil.sendSuccessResponse(response, "Loan updated successfully");
                 } else {
                     logger.warning("Error updating loan.");

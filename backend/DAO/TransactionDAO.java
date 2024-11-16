@@ -11,12 +11,14 @@ import javax.servlet.ServletException;
 
 
 import enums.TransactionStatus;
+import handlers.TransactionsHandler;
 import model.Transaction;
 import utility.DbUtil;
 import utility.QueryUtil;
 
 public class TransactionDAO {
 
+	public final static int itemsPerPage = 8;
     private DbUtil db = new DbUtil();
 
     public boolean insertTransaction(Connection conn, Transaction transaction) throws SQLException 
@@ -36,7 +38,37 @@ public class TransactionDAO {
     	AccountDAO accountDAO = new AccountDAO();
     	return accountDAO.updateBalance(db.connect(), type, amount, acc_number);
     }
+    
+    public ResultSet selectPageWise(Connection conn, HashMap<String, Integer> pathMap,String searchParam) throws SQLException 
+    {
+        Map<String,Object[]> conditions = new HashMap<>();
+    	
+        for(String key: pathMap.keySet()) {
+            conditions.put(changeName(key), new Object[] {"=", pathMap.get(key)});
+        }
+    	if(searchParam!=null)
+    	{
+    		 conditions.put("t.acc_number",new Object[] {"=",Integer.valueOf(searchParam)});
+    	}
+    	
 
+        QueryUtil query = QueryUtil.create()
+        		.select("*")
+        		.from("transaction t")
+        		.join("account a", "t.acc_number = a.acc_number", "INNER")
+        		.join("branch b", "a.branch_id = b.branch_id", "INNER")
+    			.where(conditions)
+    			.orderBy("t.transaction_id", "DESC");
+        
+        if( TransactionsHandler.offset!=-1)
+        {
+        	query.limitOffset(itemsPerPage, TransactionsHandler.offset);
+        	
+        }
+
+        return query.executeQuery(conn, db);
+    }
+    
     public ResultSet selectAllTransactions(Connection conn, HashMap<String, Integer> pathMap) throws SQLException 
     {
         Map<String,Object[]> conditions = new HashMap<>();
@@ -73,9 +105,49 @@ public class TransactionDAO {
     	{
     		return "a."+key;
     	}
-    	return "b."+key.substring(0, key.length() - 1) + "_id";
+    	else if(key.equals("banks"))
+    	{
+    		
+    		return "b."+key.substring(0, key.length() - 1) + "_id";
+    	}
+    	return key;
     }
+    
+    public int totalTransactions(Connection conn,HashMap<String, Integer> pathMap,String searchParam) throws SQLException
+    {
 
+    	Map<String,Object[]> conditions = new HashMap<>();
+
+    	for(String key:pathMap.keySet()) {
+    		conditions.put(changeName(key), new Object[] {"=",pathMap.get(key)});
+    	}
+    	if(searchParam!=null)
+    	{
+    		 conditions.put("t.acc_number",new Object[] {"=",Integer.valueOf(searchParam)});
+    	}
+    	
+
+    	 QueryUtil query = QueryUtil.create()
+    			 					.select("COUNT(t.transaction_id) AS TotalTransactions")
+    			 					.from("transaction t")
+    			 	        		.join("account a", "t.acc_number = a.acc_number", "INNER")
+    			 	        		.join("branch b", "a.branch_id = b.branch_id", "INNER")
+    			 	    			.where(conditions);
+        ResultSet rs = null;
+        try{
+        	rs = query.executeQuery(conn, new DbUtil());
+        	if(rs.next())
+        	{
+        		return rs.getInt("TotalTransactions");
+        	}
+        	
+        }
+        finally {
+			db.close(null, null, rs);
+        }
+        return -1;
+    }
+    
    
     public ResultSet lastTransaction(Connection conn, HashMap<String, Integer> pathMap) throws SQLException 
     {

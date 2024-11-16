@@ -7,8 +7,13 @@ export default Ember.Component.extend({
   sharedData:Ember.inject.service('shared-data'),
   branches: [],
   userRole:role,
-  role:getSessionData().user_role,
-    
+  role:Ember.computed(()=>{return getSessionData().user_role}),
+  branchId: Ember.computed.reads('sharedData.branchId'), 
+  resetDropdown: Ember.observer('branchId', function () {
+    if (this.get('branchId') == '*') {
+      this.set('branch_name', 'all');
+    }
+  }),
   init() {
     this._super(...arguments);
     if(this.get('role')==role.ADMIN || this.get('role')==role.CUSTOMER)
@@ -16,18 +21,6 @@ export default Ember.Component.extend({
         this.loadBranches();
         
       }
-    // if(localStorage.getItem('branchId')==null)
-    // {
-    //   localStorage.setItem('branchId', '*');
-    // }
-    // if(localStorage.getItem('accNo')==null)
-    // {
-    //   localStorage.setItem('accNo','*');  
-    // }
-    // if(localStorage.getItem('loanId')==null)
-    // {
-    //   localStorage.setItem('loanId','*');
-    // }
   }, 
    
   loadBranches() {
@@ -43,7 +36,7 @@ export default Ember.Component.extend({
     Ember.run.later(() => { 
       this.get('fetchService').fetch(url,methods.GET).then((response) => {
       // console.log(response);
-      this.set('branches', response[0].data);
+      this.set('branches', response.data);
     }).catch((error) => {
       console.error("Failed to load branches:", error);
     });
@@ -62,7 +55,6 @@ export default Ember.Component.extend({
       this.get(routeName)();
     },
     logout() {
-      // localStorage.clear();
       this.get('logout')();
     },
     setbranch(branch_name) {

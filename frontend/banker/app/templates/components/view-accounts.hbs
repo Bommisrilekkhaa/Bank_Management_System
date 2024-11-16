@@ -16,7 +16,7 @@
       <option value="inactive">Inactive</option>
       <option value="pending">Pending</option>
     </select>
-    <button class="clear" style="margin-top:7px;padding: 8px 10px 8px 10px;" {{action "AccountType" ""}} {{action "AccountStatus" ""}} >Reset</button>
+    <button class="clear" style="margin-top:7px;padding: 8px 10px 8px 10px;" {{action "FilterReset"}} >Reset</button>
   </div>
 
  {{#unless (eq role userRole.CUSTOMER)}}

@@ -10,8 +10,8 @@ export default Ember.Controller.extend({
     let  url= `http://localhost:8080/banker/api/v1/banks?page=${page}`;
     this.get('fetchService').fetch(url,methods.GET).then((response) => {
       // console.log(response);
-      this.set('totalBanks', response[0].totalBanks);
-      this.set('banks', response[0].data);
+      this.set('totalBanks', response.totalBanks);
+      this.set('banks', response.data);
     }).catch((error) => {
       this.set('banks', []);
       console.error("Failed to load banks:", error);

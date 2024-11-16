@@ -6,13 +6,14 @@ import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
 
-
+import handlers.BanksHandler;
 import model.Bank;
 import utility.DbUtil;
 import utility.QueryUtil;
 
 public class BankDAO {
 
+	public final static int itemsPerPage = 8;
     private DbUtil dbUtil = new DbUtil();
     private Bank bank = new Bank();
     
@@ -38,6 +39,43 @@ public class BankDAO {
         
        return query.executeQuery(conn, dbUtil);
         
+    }
+    
+    public ResultSet selectPageWise(Connection conn) throws SQLException 
+    {
+    	QueryUtil query = QueryUtil.create()
+    				.select("*")
+    				.from("banks")
+					.orderBy("bank_id", "DESC");
+    	
+	if(BanksHandler.offset!=-1)
+	{
+		query.limitOffset(itemsPerPage, BanksHandler.offset);	 
+	}
+        
+       return query.executeQuery(conn, dbUtil);
+        
+    }
+    
+    public int totalBanks(Connection conn) throws SQLException
+    {
+    	QueryUtil query = QueryUtil.create()
+				.select("COUNT(bank_id) AS TotalBanks")
+				.from("banks");
+    	
+        ResultSet rs = null;
+        try{
+        	rs = query.executeQuery(conn, new DbUtil());
+        	if(rs.next())
+        	{
+        		return rs.getInt("TotalBanks");
+        	}
+        	
+        }
+        finally {
+        	dbUtil.close(null, null, rs);
+        }
+        return -1;
     }
 
     public Bank getBankById(Connection conn, int bankId) throws SQLException 

@@ -3,20 +3,7 @@
     <h2>{{if isEdit "Edit Branch" "Create New Branch"}}</h2>
     
     <form {{action "submitForm" on="submit"}}>
-      {{!-- {{#if isEdit}}
-        <div class="form-group">
-          <label for="branchId">Branch ID<span style="color:rgb(237, 69, 69);">*</span></label>
-          <input 
-            type="text" 
-            id="branchId" 
-            value={{branchId}} 
-            class="form-control" 
-            oninput={{action (mut branchId) value="target.value"}} 
-            disabled
-          >
-        </div>
-      {{/if}} --}}
-  
+     
       <div class="form-group">
         <label for="name">Branch Name<span style="color:rgb(237, 69, 69);">*</span></label>
         <input 

@@ -23,7 +23,7 @@ export default Ember.Controller.extend({
 
     this.get('fetchService').fetch(url,methods.GET).then((response) => {
       // console.log(response);
-      this.set('acc', response[0].data);
+      this.set('acc', response.data);
       this.set('acc',this.get('acc')[0]);
     }).catch((error) => {
       console.error("Failed to load account:", error);

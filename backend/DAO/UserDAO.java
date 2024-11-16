@@ -6,6 +6,7 @@ import java.sql.SQLException;
 
 import enums.Status;
 import enums.UserRole;
+import handlers.UsersHandler;
 import model.Bank;
 import model.User;
 import servlets.ControllerServlet;
@@ -13,11 +14,14 @@ import utility.DbUtil;
 import utility.QueryUtil;
 import utility.SessionUtil;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class UserDAO {
 
+		public final static int itemsPerPage = 8;
 	    private DbUtil db = new DbUtil();
 	    private BankDAO bankDao = new BankDAO();
 	    private BranchDAO branchDao = new BranchDAO();
@@ -98,6 +102,33 @@ public class UserDAO {
 	        return query.executeUpdate(conn, db) > 0;
 	    }
 	    
+	   public ResultSet selectPageWise(Connection conn,HashMap<String, Integer> pathMap,String searchParam) throws SQLException 
+	   {
+	    	Map<String,Object[]> conditions = new HashMap<>();
+	    	
+	    	for(String key:pathMap.keySet()) {
+	    		conditions.put(key, new Object[] {"=",pathMap.get(key)});
+	    	}
+	    	
+	    	if(searchParam!=null) 
+	    	{
+	    		conditions.put("username", new Object[] {"ILIKE",searchParam+"%"});
+	    	}
+	    	
+	    	QueryUtil query = QueryUtil.create()
+	                .select("*")
+	                .from("users")
+	                .where(conditions)
+ 					.orderBy("user_id", "DESC");
+	    	
+	    	 if(UsersHandler.offset!=-1)
+	    	 {
+	    		 query.limitOffset(itemsPerPage, UsersHandler.offset);	 
+	    	 }
+
+	        return query.executeQuery(conn, db);
+	    }
+	   
 	    public ResultSet selectAllUsers(Connection conn) throws SQLException 
 	    {
 	    	Map<String,Object[]> conditions = new HashMap<>();
@@ -116,7 +147,49 @@ public class UserDAO {
 	        return query.executeQuery(conn, db);
 	    }
 	    
-	
+	    public int totalUsers(Connection conn,HashMap<String, Integer> pathMap,String searchParam) throws SQLException 
+		{
+		    	Map<String,Object[]> conditions = new HashMap<>();
+		    	
+		    	for(String key:pathMap.keySet()) {
+		    		if(key.equals("users"))
+		    		{
+		    			key="user_id";
+		    			conditions.put(key, new Object[] {"=",pathMap.get("users")});
+		    		}
+		    		else
+		    		{
+
+		    			conditions.put(key, new Object[] {"=",pathMap.get(key)});
+		    		}
+		    	}
+		    	
+		    	if(searchParam!=null) 
+		    	{
+		    		conditions.put("username", new Object[] {"ILIKE",searchParam+"%"});
+		    	}
+		    	
+		    	QueryUtil query = QueryUtil.create()
+		                .select("COUNT(user_id) AS TotalUsers")
+		                .from("users")
+		                .where(conditions);
+		    	
+
+		    	 ResultSet rs = null;
+		         try{
+		         	rs = query.executeQuery(conn, new DbUtil());
+		         	if(rs.next())
+		         	{
+		         		return rs.getInt("TotalUsers");
+		         	}
+		         	
+		         }
+		         finally {
+		         	db.close(null, null, rs);
+		         }
+		         return -1;
+		}
+	    
 	    public ResultSet getUnassignedManagers(Connection conn) throws SQLException
 	    {
 	    	
@@ -247,31 +320,31 @@ public class UserDAO {
 		        return null;
 		  }
 		 
-		 public User getUserId(Connection conn, String username) throws SQLException 
+		 public List<Integer> getUserId(Connection conn, String username) throws SQLException 
 		 {
 			 Map<String,Object[]> conditions = new HashMap<>();
-		     conditions.put("username", new Object[] {"=",username});
+		     conditions.put("username", new Object[] {"ILIKE",username+"%"});
 		     
-			 User user = new User();
 //			 System.out.println("full_namesatrt");
 		        QueryUtil query = QueryUtil.create()
 		                .select("user_id")
 		                .from("users")
 		                .where(conditions);
 		        ResultSet rs=null;
+		        List<Integer> userId = new ArrayList<>();
 		        try 
 		        {
 		        	rs = query.executeQuery(conn, db);
-		        	if(rs.next())
+		        	while(rs.next())
 		            {
-		        		user.setUser_id(rs.getInt("user_id"));
-		        		return user;
+		        		userId.add(rs.getInt("user_id"));
+		        		
 		            }
 		        }
 		        finally {
 		        	db.close(null, null, rs);
 		        }
-		        return null;
+		        return userId;
 		  }
 		 
 		 

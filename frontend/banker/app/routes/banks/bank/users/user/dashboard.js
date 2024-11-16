@@ -17,7 +17,7 @@ export default Ember.Route.extend({
             return;
         }
     },
-    setupController(controller, model) {
+    setupController(controller) {
         let userrole = getSessionData().user_role;
 
         if (userrole == role.ADMIN) {
