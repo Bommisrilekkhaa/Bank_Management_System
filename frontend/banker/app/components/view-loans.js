@@ -1,5 +1,5 @@
 import Ember from 'ember';
-import { role } from '../utils/util';
+import { role,loanStatus } from '../utils/util';
 
 export default Ember.Component.extend({
   loans: [],
@@ -19,7 +19,7 @@ export default Ember.Component.extend({
   selectedLoanStatus: '',
   currentPage: 1,
   itemsPerPage: 8,
-
+  status:loanStatus,
   FilteredLoans() {
    
     let selectedLoanType = this.get('selectedLoanType');
@@ -148,24 +148,24 @@ export default Ember.Component.extend({
     updateSearchQuery(value) {
       this.set('searchQuery', value);
       this.searchSuggestion();
-      // this.notifyPropertyChange('searchSuggestions');
+      
     },
       
-          // Perform search on button click
+          
     performSearch() {
       
       this.sendAction('changeLoans',this.get('currentPage'),this.get('selectedLoanType'),this.get('selectedLoanStatus'),this.get('searchQuery'));
    
-      this.set('currentPage', 1); // Reset pagination
+      this.set('currentPage', 1); 
       this.set('searchSuggestions', []);
     },
       
-          // Select suggestion from dropdown
+          
     selectSuggestion(suggestion) {
       this.set('searchQuery', suggestion);
       this.searchSuggestion();
-      // this.notifyPropertyChange('searchSuggestions');
-      this.set('currentPage', 1); // Reset pagination
+      
+      this.set('currentPage', 1); 
     },
   }
 });

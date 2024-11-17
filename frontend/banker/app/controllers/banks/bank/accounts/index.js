@@ -61,39 +61,20 @@ export default Ember.Controller.extend({
     viewaccount(account)
     {
       let bankId = this.get('sharedData').get('bankId');
-      // console.log("view...."+this.get('bankId'));
-
       this.get('sharedData').set('branchId',account.branch_id);
-        this.transitionToRoute('banks.bank.accounts.account',bankId,account.acc_no).then((newRoute)=>{
-          newRoute.controller.setProperties({
-            bankId:bankId,
-            branchId:account.branch_id,
-            account:account
-          });
-        }).catch((error) => {
-          console.error("Transition failed", error);
-        });
+      this.transitionToRoute('banks.bank.accounts.account',bankId,account.acc_no);
     },
     addNewAccount() {
 
-    let bankId = this.get('sharedData').get('bankId');
-      // console.log(this.get('bankId'));
-      this.transitionToRoute('banks.bank.accounts.new').then((newRoute)=>{
-
-        newRoute.controller.setProperties({
-          bankId:bankId
-        });
-        
-      }).catch((error) => {
-        console.error("Transition failed", error);
-      });
+      this.transitionToRoute('banks.bank.accounts.new');
         
     },
 
-    editAccount(isEdit,account,branchId) {
+    editAccount(isEdit,account) {
 
     let bankId = this.get('sharedData').get('bankId');
-    this.get('sharedData').set('branchId',branchId);
+    this.get('sharedData').set('branchId',account.branch_id);
+    console.log(account.branch_id)
       this.transitionToRoute('banks.bank.accounts.account.edit',bankId,account.acc_no).then((newRoute)=>{
 
         newRoute.controller.setProperties({
@@ -105,8 +86,7 @@ export default Ember.Controller.extend({
           username:account.username,
           fullname: account.user_fullname,
           branch_name: account.branch_name,
-          branch_Id:branchId,
-          bankId:bankId,
+          branch_Id:account.branch_id,
           userId:account.user_id
         });
       }).catch((error) => {
@@ -119,9 +99,5 @@ export default Ember.Controller.extend({
       this.loadAccounts(page,selectedType,selectedStatus,searchQuery);
     }
    
-  },
-  willDestroy() {
-    this._super(...arguments);
-    this.get('branchSelection').off('branchChanged', this, this.handleBranchChange);
   }
 });

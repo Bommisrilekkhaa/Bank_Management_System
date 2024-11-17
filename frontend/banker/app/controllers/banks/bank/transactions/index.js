@@ -66,42 +66,23 @@ export default Ember.Controller.extend({
   actions: {
     viewTransaction(transaction) {
       let bankId = this.get('sharedData').get('bankId');
-      this.transitionToRoute('banks.bank.transactions.transaction',bankId,transaction.transaction_id)
-        .then((newRoute) => {
-          newRoute.controller.setProperties({
-            bankId: this.get('bankId'),
-            transactionId: transaction.transaction_id
-          });
-          // console.log("inner view transactions");
-        })
-        .catch((error) => {
-          console.error("Transition failed", error);
-        });
+      this.transitionToRoute('banks.bank.transactions.transaction',bankId,transaction.transaction_id);
+       
     },
-
 
     addNewTransaction() { 
 
       let bankId = this.get('sharedData').get('bankId');
       // console.log(branchId);
-      this.transitionToRoute('banks.bank.transactions.new',bankId)
-        .then((newRoute) => {
-          newRoute.controller.setProperties({
-            accNo: this.get('accNo'),
-            bankId: this.get('bankId')
-          });
-        })
-        .catch((error) => {
-          console.error("Transition to new transaction page failed", error);
-        });
+      this.transitionToRoute('banks.bank.transactions.new',bankId);
     },
     changeTransactions(page,selectedType,selectedStatus,searchQuery)
     {
       this.loadTransactions(page,selectedType,selectedStatus,searchQuery);
     }
   },
-  willDestroy() {
-    this._super(...arguments);
-    this.get('branchSelection').off('branchChanged', this, this.handleBranchChange);
-  }
+  // willDestroy() {
+  //   this._super(...arguments);
+  //   this.get('branchSelection').off('branchChanged', this, this.handleBranchChange);
+  // }
 });

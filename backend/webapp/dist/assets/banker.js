@@ -32,16 +32,10 @@ define('banker/components/account-input', ['exports', 'banker/utils/util'], func
     errorMessage: '',
     branchNames: [],
     userRole: _util.role,
-    statuses: [_util.status.ACTIVE, _util.status.INACTIVE, _util.status.PENDING],
+    statuses: [_util.status.ACTIVE, _util.status.PENDING],
     types: [_util.accountType.BUSINESS, _util.accountType.SAVINGS],
-    role: Ember.computed(function () {
-      var value = '; ' + document.cookie;
-      var parts = value.split('; ' + 'sessionData' + '=');
-      if (parts.length === 2) {
-        var cookieData = decodeURIComponent(parts.pop().split(';').shift());
-        var sessionData = JSON.parse(cookieData);
-        return sessionData.user_role;
-      }
+    role: Ember.computed('branchNames', function () {
+      return (0, _util.getSessionData)().user_role;
     }),
 
     init: function init() {
@@ -50,13 +44,12 @@ define('banker/components/account-input', ['exports', 'banker/utils/util'], func
       this.loadBranches();
     },
 
-    userId: Ember.computed(function () {
-      var value = '; ' + document.cookie;
-      var parts = value.split('; ' + 'sessionData' + '=');
-      if (parts.length === 2) {
-        var cookieData = decodeURIComponent(parts.pop().split(';').shift());
-        var sessionData = JSON.parse(cookieData);
-        return sessionData.user_id;
+
+    filteredStatuses: Ember.computed('branchNames', function () {
+      if (this.get('acc_status') == _util.status.ACTIVE) {
+        return [_util.status.INACTIVE, _util.status.ACTIVE];
+      } else {
+        return [_util.status.ACTIVE, _util.status.PENDING];
       }
     }),
 
@@ -95,17 +88,23 @@ define('banker/components/account-input', ['exports', 'banker/utils/util'], func
           this.set("errorMessage", 'Please select a valid account type.');
           return;
         }
+        if (this.get('role') != this.userRole.CUSTOMER) {
+          if (this.get('isEdit')) {
+            if (!this.get('filteredStatuses').includes(this.get('acc_status'))) {
+              this.set("errorMessage", "Please select a valid account status.");
+              return;
+            }
+          } else {
+            if (!this.get('statuses').includes(this.get('acc_status'))) {
+              this.set("errorMessage", "Please select a valid account status.");
+              return;
+            }
+          }
+        }
 
-        if (!this.get('branch_name') || this.get('branch_name').trim() === '') {
+        if (!this.get('branchId') || String(this.get('branchId')).trim() === '') {
           this.set("errorMessage", 'Please select a branch.');
           return;
-        }
-        var array = this.get('branchNames');
-        for (var i = 0; i < array.length; i++) {
-          var item = array[i];
-          if (item['branch_name'] == this.get('branch_name')) {
-            this.set('branchId', item['branch_id']);
-          }
         }
 
         if (this.get('role') != 'MANAGER') {
@@ -123,7 +122,7 @@ define('banker/components/account-input', ['exports', 'banker/utils/util'], func
 
         var url = 'http://localhost:8080/banker/api/v1/';
         var bankId = this.get('sharedData').get('bankId');
-        var branchId = this.get('sharedData').get("branchId");
+        var branchId = this.get("branchId");
         if (this.get('isEdit')) {
           var accNo = this.get('sharedData').get('accNo');
           if (bankId != "*") {
@@ -161,7 +160,6 @@ define('banker/components/account-input', ['exports', 'banker/utils/util'], func
 
           this.get('fetchService').fetch(url, _util.methods.POST, accountData).then(function () {
 
-            // alert('Account created successfully!');
             _this2.resetForm();
 
             _this2.get('notification').showNotification('Account Created successfully!', 'success');
@@ -170,7 +168,6 @@ define('banker/components/account-input', ['exports', 'banker/utils/util'], func
               _this2.sendAction("toAccount");
             }, 2000);
           }).catch(function (error) {
-            // alert('Error creating account');
             console.error(error);
             _this2.sendAction("toAccount");
           });
@@ -178,7 +175,7 @@ define('banker/components/account-input', ['exports', 'banker/utils/util'], func
       },
       cancel: function cancel() {
         this.resetForm();
-        // this.transitionToRoute('accounts'); 
+        this.sendAction('toAccount');
       }
     },
 
@@ -186,7 +183,6 @@ define('banker/components/account-input', ['exports', 'banker/utils/util'], func
       this.setProperties({
         accNo: '',
         acc_type: '',
-        // acc_balance: '',
         fullname: '',
         acc_status: '',
         username: '',
@@ -243,7 +239,7 @@ define('banker/components/auth-form', ['exports', 'banker/utils/util'], function
       var _this = this;
 
       var url = 'http://localhost:8080/banker/api/v1/banks';
-      console.log(url);
+      // console.log(url);
       this.get('fetchService').fetch(url, _util.methods.GET).then(function (response) {
         _this.set('bankNames', response.data);
       }).catch(function (error) {
@@ -570,6 +566,7 @@ define('banker/components/branch-input', ['exports', 'banker/utils/util'], funct
         name: '',
         address: '',
         manager_id: '',
+        branch_number: '',
         isEdit: false
       });
     }
@@ -666,7 +663,7 @@ define('banker/components/loan-input', ['exports', 'banker/utils/util'], functio
     accNo: '',
     sharedData: Ember.inject.service('shared-data'),
     userRole: _util.role,
-    statuses: [_util.loanStatus.PENDING, _util.loanStatus.APPROVED, _util.loanStatus.CLOSED, _util.loanStatus.REJECTED],
+    statuses: [_util.loanStatus.PENDING, _util.loanStatus.APPROVED],
     types: [_util.loanType.BUSINESSLOAN, _util.loanType.EDUCATIONLOAN, _util.loanType.HOMELOAN],
     durations: [6, 12, 18, 24],
     init: function init() {
@@ -677,21 +674,18 @@ define('banker/components/loan-input', ['exports', 'banker/utils/util'], functio
       }
     },
 
-    role: Ember.computed(function () {
-      var value = '; ' + document.cookie;
-      var parts = value.split('; ' + 'sessionData' + '=');
-      if (parts.length === 2) {
-        var cookieData = decodeURIComponent(parts.pop().split(';').shift());
-        var sessionData = JSON.parse(cookieData);
-        return sessionData.user_role;
-      }
+    role: Ember.computed('accounts', function () {
+
+      return (0, _util.getSessionData)().user_role;
     }),
 
     filteredStatuses: Ember.computed('loan_amount', function () {
       if (this.get('loan_amount') > 3000000) {
-        return [_util.loanStatus.REJECTED];
+        return [_util.loanStatus.PENDING, _util.loanStatus.REJECTED];
+      } else if (this.get('loan_status') == _util.loanStatus.APPROVED) {
+        return [_util.loanStatus.APPROVED, _util.loanStatus.CLOSED];
       } else {
-        return [_util.loanStatus.PENDING, _util.loanStatus.APPROVED, _util.loanStatus.CLOSED, _util.loanStatus.REJECTED];
+        return [_util.loanStatus.PENDING, _util.loanStatus.APPROVED];
       }
     }),
 
@@ -717,13 +711,13 @@ define('banker/components/loan-input', ['exports', 'banker/utils/util'], functio
       if (branchId != '*') {
         url = url + ('/branches/' + branchId);
       }
-      url = url + '/accounts?acc_status=1';
+      url = url + '/accounts?filter_status=active';
 
       this.get('fetchService').fetch(url, _util.methods.GET).then(function (response) {
         // console.log(response);
         _this.set('accounts', response.data);
-      }).catch(function (error) {
-        console.error("Failed to load accounts:", error);
+      }).catch(function () {
+        console.error("Failed to load accounts:");
       });
     },
 
@@ -737,9 +731,16 @@ define('banker/components/loan-input', ['exports', 'banker/utils/util'], functio
         }
 
         if (this.get('role') != this.userRole.CUSTOMER) {
-          if (!this.get('statuses').includes(this.get('loan_status'))) {
-            this.set("errorMessage", "Please select a valid loan status.");
-            return;
+          if (this.get('isEdit')) {
+            if (!this.get('filteredStatuses').includes(this.get('loan_status'))) {
+              this.set("errorMessage", "Please select a valid loan status.");
+              return;
+            }
+          } else {
+            if (!this.get('statuses').includes(this.get('loan_status'))) {
+              this.set("errorMessage", "Please select a valid loan status.");
+              return;
+            }
           }
         }
 
@@ -781,7 +782,6 @@ define('banker/components/loan-input', ['exports', 'banker/utils/util'], functio
             url = url + ('/loans/' + loanId);
           }
           this.get('fetchService').fetch(url, _util.methods.PUT, loanData).then(function () {
-            // console.log('Loan updated successfully!');
             _this2.resetForm();
             _this2.get('notification').showNotification('Loan Edited successfully!', 'success');
 
@@ -794,7 +794,6 @@ define('banker/components/loan-input', ['exports', 'banker/utils/util'], functio
         } else {
           url = url + '/loans';
           this.get('fetchService').fetch(url, _util.methods.POST, loanData).then(function () {
-            // console.log('Loan created successfully!');
             _this2.resetForm();
             _this2.get('notification').showNotification('Loan Created successfully!', 'success');
 
@@ -823,7 +822,8 @@ define('banker/components/loan-input', ['exports', 'banker/utils/util'], functio
         loan_duration: '',
         loan_status: '',
         loan_availed_date: '',
-        isEdit: false
+        isEdit: false,
+        accNo: ''
       });
     }
   });
@@ -852,12 +852,7 @@ define('banker/components/nav-bar', ['exports', 'banker/utils/util'], function (
     role: Ember.computed(function () {
       return (0, _util.getSessionData)().user_role;
     }),
-    branchId: Ember.computed.reads('sharedData.branchId'),
-    resetDropdown: Ember.observer('branchId', function () {
-      if (this.get('branchId') == '*') {
-        this.set('branch_name', 'all');
-      }
-    }),
+
     init: function init() {
       this._super.apply(this, arguments);
       if (this.get('role') == _util.role.ADMIN || this.get('role') == _util.role.CUSTOMER) {
@@ -874,7 +869,6 @@ define('banker/components/nav-bar', ['exports', 'banker/utils/util'], function (
       }
 
       url = url + '/branches';
-      // console.log(this.get('bankId'));
       Ember.run.later(function () {
         _this.get('fetchService').fetch(url, _util.methods.GET).then(function (response) {
           // console.log(response);
@@ -891,6 +885,8 @@ define('banker/components/nav-bar', ['exports', 'banker/utils/util'], function (
 
     actions: {
       navigate: function navigate(routeName) {
+        this.set('branch_name', '');
+        console.log(this.get('branch_name'));
         this.set('currentRoute', routeName);
         routeName = routeName + "Route";
         this.get(routeName)();
@@ -905,7 +901,7 @@ define('banker/components/nav-bar', ['exports', 'banker/utils/util'], function (
           console.error('branches is not defined or not an array');
           return;
         }
-        if (branch_name == 'all') {
+        if (branch_name == '') {
           this.get('sharedData').set('branchId', '*');
           this.changeBranch("*");
         } else {
@@ -923,6 +919,12 @@ define('banker/components/nav-bar', ['exports', 'banker/utils/util'], function (
         }
       }
     }
+    // willDestroyElement() {
+    //   this._super(...arguments);
+
+    //   // Remove observer
+    //   this.removeObserver('sharedData.branchId', this, this.handleBranchChange);
+    // },
   });
 });
 define('banker/components/notify-box', ['exports'], function (exports) {
@@ -965,14 +967,9 @@ define('banker/components/transaction-input', ['exports', 'banker/utils/util'], 
       }
     },
 
-    role: Ember.computed(function () {
-      var value = '; ' + document.cookie;
-      var parts = value.split('; ' + 'sessionData' + '=');
-      if (parts.length === 2) {
-        var cookieData = decodeURIComponent(parts.pop().split(';').shift());
-        var sessionData = JSON.parse(cookieData);
-        return sessionData.user_role;
-      }
+    role: Ember.computed('accounts', function () {
+
+      return (0, _util.getSessionData)().user_role;
     }),
 
     loadAccounts: function loadAccounts() {
@@ -987,7 +984,7 @@ define('banker/components/transaction-input', ['exports', 'banker/utils/util'], 
       if (branchId != '*') {
         url = url + ('/branches/' + branchId);
       }
-      url = url + '/accounts?acc_status=1';
+      url = url + '/accounts?filter_status=active';
 
       this.get('fetchService').fetch(url, _util.methods.GET).then(function (response) {
         // console.log(response);
@@ -996,17 +993,6 @@ define('banker/components/transaction-input', ['exports', 'banker/utils/util'], 
         console.error("Failed to load accounts:", error);
       });
     },
-
-
-    userId: Ember.computed(function () {
-      var value = '; ' + document.cookie;
-      var parts = value.split('; ' + 'sessionData' + '=');
-      if (parts.length === 2) {
-        var cookieData = decodeURIComponent(parts.pop().split(';').shift());
-        var sessionData = JSON.parse(cookieData);
-        return sessionData.user_id;
-      }
-    }),
 
     transaction_datetime: '',
     transaction_type: '',
@@ -1025,7 +1011,7 @@ define('banker/components/transaction-input', ['exports', 'banker/utils/util'], 
         var date = new Date();
 
         var year = date.getFullYear();
-        var month = String(date.getMonth() + 1).padStart(2, '0'); // Months are zero-indexed, so add 1
+        var month = String(date.getMonth() + 1).padStart(2, '0');
         var day = String(date.getDate()).padStart(2, '0');
 
         var hours = String(date.getHours()).padStart(2, '0');
@@ -1140,7 +1126,6 @@ define('banker/components/view-accounts', ['exports', 'banker/utils/util'], func
       var selectedAccountStatus = this.get('selectedAccountStatus');
 
       this.sendAction('changeAccounts', this.get('currentPage'), selectedAccountType, selectedAccountStatus, this.get('searchQuery'));
-      // accounts = accounts.filter(account => account.acc_type === selectedAccountType);
     },
 
 
@@ -1236,11 +1221,10 @@ define('banker/components/view-accounts', ['exports', 'banker/utils/util'], func
         this.sendAction('toaddNewAccount');
       },
       editAccount: function editAccount(account) {
-        this.sendAction('toeditAccount', true, account, account.branch_id);
+        this.sendAction('toeditAccount', true, account);
       },
       goToPage: function goToPage(page) {
         this.set('currentPage', page);
-        // this.loadAccounts(page);
         this.sendAction('changeAccounts', page, this.get('selectedAccountType'), this.get('selectedAccountStatus'), this.get('searchQuery'));
       },
       nextPage: function nextPage() {
@@ -1249,7 +1233,6 @@ define('banker/components/view-accounts', ['exports', 'banker/utils/util'], func
         if (currentPage < totalPages) {
           this.incrementProperty('currentPage');
         }
-        // this.loadAccounts(this.get('currentPage'));
         this.sendAction('changeAccounts', this.get('currentPage'), this.get('selectedAccountType'), this.get('selectedAccountStatus'), this.get('searchQuery'));
       },
       previousPage: function previousPage() {
@@ -1258,32 +1241,22 @@ define('banker/components/view-accounts', ['exports', 'banker/utils/util'], func
           this.decrementProperty('currentPage');
         }
         this.sendAction('changeAccounts', this.get('currentPage'), this.get('selectedAccountType'), this.get('selectedAccountStatus'), this.get('searchQuery'));
-
-        // this.loadAccounts(this.get('currentPage'));
       },
       updateSearchQuery: function updateSearchQuery(value) {
         this.set('searchQuery', value);
         this.searchSuggestion();
-        // this.notifyPropertyChange('searchSuggestions');
       },
-
-
-      // Perform search on button click
       performSearch: function performSearch() {
 
         this.sendAction('changeAccounts', this.get('currentPage'), this.get('selectedAccountType'), this.get('selectedAccountStatus'), this.get('searchQuery'));
 
-        this.set('currentPage', 1); // Reset pagination
+        this.set('currentPage', 1);
         this.set('searchSuggestions', []);
       },
-
-
-      // Select suggestion from dropdown
       selectSuggestion: function selectSuggestion(suggestion) {
         this.set('searchQuery', suggestion);
         this.searchSuggestion();
-        // this.notifyPropertyChange('searchSuggestions');
-        this.set('currentPage', 1); // Reset pagination
+        this.set('currentPage', 1);
       }
     }
   });
@@ -1330,7 +1303,7 @@ define('banker/components/view-loans', ['exports', 'banker/utils/util'], functio
     selectedLoanStatus: '',
     currentPage: 1,
     itemsPerPage: 8,
-
+    status: _util.loanStatus,
     FilteredLoans: function FilteredLoans() {
 
       var selectedLoanType = this.get('selectedLoanType');
@@ -1455,26 +1428,19 @@ define('banker/components/view-loans', ['exports', 'banker/utils/util'], functio
       updateSearchQuery: function updateSearchQuery(value) {
         this.set('searchQuery', value);
         this.searchSuggestion();
-        // this.notifyPropertyChange('searchSuggestions');
       },
-
-
-      // Perform search on button click
       performSearch: function performSearch() {
 
         this.sendAction('changeLoans', this.get('currentPage'), this.get('selectedLoanType'), this.get('selectedLoanStatus'), this.get('searchQuery'));
 
-        this.set('currentPage', 1); // Reset pagination
+        this.set('currentPage', 1);
         this.set('searchSuggestions', []);
       },
-
-
-      // Select suggestion from dropdown
       selectSuggestion: function selectSuggestion(suggestion) {
         this.set('searchQuery', suggestion);
         this.searchSuggestion();
-        // this.notifyPropertyChange('searchSuggestions');
-        this.set('currentPage', 1); // Reset pagination
+
+        this.set('currentPage', 1);
       }
     }
   });
@@ -1654,26 +1620,19 @@ define('banker/components/view-transactions', ['exports', 'banker/utils/util'], 
       updateSearchQuery: function updateSearchQuery(value) {
         this.set('searchQuery', value);
         this.searchSuggestion();
-        // this.notifyPropertyChange('searchSuggestions');
       },
-
-
-      // Perform search on button click
       performSearch: function performSearch() {
 
         this.sendAction('changeTransactions', this.get('currentPage'), this.get('selectedTransactionType'), this.get('selectedTransactionStatus'), this.get('searchQuery'));
 
-        this.set('currentPage', 1); // Reset pagination
+        this.set('currentPage', 1);
         this.set('searchSuggestions', []);
       },
-
-
-      // Select suggestion from dropdown
       selectSuggestion: function selectSuggestion(suggestion) {
         this.set('searchQuery', suggestion);
         this.searchSuggestion();
-        // this.notifyPropertyChange('searchSuggestions');
-        this.set('currentPage', 1); // Reset pagination
+
+        this.set('currentPage', 1);
       }
     }
   });
@@ -1809,9 +1768,10 @@ define('banker/controllers/banks/bank/accounts/account/edit', ['exports'], funct
     });
     exports.default = Ember.Controller.extend({
 
+        sharedData: Ember.inject.service('shared-data'),
         actions: {
             toAccount: function toAccount() {
-                this.transitionToRoute("banks.bank.accounts", this.get('bankId'));
+                this.transitionToRoute("banks.bank.accounts", this.get('sharedData').get('bankId'));
             }
         }
     });
@@ -1853,30 +1813,10 @@ define('banker/controllers/banks/bank/accounts/account/index', ['exports', 'bank
 
     actions: {
       toLoans: function toLoans() {
-        var _this2 = this;
-
-        this.transitionToRoute('banks.bank.accounts.account.loans', this.get('sharedData').get('accNo')).then(function (newRoute) {
-
-          newRoute.controller.setProperties({
-            bankId: _this2.get('sharedData').get('bankId'),
-            branchId: _this2.get('sharedData').get('branchId')
-          });
-        }).catch(function (error) {
-          console.error("Transition failed", error);
-        });
+        this.transitionToRoute('banks.bank.accounts.account.loans', this.get('sharedData').get('accNo'));
       },
       toTransactions: function toTransactions() {
-        var _this3 = this;
-
-        this.transitionToRoute('banks.bank.accounts.account.transactions', this.get('sharedData').get('accNo')).then(function (newRoute) {
-
-          newRoute.controller.setProperties({
-            bankId: _this3.get('sharedData').get('bankId'),
-            branchId: _this3.get('sharedData').get('branchId')
-          });
-        }).catch(function (error) {
-          console.error("Transition failed", error);
-        });
+        this.transitionToRoute('banks.bank.accounts.account.transactions', this.get('sharedData').get('accNo'));
       }
     }
   });
@@ -1927,9 +1867,7 @@ define('banker/controllers/banks/bank/accounts/account/loans/index', ['exports',
         url = url + ('&search_item=' + searchQuery);
       }
 
-      // console.log(this.get('accNo'));
       this.get('fetchService').fetch(url, _util.methods.GET).then(function (response) {
-        // console.log(response);
         _this.set('loans', response.data);
         _this.set('totalLoans', response.totalLoans);
       }).catch(function (error) {
@@ -1940,34 +1878,12 @@ define('banker/controllers/banks/bank/accounts/account/loans/index', ['exports',
 
     actions: {
       viewloan: function viewloan(loan) {
-        var _this2 = this;
-
-        this.transitionToRoute('banks.bank.accounts.account.loans.loan', loan.acc_number, loan.loan_id).then(function (newRoute) {
-
-          newRoute.controller.setProperties({
-            bankId: _this2.get('bankId'),
-            branchId: _this2.get('branchId')
-          });
-        }).catch(function (error) {
-          console.error("Transition failed", error);
-        });
+        this.transitionToRoute('banks.bank.accounts.account.loans.loan', loan.acc_number, loan.loan_id);
       },
       addNewLoan: function addNewLoan() {
-        var _this3 = this;
-
-        // console.log(branchId);
-        this.transitionToRoute('banks.bank.accounts.account.loans.new').then(function (newRoute) {
-          newRoute.controller.setProperties({
-            accNo: _this3.get('accNo'),
-            bankId: _this3.get('bankId')
-          });
-        }).catch(function (error) {
-          console.error("Transition to edit loan page failed", error);
-        });
+        this.transitionToRoute('banks.bank.accounts.account.loans.new');
       },
       editLoan: function editLoan(isEdit, loan) {
-        var _this4 = this;
-
         this.transitionToRoute('banks.bank.accounts.account.loans.loan.edit', loan.loan_id).then(function (newRoute) {
           newRoute.controller.setProperties({
             isEdit: isEdit,
@@ -1977,9 +1893,7 @@ define('banker/controllers/banks/bank/accounts/account/loans/index', ['exports',
             loan_interest: loan.loan_interest,
             loan_duration: loan.loan_duration,
             loan_status: loan.loan_status,
-            loan_availed_date: loan.loan_availed_date,
-            accNo: _this4.get('accNo'),
-            bankId: _this4.get('bankId')
+            loan_availed_date: loan.loan_availed_date
           });
         }).catch(function (error) {
           console.error("Transition to edit loan page failed", error);
@@ -2126,8 +2040,7 @@ define('banker/controllers/banks/bank/accounts/account/loans/loan/emi', ['export
                 this.transitionToRoute('banks.bank.accounts.account.transactions.new', this.get('sharedData').get('bankId'), this.get('loan').acc_number).then(function (newRoute) {
                     newRoute.controller.setProperties({
                         transaction_type: 'emi',
-                        transaction_amount: _this2.get('loanAmount'),
-                        accNo: _this2.get('loan').acc_number
+                        transaction_amount: _this2.get('emiAmount')
                     });
                 }).catch(function (error) {
                     console.error("Transition failed", error);
@@ -2183,7 +2096,7 @@ define('banker/controllers/banks/bank/accounts/account/loans/loan/index', ['expo
 
           newRoute.controller.setProperties({
             loan: loan,
-            loanAmount: emiAmount
+            emiAmount: emiAmount
           });
         }).catch(function (error) {
           console.error("Transition failed", error);
@@ -2266,29 +2179,11 @@ define('banker/controllers/banks/bank/accounts/account/transactions/index', ['ex
 
     actions: {
       viewTransaction: function viewTransaction(transaction) {
-        var _this2 = this;
-
-        this.transitionToRoute('banks.bank.accounts.account.transactions.transaction', transaction.acc_number, transaction.transaction_id).then(function (newRoute) {
-          newRoute.controller.setProperties({
-            bankId: _this2.get('bankId'),
-            transactionId: transaction.transaction_id
-          });
-        }).catch(function (error) {
-          console.error("Transition failed", error);
-        });
+        this.transitionToRoute('banks.bank.accounts.account.transactions.transaction', transaction.acc_number, transaction.transaction_id);
       },
       addNewTransaction: function addNewTransaction() {
-        var _this3 = this;
-
         // console.log(branchId);
-        this.transitionToRoute('banks.bank.accounts.account.transactions.new').then(function (newRoute) {
-          newRoute.controller.setProperties({
-            accNo: _this3.get('accNo'),
-            bankId: _this3.get('bankId')
-          });
-        }).catch(function (error) {
-          console.error("Transition to new transaction page failed", error);
-        });
+        this.transitionToRoute('banks.bank.accounts.account.transactions.new');
       },
       changeTransactions: function changeTransactions(page, selectedType, selectedStatus, searchQuery) {
         this.loadTransactions(page, selectedType, selectedStatus, searchQuery);
@@ -2350,7 +2245,6 @@ define('banker/controllers/banks/bank/accounts/account/transactions/transaction'
         _this.set('transaction', _this.get('transaction')[0]);
       }).catch(function (error) {
         console.error("Failed to load transaction:", error);
-        alert("Could not load transaction. Please try again later.");
       });
     }
   });
@@ -2416,36 +2310,18 @@ define('banker/controllers/banks/bank/accounts/index', ['exports', 'banker/utils
     actions: {
       viewaccount: function viewaccount(account) {
         var bankId = this.get('sharedData').get('bankId');
-        // console.log("view...."+this.get('bankId'));
-
         this.get('sharedData').set('branchId', account.branch_id);
-        this.transitionToRoute('banks.bank.accounts.account', bankId, account.acc_no).then(function (newRoute) {
-          newRoute.controller.setProperties({
-            bankId: bankId,
-            branchId: account.branch_id,
-            account: account
-          });
-        }).catch(function (error) {
-          console.error("Transition failed", error);
-        });
+        this.transitionToRoute('banks.bank.accounts.account', bankId, account.acc_no);
       },
       addNewAccount: function addNewAccount() {
 
-        var bankId = this.get('sharedData').get('bankId');
-        // console.log(this.get('bankId'));
-        this.transitionToRoute('banks.bank.accounts.new').then(function (newRoute) {
-
-          newRoute.controller.setProperties({
-            bankId: bankId
-          });
-        }).catch(function (error) {
-          console.error("Transition failed", error);
-        });
+        this.transitionToRoute('banks.bank.accounts.new');
       },
-      editAccount: function editAccount(isEdit, account, branchId) {
+      editAccount: function editAccount(isEdit, account) {
 
         var bankId = this.get('sharedData').get('bankId');
-        this.get('sharedData').set('branchId', branchId);
+        this.get('sharedData').set('branchId', account.branch_id);
+        console.log(account.branch_id);
         this.transitionToRoute('banks.bank.accounts.account.edit', bankId, account.acc_no).then(function (newRoute) {
 
           newRoute.controller.setProperties({
@@ -2457,8 +2333,7 @@ define('banker/controllers/banks/bank/accounts/index', ['exports', 'banker/utils
             username: account.username,
             fullname: account.user_fullname,
             branch_name: account.branch_name,
-            branch_Id: branchId,
-            bankId: bankId,
+            branch_Id: account.branch_id,
             userId: account.user_id
           });
         }).catch(function (error) {
@@ -2468,10 +2343,6 @@ define('banker/controllers/banks/bank/accounts/index', ['exports', 'banker/utils
       changeAccounts: function changeAccounts(page, selectedType, selectedStatus, searchQuery) {
         this.loadAccounts(page, selectedType, selectedStatus, searchQuery);
       }
-    },
-    willDestroy: function willDestroy() {
-      this._super.apply(this, arguments);
-      this.get('branchSelection').off('branchChanged', this, this.handleBranchChange);
     }
   });
 });
@@ -2483,9 +2354,10 @@ define('banker/controllers/banks/bank/accounts/new', ['exports'], function (expo
   });
   exports.default = Ember.Controller.extend({
 
+    sharedData: Ember.inject.service('shared-data'),
     actions: {
       toAccount: function toAccount() {
-        this.transitionToRoute("banks.bank.accounts", this.get('bankId'));
+        this.transitionToRoute("banks.bank.accounts", this.get('sharedData').get('bankId'));
       }
     }
   });
@@ -2535,14 +2407,8 @@ define('banker/controllers/banks/bank/branches/branch/index', ['exports', 'banke
     sharedData: Ember.inject.service('shared-data'),
     branch: [],
     userRole: _util.role,
-    role: Ember.computed(function () {
-      var value = '; ' + document.cookie;
-      var parts = value.split('; ' + 'sessionData' + '=');
-      if (parts.length === 2) {
-        var cookieData = decodeURIComponent(parts.pop().split(';').shift());
-        var sessionData = JSON.parse(cookieData);
-        return sessionData.user_role;
-      }
+    role: Ember.computed('branch', function () {
+      return (0, _util.getSessionData)().user_role;
     }),
     loadBranch: function loadBranch() {
       var _this = this;
@@ -2568,20 +2434,11 @@ define('banker/controllers/banks/bank/branches/branch/index', ['exports', 'banke
 
     actions: {
       viewAccounts: function viewAccounts() {
-        var _this2 = this;
-
         var bankId = this.get('sharedData').get('bankId');
-        this.transitionToRoute('banks.bank.accounts', bankId).then(function (newRoute) {
-          newRoute.controller.setProperties({
-            bankId: _this2.get('sharedData').get('bankId'),
-            branchId: _this2.get('branchId')
-          });
-        }).catch(function (error) {
-          console.error("Transition failed", error);
-        });
+        this.transitionToRoute('banks.bank.accounts', bankId);
       },
       delete: function _delete(branch) {
-        var _this3 = this;
+        var _this2 = this;
 
         var bankId = this.get('sharedData').get('bankId');
         var url = 'http://localhost:8080/banker/api/v1/';
@@ -2593,17 +2450,15 @@ define('banker/controllers/banks/bank/branches/branch/index', ['exports', 'banke
         }
         if (confirm('Are you sure you want to delete the branch: ' + branch.branch_name + '?')) {
           this.get('fetchService').fetch(url, _util.methods.DELETE).then(function () {
-            _this3.get('sharedData').set('branchId', '*');
-            _this3.get('notification').showNotification('Branch Deleted successfully!', 'success');
+            _this2.get('sharedData').set('branchId', '*');
+            _this2.get('notification').showNotification('Branch Deleted successfully!', 'success');
             Ember.run.later(function () {
-              _this3.get('sessionService').logout().then(function () {
-                _this3.transitionToRoute('login');
+              _this2.get('sessionService').logout().then(function () {
+                _this2.transitionToRoute('login');
               });
             }, 2000);
-            // console.log('Branch deleted successfully');
           }).catch(function (error) {
             console.error("Failed to delete branch:", error);
-            // alert('Error occurred while deleting the branch.');
           });
         }
       }
@@ -2728,32 +2583,16 @@ define('banker/controllers/banks/bank/branches/index', ['exports', 'banker/utils
 
     actions: {
       viewBranch: function viewBranch(branch) {
-        var _this2 = this;
-
         var bankId = this.get('sharedData').get('bankId');
-        this.transitionToRoute('banks.bank.branches.branch', bankId, branch.branch_id).then(function (newRoute) {
-          newRoute.controller.setProperties({
-            bankId: _this2.get('bankId'),
-            Branch: branch
-          });
-        }).catch(function (error) {
-          console.error("Transition failed", error);
-        });
+        this.transitionToRoute('banks.bank.branches.branch', bankId, branch.branch_id);
       },
       addNewBranch: function addNewBranch() {
 
         var bankId = this.get('sharedData').get('bankId');
         // console.log(this.get('bankId'));
-        this.transitionToRoute('banks.bank.branches.new', bankId).then(function (newRoute) {
-          newRoute.controller.setProperties({
-            bankId: bankId
-          });
-        }).catch(function (error) {
-          console.error("Transition failed", error);
-        });
+        this.transitionToRoute('banks.bank.branches.new', bankId);
       },
       editBranch: function editBranch(branch) {
-        var _this3 = this;
 
         var bankId = this.get('sharedData').get('bankId');
         this.transitionToRoute('banks.bank.branches.branch.edit', bankId, branch.branch_id).then(function (newRoute) {
@@ -2764,8 +2603,7 @@ define('banker/controllers/banks/bank/branches/index', ['exports', 'banker/utils
             branch_address: branch.branch_address,
             branch_number: branch.branch_number,
             manager_id: branch.manager_id,
-            manager_name: branch.manager_name,
-            bankId: _this3.get('bankId')
+            manager_name: branch.manager_name
           });
         }).catch(function (error) {
 
@@ -2773,7 +2611,7 @@ define('banker/controllers/banks/bank/branches/index', ['exports', 'banker/utils
         });
       },
       deleteBranch: function deleteBranch(branch) {
-        var _this4 = this;
+        var _this2 = this;
 
         var bankId = this.get('sharedData').get('bankId');
         var url = 'http://localhost:8080/banker/api/v1/';
@@ -2787,10 +2625,10 @@ define('banker/controllers/banks/bank/branches/index', ['exports', 'banker/utils
 
           this.get('fetchService').fetch(url, _util.methods.DELETE).then(function () {
             // console.log('Branch deleted successfully');
-            _this4.get('notification').showNotification('Branch Deleted successfully!', 'success');
+            _this2.get('notification').showNotification('Branch Deleted successfully!', 'success');
             Ember.run.later(function () {
-              _this4.transitionToRoute('banks.bank.branches', bankId);
-              _this4.loadBranches(1);
+              _this2.transitionToRoute('banks.bank.branches', bankId);
+              _this2.loadBranches(1);
             }, 2000);
           }).catch(function (error) {
             console.error("Failed to delete branch:", error);
@@ -2819,25 +2657,18 @@ define('banker/controllers/banks/bank/branches/index', ['exports', 'banker/utils
       updateSearchQuery: function updateSearchQuery(value) {
         this.set('searchQuery', value);
         this.searchSuggestion();
-        // this.notifyPropertyChange('searchSuggestions');
       },
-
-
-      // Perform search on button click
       performSearch: function performSearch() {
         this.loadBranches(this.get('currentPage'), this.get('searchQuery'));
 
-        this.set('currentPage', 1); // Reset pagination
+        this.set('currentPage', 1);
         this.set('searchSuggestions', []);
       },
-
-
-      // Select suggestion from dropdown
       selectSuggestion: function selectSuggestion(suggestion) {
         this.set('searchQuery', suggestion);
         this.searchSuggestion();
-        // this.notifyPropertyChange('searchSuggestions');
-        this.set('currentPage', 1); // Reset pagination
+
+        this.set('currentPage', 1);
       }
     }
   });
@@ -2907,6 +2738,7 @@ define('banker/controllers/banks/bank/edit', ['exports', 'banker/utils/util'], f
         }
         this.get('fetchService').fetch(url, _util.methods.PUT, bankData).then(function () {
           // console.log("bank update successfully.");
+          _this2.reset();
           _this2.get('notification').showNotification('Bank Edited successfully!', 'success');
 
           Ember.run.later(function () {
@@ -2917,10 +2749,14 @@ define('banker/controllers/banks/bank/edit', ['exports', 'banker/utils/util'], f
         });
       },
       cancel: function cancel() {
+
         this.transitionToRoute('banks.bank');
       }
+    },
+    reset: function reset() {
+      this.set('bank.bank_name', '');
+      this.set('branchId', '');
     }
-
   });
 });
 define('banker/controllers/banks/bank/index', ['exports', 'banker/utils/util'], function (exports, _util) {
@@ -2936,13 +2772,8 @@ define('banker/controllers/banks/bank/index', ['exports', 'banker/utils/util'], 
     banks: [],
     userRole: _util.role,
     role: Ember.computed('banks', function () {
-      var value = '; ' + document.cookie;
-      var parts = value.split('; ' + 'sessionData' + '=');
-      if (parts.length === 2) {
-        var cookieData = decodeURIComponent(parts.pop().split(';').shift());
-        var sessionData = JSON.parse(cookieData);
-        return sessionData.user_role;
-      }
+
+      return (0, _util.getSessionData)().user_role;
     }),
     loadBanks: function loadBanks(bankId) {
       var _this = this;
@@ -3058,35 +2889,22 @@ define('banker/controllers/banks/bank/loans/index', ['exports', 'banker/utils/ut
 
     actions: {
       viewloan: function viewloan(loan) {
-        var _this2 = this;
-
         this.get('sharedData').set('accNo', loan.acc_number);
-        this.transitionToRoute('banks.bank.loans.loan', this.get('sharedData').get('bankId'), loan.loan_id).then(function (newRoute) {
-
-          newRoute.controller.setProperties({
-            bankId: _this2.get('bankId'),
-            branchId: _this2.get('branchId')
-          });
-        }).catch(function (error) {
-          console.error("Transition failed", error);
-        });
+        this.transitionToRoute('banks.bank.loans.loan', this.get('sharedData').get('bankId'), loan.loan_id);
       },
       addNewLoan: function addNewLoan() {
-        var _this3 = this;
+        var _this2 = this;
 
         // console.log(branchId);
         this.transitionToRoute('banks.bank.loans.new').then(function (newRoute) {
           newRoute.controller.setProperties({
-            accNo: _this3.get('accNo'),
-            bankId: _this3.get('bankId')
+            accNo: _this2.get('accNo')
           });
         }).catch(function (error) {
           console.error("Transition to edit loan page failed", error);
         });
       },
       editLoan: function editLoan(isEdit, loan) {
-        var _this4 = this;
-
         this.get('sharedData').set('accNo', loan.acc_number);
         this.transitionToRoute('banks.bank.loans.loan.edit', loan.loan_id).then(function (newRoute) {
           newRoute.controller.setProperties({
@@ -3098,8 +2916,7 @@ define('banker/controllers/banks/bank/loans/index', ['exports', 'banker/utils/ut
             loan_duration: loan.loan_duration,
             loan_status: loan.loan_status,
             loan_availed_date: loan.loan_availed_date,
-            accNo: loan.acc_number,
-            bankId: _this4.get('bankId')
+            accNo: loan.acc_number
           });
         }).catch(function (error) {
           console.error("Transition to edit loan page failed", error);
@@ -3108,11 +2925,8 @@ define('banker/controllers/banks/bank/loans/index', ['exports', 'banker/utils/ut
       changeLoans: function changeLoans(page, selectedType, selectedStatus, searchQuery) {
         this.loadLoans(page, selectedType, selectedStatus, searchQuery);
       }
-    },
-    willDestroy: function willDestroy() {
-      this._super.apply(this, arguments);
-      this.get('branchSelection').off('branchChanged', this, this.handleBranchChange);
     }
+
   });
 });
 define('banker/controllers/banks/bank/loans/loan', ['exports'], function (exports) {
@@ -3399,41 +3213,23 @@ define('banker/controllers/banks/bank/transactions/index', ['exports', 'banker/u
 
     actions: {
       viewTransaction: function viewTransaction(transaction) {
-        var _this2 = this;
-
         var bankId = this.get('sharedData').get('bankId');
-        this.transitionToRoute('banks.bank.transactions.transaction', bankId, transaction.transaction_id).then(function (newRoute) {
-          newRoute.controller.setProperties({
-            bankId: _this2.get('bankId'),
-            transactionId: transaction.transaction_id
-          });
-          // console.log("inner view transactions");
-        }).catch(function (error) {
-          console.error("Transition failed", error);
-        });
+        this.transitionToRoute('banks.bank.transactions.transaction', bankId, transaction.transaction_id);
       },
       addNewTransaction: function addNewTransaction() {
-        var _this3 = this;
 
         var bankId = this.get('sharedData').get('bankId');
         // console.log(branchId);
-        this.transitionToRoute('banks.bank.transactions.new', bankId).then(function (newRoute) {
-          newRoute.controller.setProperties({
-            accNo: _this3.get('accNo'),
-            bankId: _this3.get('bankId')
-          });
-        }).catch(function (error) {
-          console.error("Transition to new transaction page failed", error);
-        });
+        this.transitionToRoute('banks.bank.transactions.new', bankId);
       },
       changeTransactions: function changeTransactions(page, selectedType, selectedStatus, searchQuery) {
         this.loadTransactions(page, selectedType, selectedStatus, searchQuery);
       }
-    },
-    willDestroy: function willDestroy() {
-      this._super.apply(this, arguments);
-      this.get('branchSelection').off('branchChanged', this, this.handleBranchChange);
     }
+    // willDestroy() {
+    //   this._super(...arguments);
+    //   this.get('branchSelection').off('branchChanged', this, this.handleBranchChange);
+    // }
   });
 });
 define('banker/controllers/banks/bank/transactions/new', ['exports'], function (exports) {
@@ -3597,13 +3393,16 @@ define('banker/controllers/banks/bank/users/user/dashboard', ['exports', 'banker
             acc_status: account.acc_status
           };
 
-          var loanDetails = account.loan_details || null;
+          var loanDetails = account.loan_details || [];
           var transaction = account.transactions || [];
 
           accounts.push(accountData);
-          loans.push(loanDetails);
-          for (var _i = 0; _i < transaction.length; _i++) {
-            var transac = transaction[_i];
+          for (var _i = 0; _i < loanDetails.length; _i++) {
+            var loan = loanDetails[_i];
+            loans.push(loan);
+          }
+          for (var _i2 = 0; _i2 < transaction.length; _i2++) {
+            var transac = transaction[_i2];
             transactions.push(transac);
           }
         }
@@ -4108,19 +3907,10 @@ define('banker/controllers/users/index', ['exports', 'banker/utils/util'], funct
         this.FilteredUsers();
       },
       viewUser: function viewUser(user) {
-        var _this2 = this;
 
-        this.transitionToRoute('users.user', user.user_id).then(function (newRoute) {
-          newRoute.controller.setProperties({
-            bankId: _this2.get('bankId')
-          });
-        }).catch(function (error) {
-          console.error("Transition failed", error);
-        });
+        this.transitionToRoute('users.user', user.user_id);
       },
       editUser: function editUser(user) {
-        var _this3 = this;
-
         this.transitionToRoute('users.user.edit', user.user_id).then(function (newRoute) {
           newRoute.controller.setProperties({
             isEdit: true,
@@ -4131,15 +3921,14 @@ define('banker/controllers/users/index', ['exports', 'banker/utils/util'], funct
             date_of_birth: user.date_of_birth,
             user_phonenumber: user.user_phonenumber,
             user_address: user.user_address,
-            user_status: user.user_status,
-            bankId: _this3.get('bankId')
+            user_status: user.user_status
           });
         }).catch(function (error) {
           console.error("Failed to load users:", error);
         });
       },
       deleteUser: function deleteUser(user) {
-        var _this4 = this;
+        var _this2 = this;
 
         var bankId = this.get('sharedData').get('bankId');
         var url = 'http://localhost:8080/banker/api/v1';
@@ -4153,11 +3942,11 @@ define('banker/controllers/users/index', ['exports', 'banker/utils/util'], funct
 
           this.get('fetchService').fetch(url, _util.methods.DELETE, user.user_id).then(function () {
             // console.log('User deleted successfully');
-            _this4.get('notification').showNotification('User Deleted successfully!', 'success');
+            _this2.get('notification').showNotification('User Deleted successfully!', 'success');
 
             Ember.run.later(function () {
-              _this4.transitionToRoute('users');
-              _this4.loadUsers(1);
+              _this2.transitionToRoute('users');
+              _this2.loadUsers(1);
             }, 2000);
           }).catch(function (error) {
             console.error("Failed to load users:", error);
@@ -4221,11 +4010,16 @@ define('banker/controllers/users/user/edit', ['exports', 'banker/utils/util'], f
     sharedData: Ember.inject.service('shared-data'),
     notification: Ember.inject.service('notify'),
     fetchService: Ember.inject.service('fetch'),
-    statuses: [_util.status.PENDING, _util.status.ACTIVE, _util.status.INACTIVE],
+    statuses: [_util.status.INACTIVE, _util.status.ACTIVE],
 
     actions: {
       submitForm: function submitForm() {
         var _this = this;
+
+        if (!this.get('statuses').includes(this.get('user_status'))) {
+          this.set("errorMessage", "Please select a valid user status.");
+          return;
+        }
 
         var userId = this.get('sharedData').get('userId');
         var url = 'http://localhost:8080/banker/api/v1';
@@ -4289,7 +4083,7 @@ define('banker/controllers/users/user/index', ['exports', 'banker/utils/util'], 
         url = url + ('/' + userId);
       }
       this.get('fetchService').fetch(url, _util.methods.GET).then(function (response) {
-        console.log(response);
+        // console.log(response);
         _this.set('user', response.data[0]);
       }).catch(function (error) {
         console.error("Failed to load users:", error);
@@ -4658,7 +4452,7 @@ define('banker/router', ['exports', 'banker/config/environment'], function (expo
   });
 
   Router.map(function () {
-    // this.route('index', {path:"/banker"})
+
     this.route('login', { path: "/banker/login" });
     this.route('register', { path: "/banker/register" });
 
@@ -5272,9 +5066,7 @@ define('banker/routes/banks/bank/branches/index', ['exports', 'banker/utils/util
       this.get('sharedData').set('loanId', '*');
       this.get('sharedData').set('transactionId', '*');
       this.get('sharedData').set('branchId', '*');
-      var targetController = this.controllerFor('application');
-      console.log(targetController);
-      targetController.set('branch_name', 'all');
+      // this.get('sharedData').changedBranchId();
     },
     setupController: function setupController(controller) {
 
@@ -5843,6 +5635,38 @@ define('banker/routes/banks/new', ['exports', 'banker/utils/util'], function (ex
     }
   });
 });
+define('banker/routes/index', ['exports', 'banker/utils/util'], function (exports, _util) {
+    'use strict';
+
+    Object.defineProperty(exports, "__esModule", {
+        value: true
+    });
+    exports.default = Ember.Route.extend({
+        sharedData: Ember.inject.service('shared-data'),
+
+        beforeModel: function beforeModel() {
+            var bankId = this.get('sharedData').get('bankId');
+
+            var sessionData = (0, _util.getSessionData)();
+
+            if (!sessionData) {
+                this.transitionTo('login');
+                return;
+            }
+
+            var userId = sessionData.user_id;
+            var userrole = sessionData.user_role;
+
+            if (userrole !== _util.role.SUPERADMIN) {
+                this.transitionTo('banks.bank.users.user.dashboard', bankId, userId);
+                return;
+            } else {
+                this.transitionTo('users');
+                return;
+            }
+        }
+    });
+});
 define('banker/routes/login', ['exports', 'banker/utils/util'], function (exports, _util) {
     'use strict';
 
@@ -6250,10 +6074,11 @@ define('banker/services/shared-data', ['exports'], function (exports) {
         // changedBranchId() {
         //     if(this.get('branchId')=='*')
         //     {
+        //         this.trigger('branchChanged');
         //         let targetController = this.controllerFor('application');
         //         targetController.set('branch_name', 'all');
 
-        //     }
+        // }
         // }
 
     });
@@ -6304,7 +6129,7 @@ define("banker/templates/banks/bank/accounts/account/edit", ["exports"], functio
   Object.defineProperty(exports, "__esModule", {
     value: true
   });
-  exports.default = Ember.HTMLBars.template({ "id": "DieoQBZQ", "block": "{\"statements\":[[1,[33,[\"account-input\"],null,[[\"isEdit\",\"accNo\",\"acc_type\",\"acc_balance\",\"acc_status\",\"username\",\"fullname\",\"branch_name\",\"branch_Id\",\"bankId\",\"user_id\",\"toAccount\"],[true,[28,[null,\"accNo\"]],[28,[null,\"acc_type\"]],[28,[null,\"acc_balance\"]],[28,[null,\"acc_status\"]],[28,[null,\"username\"]],[28,[null,\"fullname\"]],[28,[null,\"branch_name\"]],[28,[null,\"branch_Id\"]],[28,[null,\"bankId\"]],[28,[null,\"userId\"]],[33,[\"action\"],[[28,[null]],\"toAccount\"],null]]]],false],[0,\"\\n\"]],\"locals\":[],\"named\":[],\"yields\":[],\"hasPartials\":false}", "meta": { "moduleName": "banker/templates/banks/bank/accounts/account/edit.hbs" } });
+  exports.default = Ember.HTMLBars.template({ "id": "90T/qSbx", "block": "{\"statements\":[[1,[33,[\"account-input\"],null,[[\"isEdit\",\"accNo\",\"acc_type\",\"acc_balance\",\"acc_status\",\"username\",\"fullname\",\"branch_name\",\"branchId\",\"user_id\",\"toAccount\"],[true,[28,[null,\"accNo\"]],[28,[null,\"acc_type\"]],[28,[null,\"acc_balance\"]],[28,[null,\"acc_status\"]],[28,[null,\"username\"]],[28,[null,\"fullname\"]],[28,[null,\"branch_name\"]],[28,[null,\"branch_Id\"]],[28,[null,\"userId\"]],[33,[\"action\"],[[28,[null]],\"toAccount\"],null]]]],false],[0,\"\\n\"]],\"locals\":[],\"named\":[],\"yields\":[],\"hasPartials\":false}", "meta": { "moduleName": "banker/templates/banks/bank/accounts/account/edit.hbs" } });
 });
 define("banker/templates/banks/bank/accounts/account/index", ["exports"], function (exports) {
   "use strict";
@@ -6312,7 +6137,7 @@ define("banker/templates/banks/bank/accounts/account/index", ["exports"], functi
   Object.defineProperty(exports, "__esModule", {
     value: true
   });
-  exports.default = Ember.HTMLBars.template({ "id": "mtE1scgJ", "block": "{\"statements\":[[1,[33,[\"view-account\"],null,[[\"bankId\",\"branchId\",\"acc\",\"accNo\",\"toLoans\",\"toTransactions\"],[[28,[null,\"bankId\"]],[28,[\"branchId\"]],[28,[null,\"acc\"]],[28,[null,\"accNo\"]],[33,[\"action\"],[[28,[null]],\"toLoans\"],null],[33,[\"action\"],[[28,[null]],\"toTransactions\"],null]]]],false]],\"locals\":[],\"named\":[],\"yields\":[],\"hasPartials\":false}", "meta": { "moduleName": "banker/templates/banks/bank/accounts/account/index.hbs" } });
+  exports.default = Ember.HTMLBars.template({ "id": "/7j+biR1", "block": "{\"statements\":[[1,[33,[\"view-account\"],null,[[\"acc\",\"toLoans\",\"toTransactions\"],[[28,[null,\"acc\"]],[33,[\"action\"],[[28,[null]],\"toLoans\"],null],[33,[\"action\"],[[28,[null]],\"toTransactions\"],null]]]],false]],\"locals\":[],\"named\":[],\"yields\":[],\"hasPartials\":false}", "meta": { "moduleName": "banker/templates/banks/bank/accounts/account/index.hbs" } });
 });
 define("banker/templates/banks/bank/accounts/account/loans", ["exports"], function (exports) {
   "use strict";
@@ -6328,7 +6153,7 @@ define("banker/templates/banks/bank/accounts/account/loans/index", ["exports"], 
   Object.defineProperty(exports, "__esModule", {
     value: true
   });
-  exports.default = Ember.HTMLBars.template({ "id": "jiHZ63ww", "block": "{\"statements\":[[1,[33,[\"view-loans\"],null,[[\"accNo\",\"bankId\",\"loans\",\"branchId\",\"loanId\",\"isDirect\",\"totalLoans\",\"changeLoans\",\"viewLoan\",\"toaddNewLoan\",\"toeditLoan\"],[[28,[\"accNo\"]],[28,[null,\"bankId\"]],[28,[null,\"loans\"]],[28,[null,\"branchId\"]],[28,[null,\"loanId\"]],false,[28,[null,\"totalLoans\"]],[33,[\"action\"],[[28,[null]],\"changeLoans\"],null],[33,[\"action\"],[[28,[null]],\"viewloan\"],null],[33,[\"action\"],[[28,[null]],\"addNewLoan\"],null],[33,[\"action\"],[[28,[null]],\"editLoan\"],null]]]],false]],\"locals\":[],\"named\":[],\"yields\":[],\"hasPartials\":false}", "meta": { "moduleName": "banker/templates/banks/bank/accounts/account/loans/index.hbs" } });
+  exports.default = Ember.HTMLBars.template({ "id": "xKUrAWcj", "block": "{\"statements\":[[1,[33,[\"view-loans\"],null,[[\"loans\",\"isDirect\",\"totalLoans\",\"changeLoans\",\"viewLoan\",\"toaddNewLoan\",\"toeditLoan\"],[[28,[null,\"loans\"]],false,[28,[null,\"totalLoans\"]],[33,[\"action\"],[[28,[null]],\"changeLoans\"],null],[33,[\"action\"],[[28,[null]],\"viewloan\"],null],[33,[\"action\"],[[28,[null]],\"addNewLoan\"],null],[33,[\"action\"],[[28,[null]],\"editLoan\"],null]]]],false]],\"locals\":[],\"named\":[],\"yields\":[],\"hasPartials\":false}", "meta": { "moduleName": "banker/templates/banks/bank/accounts/account/loans/index.hbs" } });
 });
 define("banker/templates/banks/bank/accounts/account/loans/loan", ["exports"], function (exports) {
   "use strict";
@@ -6360,7 +6185,7 @@ define("banker/templates/banks/bank/accounts/account/loans/loan/index", ["export
   Object.defineProperty(exports, "__esModule", {
     value: true
   });
-  exports.default = Ember.HTMLBars.template({ "id": "9YlKNVZ5", "block": "{\"statements\":[[1,[33,[\"view-loan\"],null,[[\"bankId\",\"branchId\",\"loan\",\"toEmis\"],[[28,[null,\"bankId\"]],[28,[\"branchId\"]],[28,[null,\"loan\"]],[33,[\"action\"],[[28,[null]],\"toEmis\"],null]]]],false]],\"locals\":[],\"named\":[],\"yields\":[],\"hasPartials\":false}", "meta": { "moduleName": "banker/templates/banks/bank/accounts/account/loans/loan/index.hbs" } });
+  exports.default = Ember.HTMLBars.template({ "id": "hE3blQi0", "block": "{\"statements\":[[1,[33,[\"view-loan\"],null,[[\"loan\",\"toEmis\"],[[28,[null,\"loan\"]],[33,[\"action\"],[[28,[null]],\"toEmis\"],null]]]],false]],\"locals\":[],\"named\":[],\"yields\":[],\"hasPartials\":false}", "meta": { "moduleName": "banker/templates/banks/bank/accounts/account/loans/loan/index.hbs" } });
 });
 define("banker/templates/banks/bank/accounts/account/loans/new", ["exports"], function (exports) {
   "use strict";
@@ -6368,7 +6193,7 @@ define("banker/templates/banks/bank/accounts/account/loans/new", ["exports"], fu
   Object.defineProperty(exports, "__esModule", {
     value: true
   });
-  exports.default = Ember.HTMLBars.template({ "id": "fbbeXQu9", "block": "{\"statements\":[[1,[33,[\"loan-input\"],null,[[\"accNo\",\"bankId\",\"isDirect\",\"toLoan\"],[[28,[null,\"accNo\"]],[28,[null,\"bankId\"]],false,[33,[\"action\"],[[28,[null]],\"toLoan\"],null]]]],false],[0,\"\\n\"]],\"locals\":[],\"named\":[],\"yields\":[],\"hasPartials\":false}", "meta": { "moduleName": "banker/templates/banks/bank/accounts/account/loans/new.hbs" } });
+  exports.default = Ember.HTMLBars.template({ "id": "LE6pgDNF", "block": "{\"statements\":[[1,[33,[\"loan-input\"],null,[[\"isDirect\",\"toLoan\"],[false,[33,[\"action\"],[[28,[null]],\"toLoan\"],null]]]],false],[0,\"\\n\"]],\"locals\":[],\"named\":[],\"yields\":[],\"hasPartials\":false}", "meta": { "moduleName": "banker/templates/banks/bank/accounts/account/loans/new.hbs" } });
 });
 define("banker/templates/banks/bank/accounts/account/transactions", ["exports"], function (exports) {
   "use strict";
@@ -6384,7 +6209,7 @@ define("banker/templates/banks/bank/accounts/account/transactions/index", ["expo
   Object.defineProperty(exports, "__esModule", {
     value: true
   });
-  exports.default = Ember.HTMLBars.template({ "id": "z/p209iV", "block": "{\"statements\":[[1,[33,[\"view-transactions\"],null,[[\"accNo\",\"bankId\",\"transactions\",\"branchId\",\"transactionId\",\"isDirect\",\"totalTransactions\",\"changeTransactions\",\"viewTransaction\",\"toaddNewTransaction\"],[[28,[\"accNo\"]],[28,[null,\"bankId\"]],[28,[null,\"transactions\"]],[28,[null,\"branchId\"]],[28,[null,\"transactionId\"]],[28,[\"False\"]],[28,[null,\"totalTransactions\"]],[33,[\"action\"],[[28,[null]],\"changeTransactions\"],null],[33,[\"action\"],[[28,[null]],\"viewTransaction\"],null],[33,[\"action\"],[[28,[null]],\"addNewTransaction\"],null]]]],false]],\"locals\":[],\"named\":[],\"yields\":[],\"hasPartials\":false}", "meta": { "moduleName": "banker/templates/banks/bank/accounts/account/transactions/index.hbs" } });
+  exports.default = Ember.HTMLBars.template({ "id": "c5Ru0dDV", "block": "{\"statements\":[[1,[33,[\"view-transactions\"],null,[[\"transactions\",\"isDirect\",\"totalTransactions\",\"changeTransactions\",\"viewTransaction\",\"toaddNewTransaction\"],[[28,[null,\"transactions\"]],[28,[\"False\"]],[28,[null,\"totalTransactions\"]],[33,[\"action\"],[[28,[null]],\"changeTransactions\"],null],[33,[\"action\"],[[28,[null]],\"viewTransaction\"],null],[33,[\"action\"],[[28,[null]],\"addNewTransaction\"],null]]]],false]],\"locals\":[],\"named\":[],\"yields\":[],\"hasPartials\":false}", "meta": { "moduleName": "banker/templates/banks/bank/accounts/account/transactions/index.hbs" } });
 });
 define("banker/templates/banks/bank/accounts/account/transactions/new", ["exports"], function (exports) {
   "use strict";
@@ -6392,7 +6217,7 @@ define("banker/templates/banks/bank/accounts/account/transactions/new", ["export
   Object.defineProperty(exports, "__esModule", {
     value: true
   });
-  exports.default = Ember.HTMLBars.template({ "id": "2pjU36Wf", "block": "{\"statements\":[[1,[33,[\"transaction-input\"],null,[[\"accNo\",\"bankId\",\"isDirect\",\"transaction_type\",\"transaction_amount\",\"toTransaction\"],[[28,[null,\"accNo\"]],[28,[null,\"bankId\"]],false,[28,[null,\"transaction_type\"]],[28,[null,\"transaction_amount\"]],[33,[\"action\"],[[28,[null]],\"toTransaction\"],null]]]],false],[0,\"\\n\"]],\"locals\":[],\"named\":[],\"yields\":[],\"hasPartials\":false}", "meta": { "moduleName": "banker/templates/banks/bank/accounts/account/transactions/new.hbs" } });
+  exports.default = Ember.HTMLBars.template({ "id": "loRVmyfu", "block": "{\"statements\":[[1,[33,[\"transaction-input\"],null,[[\"isDirect\",\"transaction_type\",\"transaction_amount\",\"toTransaction\"],[false,[28,[null,\"transaction_type\"]],[28,[null,\"transaction_amount\"]],[33,[\"action\"],[[28,[null]],\"toTransaction\"],null]]]],false],[0,\"\\n\"]],\"locals\":[],\"named\":[],\"yields\":[],\"hasPartials\":false}", "meta": { "moduleName": "banker/templates/banks/bank/accounts/account/transactions/new.hbs" } });
 });
 define("banker/templates/banks/bank/accounts/account/transactions/transaction", ["exports"], function (exports) {
   "use strict";
@@ -6400,7 +6225,7 @@ define("banker/templates/banks/bank/accounts/account/transactions/transaction", 
   Object.defineProperty(exports, "__esModule", {
     value: true
   });
-  exports.default = Ember.HTMLBars.template({ "id": "P9Ukk89Y", "block": "{\"statements\":[[1,[33,[\"view-transaction\"],null,[[\"bankId\",\"transaction\"],[[28,[null,\"bankId\"]],[28,[null,\"transaction\"]]]]],false]],\"locals\":[],\"named\":[],\"yields\":[],\"hasPartials\":false}", "meta": { "moduleName": "banker/templates/banks/bank/accounts/account/transactions/transaction.hbs" } });
+  exports.default = Ember.HTMLBars.template({ "id": "6F3ObMRR", "block": "{\"statements\":[[1,[33,[\"view-transaction\"],null,[[\"transaction\"],[[28,[null,\"transaction\"]]]]],false]],\"locals\":[],\"named\":[],\"yields\":[],\"hasPartials\":false}", "meta": { "moduleName": "banker/templates/banks/bank/accounts/account/transactions/transaction.hbs" } });
 });
 define("banker/templates/banks/bank/accounts/index", ["exports"], function (exports) {
   "use strict";
@@ -6408,7 +6233,7 @@ define("banker/templates/banks/bank/accounts/index", ["exports"], function (expo
   Object.defineProperty(exports, "__esModule", {
     value: true
   });
-  exports.default = Ember.HTMLBars.template({ "id": "e9Q4h9Iv", "block": "{\"statements\":[[1,[33,[\"view-accounts\"],null,[[\"bankId\",\"accounts\",\"branchId\",\"totalAccounts\",\"changeAccounts\",\"viewaccount\",\"toaddNewAccount\",\"toeditAccount\"],[[28,[null,\"bankId\"]],[28,[null,\"accounts\"]],[28,[null,\"branchId\"]],[28,[null,\"totalAccounts\"]],[33,[\"action\"],[[28,[null]],\"changeAccounts\"],null],[33,[\"action\"],[[28,[null]],\"viewaccount\"],null],[33,[\"action\"],[[28,[null]],\"addNewAccount\"],null],[33,[\"action\"],[[28,[null]],\"editAccount\"],null]]]],false]],\"locals\":[],\"named\":[],\"yields\":[],\"hasPartials\":false}", "meta": { "moduleName": "banker/templates/banks/bank/accounts/index.hbs" } });
+  exports.default = Ember.HTMLBars.template({ "id": "g/g4K36F", "block": "{\"statements\":[[1,[33,[\"view-accounts\"],null,[[\"accounts\",\"totalAccounts\",\"changeAccounts\",\"viewaccount\",\"toaddNewAccount\",\"toeditAccount\"],[[28,[null,\"accounts\"]],[28,[null,\"totalAccounts\"]],[33,[\"action\"],[[28,[null]],\"changeAccounts\"],null],[33,[\"action\"],[[28,[null]],\"viewaccount\"],null],[33,[\"action\"],[[28,[null]],\"addNewAccount\"],null],[33,[\"action\"],[[28,[null]],\"editAccount\"],null]]]],false]],\"locals\":[],\"named\":[],\"yields\":[],\"hasPartials\":false}", "meta": { "moduleName": "banker/templates/banks/bank/accounts/index.hbs" } });
 });
 define("banker/templates/banks/bank/accounts/new", ["exports"], function (exports) {
   "use strict";
@@ -6416,7 +6241,7 @@ define("banker/templates/banks/bank/accounts/new", ["exports"], function (export
   Object.defineProperty(exports, "__esModule", {
     value: true
   });
-  exports.default = Ember.HTMLBars.template({ "id": "wVRUmXlh", "block": "{\"statements\":[[1,[33,[\"account-input\"],null,[[\"bankId\",\"toAccount\"],[[28,[null,\"bankId\"]],[33,[\"action\"],[[28,[null]],\"toAccount\"],null]]]],false],[0,\"\\n\"]],\"locals\":[],\"named\":[],\"yields\":[],\"hasPartials\":false}", "meta": { "moduleName": "banker/templates/banks/bank/accounts/new.hbs" } });
+  exports.default = Ember.HTMLBars.template({ "id": "VbRegZQJ", "block": "{\"statements\":[[0,\"\\n\"],[1,[33,[\"account-input\"],null,[[\"toAccount\"],[[33,[\"action\"],[[28,[null]],\"toAccount\"],null]]]],false],[0,\"\\n\"]],\"locals\":[],\"named\":[],\"yields\":[],\"hasPartials\":false}", "meta": { "moduleName": "banker/templates/banks/bank/accounts/new.hbs" } });
 });
 define("banker/templates/banks/bank/branches", ["exports"], function (exports) {
   "use strict";
@@ -6440,7 +6265,7 @@ define("banker/templates/banks/bank/branches/branch/edit", ["exports"], function
   Object.defineProperty(exports, "__esModule", {
     value: true
   });
-  exports.default = Ember.HTMLBars.template({ "id": "Fj9VYQfC", "block": "{\"statements\":[[1,[33,[\"branch-input\"],null,[[\"isEdit\",\"address\",\"name\",\"branchId\",\"bankId\",\"branch_number\",\"manager_id\",\"manager_name\",\"toBranch\"],[true,[28,[null,\"branch_address\"]],[28,[null,\"branch_name\"]],[28,[null,\"branchId\"]],[28,[null,\"bankId\"]],[28,[null,\"branch_number\"]],[28,[null,\"manager_id\"]],[28,[null,\"manager_name\"]],[33,[\"action\"],[[28,[null]],\"toBranch\"],null]]]],false],[0,\"\\n\"]],\"locals\":[],\"named\":[],\"yields\":[],\"hasPartials\":false}", "meta": { "moduleName": "banker/templates/banks/bank/branches/branch/edit.hbs" } });
+  exports.default = Ember.HTMLBars.template({ "id": "9L4NDCPk", "block": "{\"statements\":[[1,[33,[\"branch-input\"],null,[[\"isEdit\",\"address\",\"name\",\"branchId\",\"branch_number\",\"manager_id\",\"manager_name\",\"toBranch\"],[true,[28,[null,\"branch_address\"]],[28,[null,\"branch_name\"]],[28,[null,\"branchId\"]],[28,[null,\"branch_number\"]],[28,[null,\"manager_id\"]],[28,[null,\"manager_name\"]],[33,[\"action\"],[[28,[null]],\"toBranch\"],null]]]],false],[0,\"\\n\"]],\"locals\":[],\"named\":[],\"yields\":[],\"hasPartials\":false}", "meta": { "moduleName": "banker/templates/banks/bank/branches/branch/edit.hbs" } });
 });
 define("banker/templates/banks/bank/branches/branch/index", ["exports"], function (exports) {
   "use strict";
@@ -6456,7 +6281,7 @@ define("banker/templates/banks/bank/branches/index", ["exports"], function (expo
   Object.defineProperty(exports, "__esModule", {
     value: true
   });
-  exports.default = Ember.HTMLBars.template({ "id": "AHPPSMl0", "block": "{\"statements\":[[0,\"\\n\"],[11,\"div\",[]],[15,\"class\",\"branches-list\"],[13],[0,\"\\n  \"],[11,\"button\",[]],[15,\"class\",\"new-account-btn\"],[5,[\"action\"],[[28,[null]],\"addNewBranch\"]],[13],[0,\"New Branch\"],[14],[0,\"\\n  \"],[11,\"div\",[]],[15,\"class\",\"search-container\"],[13],[0,\"\\n    \"],[11,\"input\",[]],[15,\"type\",\"text\"],[15,\"class\",\"search-input\"],[15,\"placeholder\",\"Search Branch name / Manager name\"],[16,\"value\",[26,[\"searchQuery\"]],null],[16,\"oninput\",[33,[\"action\"],[[28,[null]],\"updateSearchQuery\"],[[\"value\"],[\"target.value\"]]],null],[13],[14],[0,\"\\n    \"],[11,\"button\",[]],[15,\"class\",\"new-branch-btn\"],[15,\"style\",\"margin-right: 42%;padding:10px;margin-top:-3px\"],[5,[\"action\"],[[28,[null]],\"performSearch\"]],[13],[0,\"Search\"],[14],[0,\"\\n\\n\"],[6,[\"if\"],[[28,[\"searchSuggestions\",\"length\"]]],null,{\"statements\":[[0,\"      \"],[11,\"ul\",[]],[15,\"class\",\"suggestions-list\"],[13],[0,\"\\n\"],[6,[\"each\"],[[28,[\"searchSuggestions\"]]],null,{\"statements\":[[0,\"          \"],[11,\"li\",[]],[5,[\"action\"],[[28,[null]],\"selectSuggestion\",[28,[\"suggestion\"]]]],[13],[1,[28,[\"suggestion\"]],false],[14],[0,\"\\n\"]],\"locals\":[\"suggestion\"]},null],[0,\"      \"],[14],[0,\"\\n\"]],\"locals\":[]},null],[0,\"  \"],[14],[0,\" \\n \"],[11,\"table\",[]],[15,\"class\",\"branches-table\"],[13],[0,\"\\n    \"],[11,\"thead\",[]],[13],[0,\"\\n      \"],[11,\"tr\",[]],[13],[0,\"\\n        \"],[11,\"th\",[]],[13],[0,\"Branch Name\"],[14],[0,\"\\n        \"],[11,\"th\",[]],[13],[0,\"Branch Number\"],[14],[0,\"\\n        \"],[11,\"th\",[]],[13],[0,\"Manager Name\"],[14],[0,\"\\n        \"],[11,\"th\",[]],[13],[0,\"Actions\"],[14],[0,\"\\n      \"],[14],[0,\"\\n    \"],[14],[0,\"\\n    \"],[11,\"tbody\",[]],[13],[0,\"\\n\"],[6,[\"unless\"],[[33,[\"eq\"],[[28,[\"branches\",\"length\"]],0],null]],null,{\"statements\":[[6,[\"each\"],[[28,[\"branches\"]]],null,{\"statements\":[[0,\"        \"],[11,\"tr\",[]],[13],[0,\"\\n          \"],[11,\"td\",[]],[5,[\"action\"],[[28,[null]],\"viewBranch\",[28,[\"branch\"]]]],[13],[1,[28,[\"branch\",\"branch_name\"]],false],[14],[0,\"\\n          \"],[11,\"td\",[]],[5,[\"action\"],[[28,[null]],\"viewBranch\",[28,[\"branch\"]]]],[13],[1,[28,[\"branch\",\"branch_number\"]],false],[14],[0,\"\\n          \"],[11,\"td\",[]],[5,[\"action\"],[[28,[null]],\"viewBranch\",[28,[\"branch\"]]]],[13],[1,[28,[\"branch\",\"manager_name\"]],false],[14],[0,\"\\n          \"],[11,\"td\",[]],[13],[0,\"\\n            \"],[11,\"button\",[]],[5,[\"action\"],[[28,[null]],\"editBranch\",[28,[\"branch\"]]]],[13],[11,\"i\",[]],[15,\"class\",\"bi bi-pencil\"],[13],[14],[0,\" Edit\"],[14],[0,\"\\n\"],[6,[\"unless\"],[[33,[\"eq\"],[[28,[\"branch\",\"branch_id\"]],[28,[\"branch\",\"main_branch_id\"]]],null]],null,{\"statements\":[[0,\"            \"],[11,\"button\",[]],[5,[\"action\"],[[28,[null]],\"deleteBranch\",[28,[\"branch\"]]]],[13],[11,\"i\",[]],[15,\"class\",\"bi bi-trash-fill\"],[13],[14],[0,\" Delete\"],[14],[0,\"\\n\"]],\"locals\":[]},null],[0,\"          \"],[14],[0,\"\\n        \"],[14],[0,\"\\n\"]],\"locals\":[\"branch\"]},null]],\"locals\":[]},null],[0,\"    \"],[14],[0,\"\\n  \"],[14],[0,\"\\n\\n\"],[6,[\"if\"],[[33,[\"eq\"],[[28,[\"branches\",\"length\"]],0],null]],null,{\"statements\":[[0,\"    \"],[11,\"button\",[]],[15,\"style\",\"margin-top:60px;cursor:default;margin-right:40%;\"],[15,\"class\",\"new-branch-btn\"],[13],[0,\"No Branches Found!\"],[14],[0,\"\\n\"]],\"locals\":[]},null],[0,\"\\n\"],[6,[\"unless\"],[[33,[\"eq\"],[[28,[\"branches\",\"length\"]],0],null]],null,{\"statements\":[[0,\"    \"],[11,\"div\",[]],[15,\"class\",\"pagination-controls\"],[13],[0,\"\\n      \"],[11,\"button\",[]],[16,\"disabled\",[33,[\"if\"],[[33,[\"eq\"],[[28,[\"currentPage\"]],1],null],\"disabled\"],null],null],[5,[\"action\"],[[28,[null]],\"previousPage\"]],[13],[0,\"Previous\"],[14],[0,\"\\n\\n\"],[6,[\"if\"],[[28,[\"showFirstPage\"]]],null,{\"statements\":[[0,\"        \"],[11,\"button\",[]],[16,\"class\",[34,[\"page-number \",[33,[\"if\"],[[33,[\"eq\"],[[28,[\"currentPage\"]],1],null],\"active\",\"\"],null]]]],[5,[\"action\"],[[28,[null]],\"goToPage\",1]],[13],[0,\"1\"],[14],[0,\"\\n\"]],\"locals\":[]},null],[0,\"\\n\"],[6,[\"if\"],[[28,[\"showLeftEllipsis\"]]],null,{\"statements\":[[0,\"        \"],[11,\"span\",[]],[15,\"style\",\"color:white;font-weight:bold;\"],[13],[0,\"...\"],[14],[0,\"\\n\"]],\"locals\":[]},null],[0,\"\\n\"],[6,[\"each\"],[[28,[\"visiblePages\"]]],null,{\"statements\":[[0,\"        \"],[11,\"button\",[]],[16,\"class\",[34,[\"page-number \",[33,[\"if\"],[[33,[\"eq\"],[[28,[\"page\"]],[28,[\"currentPage\"]]],null],\"active\",\"\"],null]]]],[5,[\"action\"],[[28,[null]],\"goToPage\",[28,[\"page\"]]]],[13],[0,\"\\n          \"],[1,[28,[\"page\"]],false],[0,\"\\n        \"],[14],[0,\"\\n\"]],\"locals\":[\"page\"]},null],[0,\"\\n\"],[6,[\"if\"],[[28,[\"showRightEllipsis\"]]],null,{\"statements\":[[0,\"        \"],[11,\"span\",[]],[15,\"style\",\"color:white;font-weight:bold;\"],[13],[0,\"...\"],[14],[0,\"\\n\"]],\"locals\":[]},null],[0,\"\\n\"],[6,[\"if\"],[[28,[\"showLastPage\"]]],null,{\"statements\":[[0,\"        \"],[11,\"button\",[]],[16,\"class\",[34,[\"page-number \",[33,[\"if\"],[[33,[\"eq\"],[[28,[\"currentPage\"]],[28,[\"totalPages\"]]],null],\"active\",\"\"],null]]]],[5,[\"action\"],[[28,[null]],\"goToPage\",[28,[\"totalPages\"]]]],[13],[0,\"\\n          \"],[1,[26,[\"totalPages\"]],false],[0,\"\\n        \"],[14],[0,\"\\n\"]],\"locals\":[]},null],[0,\"\\n      \"],[11,\"button\",[]],[16,\"disabled\",[33,[\"if\"],[[33,[\"eq\"],[[28,[\"currentPage\"]],[28,[\"totalPages\"]]],null],\"disabled\"],null],null],[5,[\"action\"],[[28,[null]],\"nextPage\"]],[13],[0,\"Next\"],[14],[0,\"\\n    \"],[14],[0,\"\\n\"]],\"locals\":[]},null],[14],[0,\"\\n \"],[1,[33,[\"notify-box\"],null,[[\"message\",\"type\"],[[28,[\"notification\",\"message\"]],[28,[\"notification\",\"type\"]]]]],false],[0,\"\\n\"]],\"locals\":[],\"named\":[],\"yields\":[],\"hasPartials\":false}", "meta": { "moduleName": "banker/templates/banks/bank/branches/index.hbs" } });
+  exports.default = Ember.HTMLBars.template({ "id": "0qQDogtO", "block": "{\"statements\":[[0,\"\\n\"],[11,\"div\",[]],[15,\"class\",\"branches-list\"],[13],[0,\"\\n  \"],[11,\"button\",[]],[15,\"class\",\"new-account-btn\"],[15,\"style\",\"margin-top:20px\"],[5,[\"action\"],[[28,[null]],\"addNewBranch\"]],[13],[0,\"New Branch\"],[14],[0,\"\\n  \"],[11,\"div\",[]],[15,\"class\",\"search-container\"],[15,\"style\",\"margin-top:20px\"],[13],[0,\"\\n    \"],[11,\"input\",[]],[15,\"type\",\"text\"],[15,\"class\",\"search-input\"],[15,\"placeholder\",\"Search Branch name / Manager name\"],[16,\"value\",[26,[\"searchQuery\"]],null],[16,\"oninput\",[33,[\"action\"],[[28,[null]],\"updateSearchQuery\"],[[\"value\"],[\"target.value\"]]],null],[13],[14],[0,\"\\n    \"],[11,\"button\",[]],[15,\"class\",\"new-branch-btn\"],[15,\"style\",\"margin-right: 42%;padding:10px;margin-top:-3px\"],[5,[\"action\"],[[28,[null]],\"performSearch\"]],[13],[0,\"Search\"],[14],[0,\"\\n\\n\"],[6,[\"if\"],[[28,[\"searchSuggestions\",\"length\"]]],null,{\"statements\":[[0,\"      \"],[11,\"ul\",[]],[15,\"class\",\"suggestions-list\"],[13],[0,\"\\n\"],[6,[\"each\"],[[28,[\"searchSuggestions\"]]],null,{\"statements\":[[0,\"          \"],[11,\"li\",[]],[5,[\"action\"],[[28,[null]],\"selectSuggestion\",[28,[\"suggestion\"]]]],[13],[1,[28,[\"suggestion\"]],false],[14],[0,\"\\n\"]],\"locals\":[\"suggestion\"]},null],[0,\"      \"],[14],[0,\"\\n\"]],\"locals\":[]},null],[0,\"  \"],[14],[0,\" \\n \"],[11,\"table\",[]],[15,\"class\",\"branches-table\"],[13],[0,\"\\n    \"],[11,\"thead\",[]],[13],[0,\"\\n      \"],[11,\"tr\",[]],[13],[0,\"\\n        \"],[11,\"th\",[]],[13],[0,\"Branch Name\"],[14],[0,\"\\n        \"],[11,\"th\",[]],[13],[0,\"Branch Number\"],[14],[0,\"\\n        \"],[11,\"th\",[]],[13],[0,\"Manager Name\"],[14],[0,\"\\n        \"],[11,\"th\",[]],[13],[0,\"Actions\"],[14],[0,\"\\n      \"],[14],[0,\"\\n    \"],[14],[0,\"\\n    \"],[11,\"tbody\",[]],[13],[0,\"\\n\"],[6,[\"unless\"],[[33,[\"eq\"],[[28,[\"branches\",\"length\"]],0],null]],null,{\"statements\":[[6,[\"each\"],[[28,[\"branches\"]]],null,{\"statements\":[[0,\"        \"],[11,\"tr\",[]],[13],[0,\"\\n          \"],[11,\"td\",[]],[5,[\"action\"],[[28,[null]],\"viewBranch\",[28,[\"branch\"]]]],[13],[1,[28,[\"branch\",\"branch_name\"]],false],[14],[0,\"\\n          \"],[11,\"td\",[]],[5,[\"action\"],[[28,[null]],\"viewBranch\",[28,[\"branch\"]]]],[13],[1,[28,[\"branch\",\"branch_number\"]],false],[14],[0,\"\\n          \"],[11,\"td\",[]],[5,[\"action\"],[[28,[null]],\"viewBranch\",[28,[\"branch\"]]]],[13],[1,[28,[\"branch\",\"manager_name\"]],false],[14],[0,\"\\n          \"],[11,\"td\",[]],[13],[0,\"\\n            \"],[11,\"button\",[]],[5,[\"action\"],[[28,[null]],\"editBranch\",[28,[\"branch\"]]]],[13],[11,\"i\",[]],[15,\"class\",\"bi bi-pencil\"],[13],[14],[0,\" Edit\"],[14],[0,\"\\n\"],[6,[\"unless\"],[[33,[\"eq\"],[[28,[\"branch\",\"branch_id\"]],[28,[\"branch\",\"main_branch_id\"]]],null]],null,{\"statements\":[[0,\"            \"],[11,\"button\",[]],[5,[\"action\"],[[28,[null]],\"deleteBranch\",[28,[\"branch\"]]]],[13],[11,\"i\",[]],[15,\"class\",\"bi bi-trash-fill\"],[13],[14],[0,\" Delete\"],[14],[0,\"\\n\"]],\"locals\":[]},null],[0,\"          \"],[14],[0,\"\\n        \"],[14],[0,\"\\n\"]],\"locals\":[\"branch\"]},null]],\"locals\":[]},null],[0,\"    \"],[14],[0,\"\\n  \"],[14],[0,\"\\n\\n\"],[6,[\"if\"],[[33,[\"eq\"],[[28,[\"branches\",\"length\"]],0],null]],null,{\"statements\":[[0,\"    \"],[11,\"button\",[]],[15,\"style\",\"margin-top:60px;cursor:default;margin-right:40%;\"],[15,\"class\",\"new-branch-btn\"],[13],[0,\"No Branches Found!\"],[14],[0,\"\\n\"]],\"locals\":[]},null],[0,\"\\n\"],[6,[\"unless\"],[[33,[\"eq\"],[[28,[\"branches\",\"length\"]],0],null]],null,{\"statements\":[[0,\"    \"],[11,\"div\",[]],[15,\"class\",\"pagination-controls\"],[13],[0,\"\\n      \"],[11,\"button\",[]],[16,\"disabled\",[33,[\"if\"],[[33,[\"eq\"],[[28,[\"currentPage\"]],1],null],\"disabled\"],null],null],[5,[\"action\"],[[28,[null]],\"previousPage\"]],[13],[0,\"Previous\"],[14],[0,\"\\n\\n\"],[6,[\"if\"],[[28,[\"showFirstPage\"]]],null,{\"statements\":[[0,\"        \"],[11,\"button\",[]],[16,\"class\",[34,[\"page-number \",[33,[\"if\"],[[33,[\"eq\"],[[28,[\"currentPage\"]],1],null],\"active\",\"\"],null]]]],[5,[\"action\"],[[28,[null]],\"goToPage\",1]],[13],[0,\"1\"],[14],[0,\"\\n\"]],\"locals\":[]},null],[0,\"\\n\"],[6,[\"if\"],[[28,[\"showLeftEllipsis\"]]],null,{\"statements\":[[0,\"        \"],[11,\"span\",[]],[15,\"style\",\"color:white;font-weight:bold;\"],[13],[0,\"...\"],[14],[0,\"\\n\"]],\"locals\":[]},null],[0,\"\\n\"],[6,[\"each\"],[[28,[\"visiblePages\"]]],null,{\"statements\":[[0,\"        \"],[11,\"button\",[]],[16,\"class\",[34,[\"page-number \",[33,[\"if\"],[[33,[\"eq\"],[[28,[\"page\"]],[28,[\"currentPage\"]]],null],\"active\",\"\"],null]]]],[5,[\"action\"],[[28,[null]],\"goToPage\",[28,[\"page\"]]]],[13],[0,\"\\n          \"],[1,[28,[\"page\"]],false],[0,\"\\n        \"],[14],[0,\"\\n\"]],\"locals\":[\"page\"]},null],[0,\"\\n\"],[6,[\"if\"],[[28,[\"showRightEllipsis\"]]],null,{\"statements\":[[0,\"        \"],[11,\"span\",[]],[15,\"style\",\"color:white;font-weight:bold;\"],[13],[0,\"...\"],[14],[0,\"\\n\"]],\"locals\":[]},null],[0,\"\\n\"],[6,[\"if\"],[[28,[\"showLastPage\"]]],null,{\"statements\":[[0,\"        \"],[11,\"button\",[]],[16,\"class\",[34,[\"page-number \",[33,[\"if\"],[[33,[\"eq\"],[[28,[\"currentPage\"]],[28,[\"totalPages\"]]],null],\"active\",\"\"],null]]]],[5,[\"action\"],[[28,[null]],\"goToPage\",[28,[\"totalPages\"]]]],[13],[0,\"\\n          \"],[1,[26,[\"totalPages\"]],false],[0,\"\\n        \"],[14],[0,\"\\n\"]],\"locals\":[]},null],[0,\"\\n      \"],[11,\"button\",[]],[16,\"disabled\",[33,[\"if\"],[[33,[\"eq\"],[[28,[\"currentPage\"]],[28,[\"totalPages\"]]],null],\"disabled\"],null],null],[5,[\"action\"],[[28,[null]],\"nextPage\"]],[13],[0,\"Next\"],[14],[0,\"\\n    \"],[14],[0,\"\\n\"]],\"locals\":[]},null],[14],[0,\"\\n \"],[1,[33,[\"notify-box\"],null,[[\"message\",\"type\"],[[28,[\"notification\",\"message\"]],[28,[\"notification\",\"type\"]]]]],false],[0,\"\\n\"]],\"locals\":[],\"named\":[],\"yields\":[],\"hasPartials\":false}", "meta": { "moduleName": "banker/templates/banks/bank/branches/index.hbs" } });
 });
 define("banker/templates/banks/bank/branches/new", ["exports"], function (exports) {
   "use strict";
@@ -6464,7 +6289,7 @@ define("banker/templates/banks/bank/branches/new", ["exports"], function (export
   Object.defineProperty(exports, "__esModule", {
     value: true
   });
-  exports.default = Ember.HTMLBars.template({ "id": "Nbyrqh5x", "block": "{\"statements\":[[1,[33,[\"branch-input\"],null,[[\"bankId\",\"toBranch\"],[[28,[null,\"bankId\"]],[33,[\"action\"],[[28,[null]],\"toBranch\"],null]]]],false],[0,\"\\n\"]],\"locals\":[],\"named\":[],\"yields\":[],\"hasPartials\":false}", "meta": { "moduleName": "banker/templates/banks/bank/branches/new.hbs" } });
+  exports.default = Ember.HTMLBars.template({ "id": "BynNByZO", "block": "{\"statements\":[[0,\"\\n\"],[1,[33,[\"branch-input\"],null,[[\"toBranch\"],[[33,[\"action\"],[[28,[null]],\"toBranch\"],null]]]],false],[0,\"\\n\"]],\"locals\":[],\"named\":[],\"yields\":[],\"hasPartials\":false}", "meta": { "moduleName": "banker/templates/banks/bank/branches/new.hbs" } });
 });
 define("banker/templates/banks/bank/edit", ["exports"], function (exports) {
   "use strict";
@@ -6472,7 +6297,7 @@ define("banker/templates/banks/bank/edit", ["exports"], function (exports) {
   Object.defineProperty(exports, "__esModule", {
     value: true
   });
-  exports.default = Ember.HTMLBars.template({ "id": "+mr9NdA2", "block": "{\"statements\":[[11,\"body\",[]],[13],[0,\"\\n  \"],[11,\"div\",[]],[15,\"class\",\"bank-form\"],[13],[0,\"\\n    \"],[11,\"h2\",[]],[13],[0,\"Edit Bank\"],[14],[0,\"\\n    \\n    \"],[11,\"form\",[]],[5,[\"action\"],[[28,[null]],\"submitForm\"],[[\"on\"],[\"submit\"]]],[13],[0,\"\\n\"],[0,\"\\n      \"],[11,\"div\",[]],[15,\"class\",\"form-group\"],[13],[0,\"\\n        \"],[11,\"label\",[]],[15,\"for\",\"bankId\"],[13],[0,\"Bank Name\"],[11,\"span\",[]],[15,\"style\",\"color:rgb(237, 69, 69);\"],[13],[0,\"*\"],[14],[14],[0,\"\\n        \"],[11,\"input\",[]],[15,\"type\",\"text\"],[15,\"id\",\"bankId\"],[16,\"value\",[28,[\"bank\",\"bank_name\"]],null],[15,\"class\",\"form-control\"],[15,\"disabled\",\"\"],[13],[14],[0,\"\\n      \"],[14],[0,\"\\n\\n      \"],[11,\"div\",[]],[15,\"class\",\"form-group\"],[13],[0,\"\\n        \"],[11,\"label\",[]],[15,\"for\",\"branchId\"],[13],[0,\"Branch ID\"],[11,\"span\",[]],[15,\"style\",\"color:rgb(237, 69, 69);\"],[13],[0,\"*\"],[14],[14],[0,\"\\n        \"],[11,\"select\",[]],[15,\"id\",\"branchId\"],[15,\"class\",\"form-control\"],[16,\"onchange\",[33,[\"action\"],[[28,[null]],[33,[\"mut\"],[[28,[\"branchId\"]]],null]],[[\"value\"],[\"target.value\"]]],null],[13],[0,\"\\n          \"],[11,\"option\",[]],[15,\"value\",\"\"],[13],[0,\"Select Branch\"],[14],[0,\"\\n\"],[6,[\"each\"],[[28,[\"branches\"]]],null,{\"statements\":[[0,\"            \"],[11,\"option\",[]],[16,\"value\",[28,[\"branch\",\"branch_id\"]],null],[16,\"selected\",[33,[\"if\"],[[33,[\"eq\"],[[28,[\"branch\",\"branch_id\"]],[28,[\"bank\",\"main_branch_id\"]]],null],\"selected\"],null],null],[13],[1,[28,[\"branch\",\"branch_name\"]],false],[14],[0,\"\\n\"]],\"locals\":[\"branch\"]},null],[0,\"        \"],[14],[0,\"\\n      \"],[14],[0,\"\\n      \\n      \"],[11,\"button\",[]],[15,\"type\",\"submit\"],[15,\"class\",\"btn-primary\"],[13],[0,\"Update Bank\"],[14],[0,\"\\n      \"],[11,\"button\",[]],[15,\"class\",\"btn-secondary\"],[5,[\"action\"],[[28,[null]],\"cancel\"]],[13],[0,\"Cancel\"],[14],[0,\"\\n    \"],[14],[0,\"\\n  \"],[14],[0,\"\\n  \"],[1,[33,[\"notify-box\"],null,[[\"message\",\"type\"],[[28,[\"notification\",\"message\"]],[28,[\"notification\",\"type\"]]]]],false],[0,\"\\n\"],[14],[0,\"\\n\"]],\"locals\":[],\"named\":[],\"yields\":[],\"hasPartials\":false}", "meta": { "moduleName": "banker/templates/banks/bank/edit.hbs" } });
+  exports.default = Ember.HTMLBars.template({ "id": "KTwYytYr", "block": "{\"statements\":[[11,\"body\",[]],[13],[0,\"\\n  \"],[11,\"div\",[]],[15,\"class\",\"bank-form\"],[13],[0,\"\\n    \"],[11,\"h2\",[]],[13],[0,\"Edit Bank\"],[14],[0,\"\\n    \\n    \"],[11,\"form\",[]],[5,[\"action\"],[[28,[null]],\"submitForm\"],[[\"on\"],[\"submit\"]]],[13],[0,\"\\n\"],[0,\"\\n      \"],[11,\"div\",[]],[15,\"class\",\"form-group\"],[13],[0,\"\\n        \"],[11,\"label\",[]],[15,\"for\",\"bankId\"],[13],[0,\"Bank Name\"],[11,\"span\",[]],[15,\"style\",\"color:rgb(237, 69, 69);\"],[13],[0,\"*\"],[14],[14],[0,\"\\n        \"],[11,\"input\",[]],[15,\"type\",\"text\"],[15,\"id\",\"bankId\"],[16,\"value\",[28,[\"bank\",\"bank_name\"]],null],[15,\"class\",\"form-control\"],[15,\"disabled\",\"\"],[13],[14],[0,\"\\n      \"],[14],[0,\"\\n\\n      \"],[11,\"div\",[]],[15,\"class\",\"form-group\"],[13],[0,\"\\n        \"],[11,\"label\",[]],[15,\"for\",\"branchId\"],[13],[0,\"Branch ID\"],[11,\"span\",[]],[15,\"style\",\"color:rgb(237, 69, 69);\"],[13],[0,\"*\"],[14],[14],[0,\"\\n        \"],[11,\"select\",[]],[15,\"id\",\"branchId\"],[16,\"value\",[26,[\"branchId\"]],null],[15,\"class\",\"form-control\"],[16,\"onchange\",[33,[\"action\"],[[28,[null]],[33,[\"mut\"],[[28,[\"branchId\"]]],null]],[[\"value\"],[\"target.value\"]]],null],[13],[0,\"\\n          \"],[11,\"option\",[]],[15,\"value\",\"\"],[13],[0,\"Select Branch\"],[14],[0,\"\\n\"],[6,[\"each\"],[[28,[\"branches\"]]],null,{\"statements\":[[0,\"            \"],[11,\"option\",[]],[16,\"value\",[28,[\"branch\",\"branch_id\"]],null],[16,\"selected\",[33,[\"if\"],[[33,[\"eq\"],[[28,[\"branch\",\"branch_id\"]],[28,[\"bank\",\"main_branch_id\"]]],null],\"selected\"],null],null],[13],[1,[28,[\"branch\",\"branch_name\"]],false],[14],[0,\"\\n\"]],\"locals\":[\"branch\"]},null],[0,\"        \"],[14],[0,\"\\n      \"],[14],[0,\"\\n      \\n      \"],[11,\"button\",[]],[15,\"type\",\"submit\"],[15,\"class\",\"btn-primary\"],[13],[0,\"Update Bank\"],[14],[0,\"\\n      \"],[11,\"button\",[]],[15,\"class\",\"btn-secondary\"],[5,[\"action\"],[[28,[null]],\"cancel\"]],[13],[0,\"Cancel\"],[14],[0,\"\\n    \"],[14],[0,\"\\n  \"],[14],[0,\"\\n  \"],[1,[33,[\"notify-box\"],null,[[\"message\",\"type\"],[[28,[\"notification\",\"message\"]],[28,[\"notification\",\"type\"]]]]],false],[0,\"\\n\"],[14],[0,\"\\n\"]],\"locals\":[],\"named\":[],\"yields\":[],\"hasPartials\":false}", "meta": { "moduleName": "banker/templates/banks/bank/edit.hbs" } });
 });
 define("banker/templates/banks/bank/index", ["exports"], function (exports) {
   "use strict";
@@ -6480,7 +6305,7 @@ define("banker/templates/banks/bank/index", ["exports"], function (exports) {
   Object.defineProperty(exports, "__esModule", {
     value: true
   });
-  exports.default = Ember.HTMLBars.template({ "id": "a7624+Sn", "block": "{\"statements\":[[11,\"div\",[]],[15,\"class\",\"bank-card-wrapper\"],[13],[0,\"\\n  \"],[11,\"div\",[]],[15,\"class\",\"bank-card\"],[13],[0,\"\\n    \"],[11,\"h2\",[]],[13],[0,\"Bank Details\"],[14],[0,\"\\n\"],[6,[\"each\"],[[28,[\"banks\"]]],null,{\"statements\":[[0,\"     \\n    \"],[11,\"div\",[]],[15,\"class\",\"bank-field\"],[13],[0,\"\\n      \"],[11,\"span\",[]],[15,\"class\",\"field-label\"],[13],[0,\"Bank Name:\"],[14],[0,\"\\n      \"],[11,\"span\",[]],[15,\"class\",\"field-value\"],[13],[1,[28,[\"bank\",\"bank_name\"]],false],[14],[0,\"\\n    \"],[14],[0,\"\\n    \"],[11,\"div\",[]],[15,\"class\",\"bank-field\"],[13],[0,\"\\n      \"],[11,\"span\",[]],[15,\"class\",\"field-label\"],[13],[0,\"Bank Code:\"],[14],[0,\"\\n      \"],[11,\"span\",[]],[15,\"class\",\"field-value\"],[13],[1,[28,[\"bank\",\"bank_code\"]],false],[14],[0,\"\\n    \"],[14],[0,\"\\n     \"],[11,\"div\",[]],[15,\"class\",\"bank-field\"],[13],[0,\"\\n      \"],[11,\"span\",[]],[15,\"class\",\"field-label\"],[13],[0,\"Bank Admin:\"],[14],[0,\"\\n      \"],[11,\"span\",[]],[15,\"class\",\"field-value\"],[13],[1,[28,[\"bank\",\"admin_name\"]],false],[14],[0,\"\\n    \"],[14],[0,\"\\n   \\n     \"],[11,\"div\",[]],[15,\"class\",\"bank-field\"],[13],[0,\"\\n      \"],[11,\"span\",[]],[15,\"class\",\"field-label\"],[13],[0,\"Main Branch Name:\"],[14],[0,\"\\n      \"],[11,\"span\",[]],[15,\"class\",\"field-value\"],[13],[1,[33,[\"if\"],[[28,[\"branch\",\"branch_name\"]],[28,[\"branch\",\"branch_name\"]],\"Not Assigned\"],null],false],[14],[0,\"\\n    \"],[14],[0,\"\\n     \"],[11,\"div\",[]],[15,\"class\",\"bank-field\"],[13],[0,\"\\n      \"],[11,\"span\",[]],[15,\"class\",\"field-label\"],[13],[0,\"Main Branch Address:\"],[14],[0,\"\\n      \"],[11,\"span\",[]],[15,\"class\",\"field-value\"],[13],[1,[33,[\"if\"],[[28,[\"branch\",\"branch_address\"]],[28,[\"branch\",\"branch_address\"]],\"Not Assigned\"],null],false],[14],[0,\"\\n    \"],[14],[0,\"\\n\"],[6,[\"if\"],[[33,[\"eq\"],[[28,[\"role\"]],[28,[\"userRole\",\"ADMIN\"]]],null]],null,{\"statements\":[[0,\"    \\n      \"],[11,\"div\",[]],[15,\"class\",\"view-wrap\"],[13],[0,\"\\n        \"],[11,\"button\",[]],[15,\"class\",\"view-btn\"],[5,[\"action\"],[[28,[null]],\"updateMainBranch\",[28,[\"bank\"]]]],[13],[11,\"i\",[]],[15,\"class\",\"bi bi-pencil\"],[13],[14],[0,\" Update Main Branch\"],[14],[0,\"\\n      \"],[14],[0,\"\\n    \\n\"]],\"locals\":[]},null]],\"locals\":[\"bank\"]},null],[0,\"  \"],[14],[0,\"\\n\"],[14],[0,\"\\n\"]],\"locals\":[],\"named\":[],\"yields\":[],\"hasPartials\":false}", "meta": { "moduleName": "banker/templates/banks/bank/index.hbs" } });
+  exports.default = Ember.HTMLBars.template({ "id": "a9il1mRT", "block": "{\"statements\":[[11,\"div\",[]],[15,\"class\",\"bank-card-wrapper\"],[13],[0,\"\\n  \"],[11,\"div\",[]],[15,\"class\",\"bank-card\"],[13],[0,\"\\n    \"],[11,\"h2\",[]],[13],[0,\"Bank Details\"],[14],[0,\"\\n\"],[6,[\"each\"],[[28,[\"banks\"]]],null,{\"statements\":[[0,\"     \\n    \"],[11,\"div\",[]],[15,\"class\",\"bank-field\"],[13],[0,\"\\n      \"],[11,\"span\",[]],[15,\"class\",\"field-label\"],[13],[0,\"Bank Name:\"],[14],[0,\"\\n      \"],[11,\"span\",[]],[15,\"class\",\"field-value\"],[13],[1,[28,[\"bank\",\"bank_name\"]],false],[14],[0,\"\\n    \"],[14],[0,\"\\n    \"],[11,\"div\",[]],[15,\"class\",\"bank-field\"],[13],[0,\"\\n      \"],[11,\"span\",[]],[15,\"class\",\"field-label\"],[13],[0,\"Bank Code:\"],[14],[0,\"\\n      \"],[11,\"span\",[]],[15,\"class\",\"field-value\"],[13],[1,[28,[\"bank\",\"bank_code\"]],false],[14],[0,\"\\n    \"],[14],[0,\"\\n     \"],[11,\"div\",[]],[15,\"class\",\"bank-field\"],[13],[0,\"\\n      \"],[11,\"span\",[]],[15,\"class\",\"field-label\"],[13],[0,\"Bank Admin:\"],[14],[0,\"\\n      \"],[11,\"span\",[]],[15,\"class\",\"field-value\"],[13],[1,[28,[\"bank\",\"admin_name\"]],false],[14],[0,\"\\n    \"],[14],[0,\"\\n   \\n     \"],[11,\"div\",[]],[15,\"class\",\"bank-field\"],[13],[0,\"\\n      \"],[11,\"span\",[]],[15,\"class\",\"field-label\"],[13],[0,\"Main Branch Name:\"],[14],[0,\"\\n      \"],[11,\"span\",[]],[15,\"class\",\"field-value\"],[13],[1,[33,[\"if\"],[[28,[\"branch\",\"branch_name\"]],[28,[\"branch\",\"branch_name\"]],\"Not Assigned\"],null],false],[14],[0,\"\\n    \"],[14],[0,\"\\n     \"],[11,\"div\",[]],[15,\"class\",\"bank-field\"],[13],[0,\"\\n      \"],[11,\"span\",[]],[15,\"class\",\"field-label\"],[13],[0,\"Main Branch Address:\"],[14],[0,\"\\n      \"],[11,\"span\",[]],[15,\"class\",\"field-value\"],[13],[1,[33,[\"if\"],[[28,[\"branch\",\"branch_address\"]],[28,[\"branch\",\"branch_address\"]],\"Not Assigned\"],null],false],[14],[0,\"\\n    \"],[14],[0,\"\\n\"],[6,[\"if\"],[[33,[\"eq\"],[[28,[\"role\"]],[28,[\"userRole\",\"ADMIN\"]]],null]],null,{\"statements\":[[0,\"    \\n      \"],[11,\"div\",[]],[15,\"class\",\"view-wrap\"],[13],[0,\"\\n        \"],[11,\"button\",[]],[15,\"class\",\"view-btn\"],[15,\"style\",\"margin-top:15px\"],[5,[\"action\"],[[28,[null]],\"updateMainBranch\",[28,[\"bank\"]]]],[13],[11,\"i\",[]],[15,\"class\",\"bi bi-pencil\"],[13],[14],[0,\" Update Main Branch\"],[14],[0,\"\\n      \"],[14],[0,\"\\n    \\n\"]],\"locals\":[]},null]],\"locals\":[\"bank\"]},null],[0,\"  \"],[14],[0,\"\\n\"],[14],[0,\"\\n\"]],\"locals\":[],\"named\":[],\"yields\":[],\"hasPartials\":false}", "meta": { "moduleName": "banker/templates/banks/bank/index.hbs" } });
 });
 define("banker/templates/banks/bank/loans", ["exports"], function (exports) {
   "use strict";
@@ -6496,7 +6321,7 @@ define("banker/templates/banks/bank/loans/index", ["exports"], function (exports
   Object.defineProperty(exports, "__esModule", {
     value: true
   });
-  exports.default = Ember.HTMLBars.template({ "id": "l6xOxG8n", "block": "{\"statements\":[[1,[33,[\"view-loans\"],null,[[\"accNo\",\"bankId\",\"loans\",\"branchId\",\"loanId\",\"totalLoans\",\"isDirect\",\"changeLoans\",\"viewLoan\",\"toaddNewLoan\",\"toeditLoan\"],[[28,[\"accNo\"]],[28,[null,\"bankId\"]],[28,[null,\"loans\"]],[28,[null,\"branchId\"]],[28,[null,\"loanId\"]],[28,[null,\"totalLoans\"]],true,[33,[\"action\"],[[28,[null]],\"changeLoans\"],null],[33,[\"action\"],[[28,[null]],\"viewloan\"],null],[33,[\"action\"],[[28,[null]],\"addNewLoan\"],null],[33,[\"action\"],[[28,[null]],\"editLoan\"],null]]]],false]],\"locals\":[],\"named\":[],\"yields\":[],\"hasPartials\":false}", "meta": { "moduleName": "banker/templates/banks/bank/loans/index.hbs" } });
+  exports.default = Ember.HTMLBars.template({ "id": "x3IkRvAD", "block": "{\"statements\":[[1,[33,[\"view-loans\"],null,[[\"loans\",\"totalLoans\",\"isDirect\",\"changeLoans\",\"viewLoan\",\"toaddNewLoan\",\"toeditLoan\"],[[28,[null,\"loans\"]],[28,[null,\"totalLoans\"]],true,[33,[\"action\"],[[28,[null]],\"changeLoans\"],null],[33,[\"action\"],[[28,[null]],\"viewloan\"],null],[33,[\"action\"],[[28,[null]],\"addNewLoan\"],null],[33,[\"action\"],[[28,[null]],\"editLoan\"],null]]]],false]],\"locals\":[],\"named\":[],\"yields\":[],\"hasPartials\":false}", "meta": { "moduleName": "banker/templates/banks/bank/loans/index.hbs" } });
 });
 define("banker/templates/banks/bank/loans/loan", ["exports"], function (exports) {
   "use strict";
@@ -6512,7 +6337,7 @@ define("banker/templates/banks/bank/loans/loan/edit", ["exports"], function (exp
   Object.defineProperty(exports, "__esModule", {
     value: true
   });
-  exports.default = Ember.HTMLBars.template({ "id": "SR4v3w/y", "block": "{\"statements\":[[1,[33,[\"loan-input\"],null,[[\"isEdit\",\"loan_id\",\"loan_type\",\"loan_amount\",\"loan_interest\",\"loan_duration\",\"loan_status\",\"loan_availed_date\",\"accNo\",\"bankId\",\"toLoan\"],[true,[28,[null,\"loan_id\"]],[28,[null,\"loan_type\"]],[28,[null,\"loan_amount\"]],[28,[null,\"loan_interest\"]],[28,[null,\"loan_duration\"]],[28,[null,\"loan_status\"]],[28,[null,\"loan_availed_date\"]],[28,[null,\"accNo\"]],[28,[null,\"bankId\"]],[33,[\"action\"],[[28,[null]],\"toLoan\"],null]]]],false],[0,\"\\n\"]],\"locals\":[],\"named\":[],\"yields\":[],\"hasPartials\":false}", "meta": { "moduleName": "banker/templates/banks/bank/loans/loan/edit.hbs" } });
+  exports.default = Ember.HTMLBars.template({ "id": "dT0ZVPBf", "block": "{\"statements\":[[1,[33,[\"loan-input\"],null,[[\"isEdit\",\"loan_id\",\"loan_type\",\"loan_amount\",\"loan_interest\",\"loan_duration\",\"loan_status\",\"loan_availed_date\",\"accNo\",\"toLoan\"],[true,[28,[null,\"loan_id\"]],[28,[null,\"loan_type\"]],[28,[null,\"loan_amount\"]],[28,[null,\"loan_interest\"]],[28,[null,\"loan_duration\"]],[28,[null,\"loan_status\"]],[28,[null,\"loan_availed_date\"]],[28,[null,\"accNo\"]],[33,[\"action\"],[[28,[null]],\"toLoan\"],null]]]],false],[0,\"\\n\"]],\"locals\":[],\"named\":[],\"yields\":[],\"hasPartials\":false}", "meta": { "moduleName": "banker/templates/banks/bank/loans/loan/edit.hbs" } });
 });
 define("banker/templates/banks/bank/loans/loan/emi", ["exports"], function (exports) {
   "use strict";
@@ -6528,7 +6353,7 @@ define("banker/templates/banks/bank/loans/loan/index", ["exports"], function (ex
   Object.defineProperty(exports, "__esModule", {
     value: true
   });
-  exports.default = Ember.HTMLBars.template({ "id": "zPaLWao/", "block": "{\"statements\":[[1,[33,[\"view-loan\"],null,[[\"bankId\",\"branchId\",\"loan\",\"toEmis\"],[[28,[null,\"bankId\"]],[28,[\"branchId\"]],[28,[null,\"loan\"]],[33,[\"action\"],[[28,[null]],\"toEmis\"],null]]]],false]],\"locals\":[],\"named\":[],\"yields\":[],\"hasPartials\":false}", "meta": { "moduleName": "banker/templates/banks/bank/loans/loan/index.hbs" } });
+  exports.default = Ember.HTMLBars.template({ "id": "mnDm0mr1", "block": "{\"statements\":[[1,[33,[\"view-loan\"],null,[[\"loan\",\"toEmis\"],[[28,[null,\"loan\"]],[33,[\"action\"],[[28,[null]],\"toEmis\"],null]]]],false]],\"locals\":[],\"named\":[],\"yields\":[],\"hasPartials\":false}", "meta": { "moduleName": "banker/templates/banks/bank/loans/loan/index.hbs" } });
 });
 define("banker/templates/banks/bank/loans/new", ["exports"], function (exports) {
   "use strict";
@@ -6536,7 +6361,7 @@ define("banker/templates/banks/bank/loans/new", ["exports"], function (exports) 
   Object.defineProperty(exports, "__esModule", {
     value: true
   });
-  exports.default = Ember.HTMLBars.template({ "id": "e0Dlai8x", "block": "{\"statements\":[[1,[33,[\"loan-input\"],null,[[\"accNo\",\"bankId\",\"isDirect\",\"toLoan\"],[[28,[null,\"accNo\"]],[28,[null,\"bankId\"]],true,[33,[\"action\"],[[28,[null]],\"toLoan\"],null]]]],false],[0,\"\\n\"]],\"locals\":[],\"named\":[],\"yields\":[],\"hasPartials\":false}", "meta": { "moduleName": "banker/templates/banks/bank/loans/new.hbs" } });
+  exports.default = Ember.HTMLBars.template({ "id": "eV2n9z+0", "block": "{\"statements\":[[1,[33,[\"loan-input\"],null,[[\"isDirect\",\"toLoan\"],[true,[33,[\"action\"],[[28,[null]],\"toLoan\"],null]]]],false],[0,\"\\n\"]],\"locals\":[],\"named\":[],\"yields\":[],\"hasPartials\":false}", "meta": { "moduleName": "banker/templates/banks/bank/loans/new.hbs" } });
 });
 define("banker/templates/banks/bank/transactions", ["exports"], function (exports) {
   "use strict";
@@ -6552,7 +6377,7 @@ define("banker/templates/banks/bank/transactions/index", ["exports"], function (
   Object.defineProperty(exports, "__esModule", {
     value: true
   });
-  exports.default = Ember.HTMLBars.template({ "id": "Fy32dvuJ", "block": "{\"statements\":[[1,[33,[\"view-transactions\"],null,[[\"accNo\",\"bankId\",\"transactions\",\"branchId\",\"transactionId\",\"isDirect\",\"totalTransactions\",\"changeTransactions\",\"viewTransaction\",\"toaddNewTransaction\"],[[28,[null,\"accNo\"]],[28,[null,\"bankId\"]],[28,[null,\"transactions\"]],[28,[null,\"branchId\"]],[28,[null,\"transactionId\"]],true,[28,[null,\"totalTransactions\"]],[33,[\"action\"],[[28,[null]],\"changeTransactions\"],null],[33,[\"action\"],[[28,[null]],\"viewTransaction\"],null],[33,[\"action\"],[[28,[null]],\"addNewTransaction\"],null]]]],false]],\"locals\":[],\"named\":[],\"yields\":[],\"hasPartials\":false}", "meta": { "moduleName": "banker/templates/banks/bank/transactions/index.hbs" } });
+  exports.default = Ember.HTMLBars.template({ "id": "ERcgQLif", "block": "{\"statements\":[[1,[33,[\"view-transactions\"],null,[[\"accNo\",\"transactions\",\"isDirect\",\"totalTransactions\",\"changeTransactions\",\"viewTransaction\",\"toaddNewTransaction\"],[[28,[null,\"accNo\"]],[28,[null,\"transactions\"]],true,[28,[null,\"totalTransactions\"]],[33,[\"action\"],[[28,[null]],\"changeTransactions\"],null],[33,[\"action\"],[[28,[null]],\"viewTransaction\"],null],[33,[\"action\"],[[28,[null]],\"addNewTransaction\"],null]]]],false]],\"locals\":[],\"named\":[],\"yields\":[],\"hasPartials\":false}", "meta": { "moduleName": "banker/templates/banks/bank/transactions/index.hbs" } });
 });
 define("banker/templates/banks/bank/transactions/new", ["exports"], function (exports) {
   "use strict";
@@ -6560,7 +6385,7 @@ define("banker/templates/banks/bank/transactions/new", ["exports"], function (ex
   Object.defineProperty(exports, "__esModule", {
     value: true
   });
-  exports.default = Ember.HTMLBars.template({ "id": "N+RQxG0g", "block": "{\"statements\":[[1,[33,[\"transaction-input\"],null,[[\"accNo\",\"bankId\",\"isDirect\",\"toTransaction\"],[[28,[null,\"accNo\"]],[28,[null,\"bankId\"]],true,[33,[\"action\"],[[28,[null]],\"toTransaction\"],null]]]],false],[0,\"\\n\"]],\"locals\":[],\"named\":[],\"yields\":[],\"hasPartials\":false}", "meta": { "moduleName": "banker/templates/banks/bank/transactions/new.hbs" } });
+  exports.default = Ember.HTMLBars.template({ "id": "Xyrf4iDL", "block": "{\"statements\":[[1,[33,[\"transaction-input\"],null,[[\"isDirect\",\"toTransaction\"],[true,[33,[\"action\"],[[28,[null]],\"toTransaction\"],null]]]],false],[0,\"\\n\"]],\"locals\":[],\"named\":[],\"yields\":[],\"hasPartials\":false}", "meta": { "moduleName": "banker/templates/banks/bank/transactions/new.hbs" } });
 });
 define("banker/templates/banks/bank/transactions/transaction", ["exports"], function (exports) {
   "use strict";
@@ -6568,7 +6393,7 @@ define("banker/templates/banks/bank/transactions/transaction", ["exports"], func
   Object.defineProperty(exports, "__esModule", {
     value: true
   });
-  exports.default = Ember.HTMLBars.template({ "id": "kaieaYaI", "block": "{\"statements\":[[0,\"\\n\"],[1,[33,[\"view-transaction\"],null,[[\"bankId\",\"transaction\"],[[28,[null,\"bankId\"]],[28,[null,\"transaction\"]]]]],false]],\"locals\":[],\"named\":[],\"yields\":[],\"hasPartials\":false}", "meta": { "moduleName": "banker/templates/banks/bank/transactions/transaction.hbs" } });
+  exports.default = Ember.HTMLBars.template({ "id": "va6r4Sqp", "block": "{\"statements\":[[0,\"\\n\"],[1,[33,[\"view-transaction\"],null,[[\"transaction\"],[[28,[null,\"transaction\"]]]]],false]],\"locals\":[],\"named\":[],\"yields\":[],\"hasPartials\":false}", "meta": { "moduleName": "banker/templates/banks/bank/transactions/transaction.hbs" } });
 });
 define("banker/templates/banks/bank/users", ["exports"], function (exports) {
   "use strict";
@@ -6616,7 +6441,7 @@ define("banker/templates/components/account-input", ["exports"], function (expor
   Object.defineProperty(exports, "__esModule", {
     value: true
   });
-  exports.default = Ember.HTMLBars.template({ "id": "rMhqOyyw", "block": "{\"statements\":[[11,\"body\",[]],[13],[0,\"\\n  \"],[11,\"div\",[]],[15,\"class\",\"account-form\"],[13],[0,\"\\n    \"],[11,\"h2\",[]],[13],[1,[33,[\"if\"],[[28,[\"isEdit\"]],\"Edit Account\",\"Create New Account\"],null],false],[14],[0,\"\\n\\n    \"],[11,\"form\",[]],[5,[\"action\"],[[28,[null]],\"submitForm\"],[[\"on\"],[\"submit\"]]],[13],[0,\"\\n\"],[6,[\"if\"],[[28,[\"isEdit\"]]],null,{\"statements\":[[0,\"        \"],[11,\"div\",[]],[15,\"class\",\"form-group\"],[13],[0,\"\\n          \"],[11,\"label\",[]],[15,\"for\",\"accNo\"],[13],[0,\"Account Number\"],[11,\"span\",[]],[15,\"style\",\"color:rgb(237, 69, 69);\"],[13],[0,\"*\"],[14],[14],[0,\"\\n          \"],[11,\"input\",[]],[15,\"type\",\"text\"],[15,\"id\",\"accNo\"],[16,\"value\",[26,[\"accNo\"]],null],[15,\"class\",\"form-control\"],[16,\"oninput\",[33,[\"action\"],[[28,[null]],[33,[\"mut\"],[[28,[\"accNo\"]]],null]],[[\"value\"],[\"target.value\"]]],null],[16,\"disabled\",[26,[\"isEdit\"]],null],[13],[14],[0,\"\\n        \"],[14],[0,\"\\n\"]],\"locals\":[]},null],[0,\"\\n      \"],[11,\"div\",[]],[15,\"class\",\"form-group\"],[13],[0,\"\\n        \"],[11,\"label\",[]],[15,\"for\",\"acc_type\"],[13],[0,\"Account Type\"],[11,\"span\",[]],[15,\"style\",\"color:rgb(237, 69, 69);\"],[13],[0,\"*\"],[14],[14],[0,\"\\n        \"],[11,\"select\",[]],[15,\"id\",\"acc_type\"],[15,\"class\",\"form-control\"],[16,\"onchange\",[33,[\"action\"],[[28,[null]],[33,[\"mut\"],[[28,[\"acc_type\"]]],null]],[[\"value\"],[\"target.value\"]]],null],[13],[0,\"\\n          \"],[11,\"option\",[]],[15,\"value\",\"\"],[13],[0,\"Select type\"],[14],[0,\"\\n\"],[6,[\"each\"],[[28,[\"types\"]]],null,{\"statements\":[[0,\"            \"],[11,\"option\",[]],[16,\"value\",[28,[\"type\"]],null],[16,\"selected\",[33,[\"if\"],[[33,[\"eq\"],[[28,[\"type\"]],[28,[\"acc_type\"]]],null],\"selected\"],null],null],[13],[1,[28,[\"type\"]],false],[14],[0,\"\\n\"]],\"locals\":[\"type\"]},null],[0,\"        \"],[14],[0,\"\\n      \"],[14],[0,\"\\n\\n\"],[6,[\"unless\"],[[33,[\"eq\"],[[28,[\"role\"]],[28,[\"userRole\",\"CUSTOMER\"]]],null]],null,{\"statements\":[[0,\"        \"],[11,\"div\",[]],[15,\"class\",\"form-group\"],[13],[0,\"\\n          \"],[11,\"label\",[]],[15,\"for\",\"acc_status\"],[13],[0,\"Account Status\"],[11,\"span\",[]],[15,\"style\",\"color:rgb(237, 69, 69);\"],[13],[0,\"*\"],[14],[14],[0,\"\\n          \"],[11,\"select\",[]],[15,\"id\",\"acc_status\"],[15,\"class\",\"form-control\"],[16,\"onchange\",[33,[\"action\"],[[28,[null]],[33,[\"mut\"],[[28,[\"acc_status\"]]],null]],[[\"value\"],[\"target.value\"]]],null],[13],[0,\"\\n            \"],[11,\"option\",[]],[15,\"value\",\"\"],[13],[0,\"Select Status\"],[14],[0,\"\\n\"],[6,[\"each\"],[[28,[\"statuses\"]]],null,{\"statements\":[[0,\"              \"],[11,\"option\",[]],[16,\"value\",[28,[\"status\"]],null],[16,\"selected\",[33,[\"if\"],[[33,[\"eq\"],[[28,[\"status\"]],[28,[\"acc_status\"]]],null],\"selected\"],null],null],[13],[1,[28,[\"status\"]],false],[14],[0,\"\\n\"]],\"locals\":[\"status\"]},null],[0,\"          \"],[14],[0,\"\\n        \"],[14],[0,\"\\n\\n        \"],[11,\"div\",[]],[15,\"class\",\"form-group\"],[13],[0,\"\\n          \"],[11,\"label\",[]],[15,\"for\",\"username\"],[13],[0,\"Username\"],[11,\"span\",[]],[15,\"style\",\"color:rgb(237, 69, 69);\"],[13],[0,\"*\"],[14],[14],[0,\"\\n          \"],[11,\"input\",[]],[15,\"type\",\"text\"],[15,\"id\",\"username\"],[16,\"value\",[26,[\"username\"]],null],[15,\"class\",\"form-control\"],[16,\"oninput\",[33,[\"action\"],[[28,[null]],[33,[\"mut\"],[[28,[\"username\"]]],null]],[[\"value\"],[\"target.value\"]]],null],[16,\"disabled\",[26,[\"isEdit\"]],null],[13],[14],[0,\"\\n        \"],[14],[0,\"\\n\"]],\"locals\":[]},null],[0,\"\\n      \"],[11,\"div\",[]],[15,\"class\",\"form-group\"],[13],[0,\"\\n        \"],[11,\"label\",[]],[15,\"for\",\"branch_name\"],[13],[0,\"Branch Name\"],[11,\"span\",[]],[15,\"style\",\"color:rgb(237, 69, 69);\"],[13],[0,\"*\"],[14],[14],[0,\"\\n        \"],[11,\"select\",[]],[15,\"id\",\"branch_name\"],[15,\"class\",\"form-control\"],[16,\"onchange\",[33,[\"action\"],[[28,[null]],[33,[\"mut\"],[[28,[\"branch_name\"]]],null]],[[\"value\"],[\"target.value\"]]],null],[13],[0,\"\\n          \"],[11,\"option\",[]],[15,\"value\",\"\"],[13],[0,\"Select branch\"],[14],[0,\"\\n\"],[6,[\"each\"],[[28,[\"branchNames\"]]],null,{\"statements\":[[0,\"            \"],[11,\"option\",[]],[16,\"value\",[28,[\"branch\",\"branch_name\"]],null],[16,\"selected\",[33,[\"if\"],[[33,[\"eq\"],[[28,[\"branch\",\"branch_name\"]],[28,[\"branch_name\"]]],null],\"selected\"],null],null],[13],[1,[28,[\"branch\",\"branch_name\"]],false],[14],[0,\"\\n\"]],\"locals\":[\"branch\"]},null],[0,\"        \"],[14],[0,\"\\n      \"],[14],[0,\"\\n\\n      \"],[11,\"button\",[]],[15,\"type\",\"submit\"],[15,\"class\",\"btn-primary\"],[13],[1,[33,[\"if\"],[[28,[\"isEdit\"]],\"Update Account\",\"Create Account\"],null],false],[14],[0,\"\\n\\n\"],[6,[\"link-to\"],[\"banks.bank.accounts\",[28,[\"bankId\"]]],null,{\"statements\":[[0,\"        \"],[11,\"button\",[]],[15,\"class\",\"btn-secondary\"],[5,[\"action\"],[[28,[null]],\"cancel\"]],[13],[0,\"Cancel\"],[14],[0,\"\\n\"]],\"locals\":[]},null],[0,\"\\n\"],[6,[\"if\"],[[28,[\"errorMessage\"]]],null,{\"statements\":[[0,\"        \"],[11,\"div\",[]],[15,\"class\",\"error-message\"],[13],[0,\"* \"],[1,[26,[\"errorMessage\"]],false],[14],[0,\"\\n\"]],\"locals\":[]},null],[0,\"    \"],[14],[0,\"\\n  \"],[14],[0,\"\\n  \"],[1,[33,[\"notify-box\"],null,[[\"message\",\"type\"],[[28,[\"notification\",\"message\"]],[28,[\"notification\",\"type\"]]]]],false],[0,\"\\n\"],[14],[0,\"\\n\"]],\"locals\":[],\"named\":[],\"yields\":[],\"hasPartials\":false}", "meta": { "moduleName": "banker/templates/components/account-input.hbs" } });
+  exports.default = Ember.HTMLBars.template({ "id": "BYHo4W2l", "block": "{\"statements\":[[11,\"body\",[]],[13],[0,\"\\n  \"],[11,\"div\",[]],[15,\"class\",\"account-form\"],[15,\"style\",\"margin-top:20px\"],[13],[0,\"\\n    \"],[11,\"h2\",[]],[13],[1,[33,[\"if\"],[[28,[\"isEdit\"]],\"Edit Account\",\"Create New Account\"],null],false],[14],[0,\"\\n\\n    \"],[11,\"form\",[]],[5,[\"action\"],[[28,[null]],\"submitForm\"],[[\"on\"],[\"submit\"]]],[13],[0,\"\\n\"],[6,[\"if\"],[[28,[\"isEdit\"]]],null,{\"statements\":[[0,\"        \"],[11,\"div\",[]],[15,\"class\",\"form-group\"],[13],[0,\"\\n          \"],[11,\"label\",[]],[15,\"for\",\"accNo\"],[13],[0,\"Account Number\"],[11,\"span\",[]],[15,\"style\",\"color:rgb(237, 69, 69);\"],[13],[0,\"*\"],[14],[14],[0,\"\\n          \"],[11,\"input\",[]],[15,\"type\",\"text\"],[15,\"id\",\"accNo\"],[16,\"value\",[26,[\"accNo\"]],null],[15,\"class\",\"form-control\"],[16,\"oninput\",[33,[\"action\"],[[28,[null]],[33,[\"mut\"],[[28,[\"accNo\"]]],null]],[[\"value\"],[\"target.value\"]]],null],[16,\"disabled\",[26,[\"isEdit\"]],null],[13],[14],[0,\"\\n        \"],[14],[0,\"\\n\"]],\"locals\":[]},null],[0,\"\\n      \"],[11,\"div\",[]],[15,\"class\",\"form-group\"],[13],[0,\"\\n        \"],[11,\"label\",[]],[15,\"for\",\"acc_type\"],[13],[0,\"Account Type\"],[11,\"span\",[]],[15,\"style\",\"color:rgb(237, 69, 69);\"],[13],[0,\"*\"],[14],[14],[0,\"\\n        \"],[11,\"select\",[]],[15,\"id\",\"acc_type\"],[15,\"class\",\"form-control\"],[16,\"onchange\",[33,[\"action\"],[[28,[null]],[33,[\"mut\"],[[28,[\"acc_type\"]]],null]],[[\"value\"],[\"target.value\"]]],null],[13],[0,\"\\n          \"],[11,\"option\",[]],[15,\"value\",\"\"],[13],[0,\"Select type\"],[14],[0,\"\\n\"],[6,[\"each\"],[[28,[\"types\"]]],null,{\"statements\":[[0,\"            \"],[11,\"option\",[]],[16,\"value\",[28,[\"type\"]],null],[16,\"selected\",[33,[\"if\"],[[33,[\"eq\"],[[28,[\"type\"]],[28,[\"acc_type\"]]],null],\"selected\"],null],null],[13],[1,[28,[\"type\"]],false],[14],[0,\"\\n\"]],\"locals\":[\"type\"]},null],[0,\"        \"],[14],[0,\"\\n      \"],[14],[0,\"\\n\\n\"],[6,[\"unless\"],[[33,[\"eq\"],[[28,[\"role\"]],[28,[\"userRole\",\"CUSTOMER\"]]],null]],null,{\"statements\":[[6,[\"if\"],[[28,[\"isEdit\"]]],null,{\"statements\":[[0,\"       \"],[11,\"div\",[]],[15,\"class\",\"form-group\"],[13],[0,\"\\n          \"],[11,\"label\",[]],[15,\"for\",\"acc_status\"],[13],[0,\"Account Status\"],[11,\"span\",[]],[15,\"style\",\"color:rgb(237, 69, 69);\"],[13],[0,\"*\"],[14],[14],[0,\"\\n          \"],[11,\"select\",[]],[15,\"id\",\"acc_status\"],[15,\"class\",\"form-control\"],[16,\"onchange\",[33,[\"action\"],[[28,[null]],[33,[\"mut\"],[[28,[\"acc_status\"]]],null]],[[\"value\"],[\"target.value\"]]],null],[13],[0,\"\\n            \"],[11,\"option\",[]],[15,\"value\",\"\"],[13],[0,\"Select Status\"],[14],[0,\"\\n\"],[6,[\"each\"],[[28,[\"filteredStatuses\"]]],null,{\"statements\":[[0,\"              \"],[11,\"option\",[]],[16,\"value\",[28,[\"status\"]],null],[16,\"selected\",[33,[\"if\"],[[33,[\"eq\"],[[28,[\"status\"]],[28,[\"acc_status\"]]],null],\"selected\"],null],null],[13],[1,[28,[\"status\"]],false],[14],[0,\"\\n\"]],\"locals\":[\"status\"]},null],[0,\"          \"],[14],[0,\"\\n        \"],[14],[0,\"\\n\"]],\"locals\":[]},{\"statements\":[[0,\"        \"],[11,\"div\",[]],[15,\"class\",\"form-group\"],[13],[0,\"\\n          \"],[11,\"label\",[]],[15,\"for\",\"acc_status\"],[13],[0,\"Account Status\"],[11,\"span\",[]],[15,\"style\",\"color:rgb(237, 69, 69);\"],[13],[0,\"*\"],[14],[14],[0,\"\\n          \"],[11,\"select\",[]],[15,\"id\",\"acc_status\"],[15,\"class\",\"form-control\"],[16,\"onchange\",[33,[\"action\"],[[28,[null]],[33,[\"mut\"],[[28,[\"acc_status\"]]],null]],[[\"value\"],[\"target.value\"]]],null],[13],[0,\"\\n            \"],[11,\"option\",[]],[15,\"value\",\"\"],[13],[0,\"Select Status\"],[14],[0,\"\\n\"],[6,[\"each\"],[[28,[\"statuses\"]]],null,{\"statements\":[[0,\"              \"],[11,\"option\",[]],[16,\"value\",[28,[\"status\"]],null],[16,\"selected\",[33,[\"if\"],[[33,[\"eq\"],[[28,[\"status\"]],[28,[\"acc_status\"]]],null],\"selected\"],null],null],[13],[1,[28,[\"status\"]],false],[14],[0,\"\\n\"]],\"locals\":[\"status\"]},null],[0,\"          \"],[14],[0,\"\\n        \"],[14],[0,\"\\n\\n\"]],\"locals\":[]}],[0,\"        \"],[11,\"div\",[]],[15,\"class\",\"form-group\"],[13],[0,\"\\n          \"],[11,\"label\",[]],[15,\"for\",\"username\"],[13],[0,\"Username\"],[11,\"span\",[]],[15,\"style\",\"color:rgb(237, 69, 69);\"],[13],[0,\"*\"],[14],[14],[0,\"\\n          \"],[11,\"input\",[]],[15,\"type\",\"text\"],[15,\"id\",\"username\"],[16,\"value\",[26,[\"username\"]],null],[15,\"class\",\"form-control\"],[16,\"oninput\",[33,[\"action\"],[[28,[null]],[33,[\"mut\"],[[28,[\"username\"]]],null]],[[\"value\"],[\"target.value\"]]],null],[16,\"disabled\",[26,[\"isEdit\"]],null],[13],[14],[0,\"\\n        \"],[14],[0,\"\\n\"]],\"locals\":[]},null],[0,\"\\n      \"],[11,\"div\",[]],[15,\"class\",\"form-group\"],[13],[0,\"\\n        \"],[11,\"label\",[]],[15,\"for\",\"branch_name\"],[13],[0,\"Branch Name\"],[11,\"span\",[]],[15,\"style\",\"color:rgb(237, 69, 69);\"],[13],[0,\"*\"],[14],[14],[0,\"\\n        \"],[11,\"select\",[]],[15,\"id\",\"branch_name\"],[16,\"value\",[26,[\"branch_name\"]],null],[15,\"class\",\"form-control\"],[16,\"onchange\",[33,[\"action\"],[[28,[null]],[33,[\"mut\"],[[28,[\"branchId\"]]],null]],[[\"value\"],[\"target.value\"]]],null],[13],[0,\"\\n          \"],[11,\"option\",[]],[15,\"value\",\"\"],[13],[0,\"Select branch\"],[14],[0,\"\\n\"],[6,[\"each\"],[[28,[\"branchNames\"]]],null,{\"statements\":[[0,\"            \"],[11,\"option\",[]],[16,\"value\",[28,[\"branch\",\"branch_id\"]],null],[16,\"selected\",[33,[\"if\"],[[33,[\"eq\"],[[28,[\"branch\",\"branch_name\"]],[28,[\"branch_name\"]]],null],\"selected\"],null],null],[13],[1,[28,[\"branch\",\"branch_name\"]],false],[14],[0,\"\\n\"]],\"locals\":[\"branch\"]},null],[0,\"        \"],[14],[0,\"\\n      \"],[14],[0,\"\\n\\n      \"],[11,\"button\",[]],[15,\"type\",\"submit\"],[15,\"class\",\"btn-primary\"],[13],[1,[33,[\"if\"],[[28,[\"isEdit\"]],\"Update Account\",\"Create Account\"],null],false],[14],[0,\"\\n\\n      \"],[11,\"button\",[]],[15,\"class\",\"btn-secondary\"],[5,[\"action\"],[[28,[null]],\"cancel\"]],[13],[0,\"Cancel\"],[14],[0,\"\\n      \\n\\n\"],[6,[\"if\"],[[28,[\"errorMessage\"]]],null,{\"statements\":[[0,\"        \"],[11,\"div\",[]],[15,\"class\",\"error-message\"],[13],[0,\"* \"],[1,[26,[\"errorMessage\"]],false],[14],[0,\"\\n\"]],\"locals\":[]},null],[0,\"    \"],[14],[0,\"\\n  \"],[14],[0,\"\\n  \"],[1,[33,[\"notify-box\"],null,[[\"message\",\"type\"],[[28,[\"notification\",\"message\"]],[28,[\"notification\",\"type\"]]]]],false],[0,\"\\n\"],[14],[0,\"\\n\"]],\"locals\":[],\"named\":[],\"yields\":[],\"hasPartials\":false}", "meta": { "moduleName": "banker/templates/components/account-input.hbs" } });
 });
 define("banker/templates/components/admin-dashboard", ["exports"], function (exports) {
   "use strict";
@@ -6624,7 +6449,7 @@ define("banker/templates/components/admin-dashboard", ["exports"], function (exp
   Object.defineProperty(exports, "__esModule", {
     value: true
   });
-  exports.default = Ember.HTMLBars.template({ "id": "tRVvGpsA", "block": "{\"statements\":[[11,\"div\",[]],[15,\"class\",\"branch-card\"],[13],[0,\"\\n  \"],[11,\"h2\",[]],[15,\"class\",\"branch-name\"],[13],[1,[26,[\"branchName\"]],false],[14],[0,\"\\n  \"],[11,\"div\",[]],[15,\"class\",\"branch-field\"],[13],[0,\"\\n    \"],[11,\"span\",[]],[15,\"class\",\"field-label\"],[13],[0,\"Accounts:\"],[14],[0,\"\\n    \"],[11,\"span\",[]],[15,\"class\",\"field-value\"],[13],[1,[26,[\"accountCount\"]],false],[14],[0,\"\\n  \"],[14],[0,\"\\n  \"],[11,\"div\",[]],[15,\"class\",\"branch-field\"],[13],[0,\"\\n    \"],[11,\"span\",[]],[15,\"class\",\"field-label\"],[13],[0,\"Loans:\"],[14],[0,\"\\n    \"],[11,\"span\",[]],[15,\"class\",\"field-value\"],[13],[1,[26,[\"loansAvailed\"]],false],[14],[0,\"\\n  \"],[14],[0,\"\\n  \"],[11,\"div\",[]],[15,\"class\",\"branch-field\"],[13],[0,\"\\n    \"],[11,\"span\",[]],[15,\"class\",\"field-label\"],[13],[0,\"Total Deposits:\"],[14],[0,\"\\n    \"],[11,\"span\",[]],[15,\"class\",\"field-value\"],[13],[0,\"Rs. \"],[1,[26,[\"totalDeposits\"]],false],[14],[0,\"\\n  \"],[14],[0,\"\\n\"],[14],[0,\"\\n\"]],\"locals\":[],\"named\":[],\"yields\":[],\"hasPartials\":false}", "meta": { "moduleName": "banker/templates/components/admin-dashboard.hbs" } });
+  exports.default = Ember.HTMLBars.template({ "id": "teGhNLb9", "block": "{\"statements\":[[11,\"div\",[]],[15,\"class\",\"branch-card\"],[15,\"style\",\"padding:40px 20px;\"],[13],[0,\"\\n  \"],[11,\"h2\",[]],[15,\"class\",\"branch-name\"],[13],[1,[26,[\"branchName\"]],false],[14],[0,\"\\n  \"],[11,\"div\",[]],[15,\"class\",\"branch-field\"],[13],[0,\"\\n    \"],[11,\"span\",[]],[15,\"class\",\"field-label\"],[15,\"style\",\"padding-left:60px\"],[13],[0,\"Accounts:\"],[14],[0,\"\\n    \"],[11,\"span\",[]],[15,\"class\",\"field-value\"],[13],[1,[26,[\"accountCount\"]],false],[14],[0,\"\\n  \"],[14],[0,\"\\n  \"],[11,\"div\",[]],[15,\"class\",\"branch-field\"],[13],[0,\"\\n    \"],[11,\"span\",[]],[15,\"class\",\"field-label\"],[15,\"style\",\"padding-left:60px\"],[13],[0,\"Loans:\"],[14],[0,\"\\n    \"],[11,\"span\",[]],[15,\"class\",\"field-value\"],[13],[1,[26,[\"loansAvailed\"]],false],[14],[0,\"\\n  \"],[14],[0,\"\\n  \"],[11,\"div\",[]],[15,\"class\",\"branch-field\"],[13],[0,\"\\n    \"],[11,\"span\",[]],[15,\"class\",\"field-label\"],[15,\"style\",\"padding-left:60px\"],[13],[0,\"Total Deposits:\"],[14],[0,\"\\n    \"],[11,\"span\",[]],[15,\"class\",\"field-value\"],[13],[0,\"Rs. \"],[1,[26,[\"totalDeposits\"]],false],[14],[0,\"\\n  \"],[14],[0,\"\\n\"],[14],[0,\"\\n\"]],\"locals\":[],\"named\":[],\"yields\":[],\"hasPartials\":false}", "meta": { "moduleName": "banker/templates/components/admin-dashboard.hbs" } });
 });
 define("banker/templates/components/auth-form", ["exports"], function (exports) {
   "use strict";
@@ -6640,7 +6465,7 @@ define("banker/templates/components/branch-input", ["exports"], function (export
   Object.defineProperty(exports, "__esModule", {
     value: true
   });
-  exports.default = Ember.HTMLBars.template({ "id": "+s3e3t7s", "block": "{\"statements\":[[11,\"body\",[]],[13],[0,\"\\n  \"],[11,\"div\",[]],[15,\"class\",\"branch-form\"],[13],[0,\"\\n    \"],[11,\"h2\",[]],[13],[1,[33,[\"if\"],[[28,[\"isEdit\"]],\"Edit Branch\",\"Create New Branch\"],null],false],[14],[0,\"\\n    \\n    \"],[11,\"form\",[]],[5,[\"action\"],[[28,[null]],\"submitForm\"],[[\"on\"],[\"submit\"]]],[13],[0,\"\\n     \\n      \"],[11,\"div\",[]],[15,\"class\",\"form-group\"],[13],[0,\"\\n        \"],[11,\"label\",[]],[15,\"for\",\"name\"],[13],[0,\"Branch Name\"],[11,\"span\",[]],[15,\"style\",\"color:rgb(237, 69, 69);\"],[13],[0,\"*\"],[14],[14],[0,\"\\n        \"],[11,\"input\",[]],[15,\"type\",\"text\"],[15,\"id\",\"name\"],[16,\"value\",[26,[\"name\"]],null],[15,\"class\",\"form-control\"],[16,\"oninput\",[33,[\"action\"],[[28,[null]],[33,[\"mut\"],[[28,[\"name\"]]],null]],[[\"value\"],[\"target.value\"]]],null],[13],[14],[0,\"\\n      \"],[14],[0,\"\\n  \\n      \"],[11,\"div\",[]],[15,\"class\",\"form-group\"],[13],[0,\"\\n        \"],[11,\"label\",[]],[15,\"for\",\"address\"],[13],[0,\"Branch Address\"],[11,\"span\",[]],[15,\"style\",\"color:rgb(237, 69, 69);\"],[13],[0,\"*\"],[14],[14],[0,\"\\n        \"],[11,\"input\",[]],[15,\"type\",\"text\"],[15,\"id\",\"address\"],[16,\"value\",[26,[\"address\"]],null],[15,\"class\",\"form-control\"],[16,\"oninput\",[33,[\"action\"],[[28,[null]],[33,[\"mut\"],[[28,[\"address\"]]],null]],[[\"value\"],[\"target.value\"]]],null],[13],[14],[0,\"\\n      \"],[14],[0,\"\\n\\n\"],[6,[\"if\"],[[28,[\"isEdit\"]]],null,{\"statements\":[[0,\"        \"],[11,\"div\",[]],[15,\"class\",\"form-group\"],[13],[0,\"\\n          \"],[11,\"label\",[]],[15,\"for\",\"branch_number\"],[13],[0,\"Branch Number\"],[11,\"span\",[]],[15,\"style\",\"color:rgb(237, 69, 69);\"],[13],[0,\"*\"],[14],[14],[0,\"\\n          \"],[11,\"input\",[]],[15,\"type\",\"text\"],[15,\"id\",\"branch_number\"],[16,\"value\",[26,[\"branch_number\"]],null],[15,\"class\",\"form-control\"],[16,\"oninput\",[33,[\"action\"],[[28,[null]],[33,[\"mut\"],[[28,[\"branch_number\"]]],null]],[[\"value\"],[\"target.value\"]]],null],[15,\"disabled\",\"\"],[13],[14],[0,\"\\n        \"],[14],[0,\"\\n\"]],\"locals\":[]},null],[0,\"\\n      \"],[11,\"div\",[]],[15,\"class\",\"form-group\"],[13],[0,\"\\n        \"],[11,\"label\",[]],[15,\"for\",\"manager_id\"],[13],[0,\"Manager Name\"],[11,\"span\",[]],[15,\"style\",\"color:rgb(237, 69, 69);\"],[13],[0,\"*\"],[14],[14],[0,\"\\n        \"],[11,\"select\",[]],[15,\"id\",\"manager_id\"],[15,\"class\",\"form-control\"],[16,\"value\",[26,[\"manager_id\"]],null],[16,\"onchange\",[33,[\"action\"],[[28,[null]],[33,[\"mut\"],[[28,[\"manager_id\"]]],null]],[[\"value\"],[\"target.value\"]]],null],[13],[0,\"\\n\"],[6,[\"if\"],[[28,[\"isEdit\"]]],null,{\"statements\":[[0,\"            \"],[11,\"option\",[]],[16,\"value\",[26,[\"manager_id\"]],null],[13],[1,[26,[\"manager_name\"]],false],[14],[0,\"\\n\"]],\"locals\":[]},{\"statements\":[[0,\"            \"],[11,\"option\",[]],[15,\"value\",\"\"],[13],[0,\"Select Manager\"],[14],[0,\"\\n\"]],\"locals\":[]}],[6,[\"each\"],[[28,[\"availableManagers\"]]],null,{\"statements\":[[0,\"            \"],[11,\"option\",[]],[16,\"value\",[28,[\"manager\",\"manager_id\"]],null],[13],[1,[28,[\"manager\",\"manager_name\"]],false],[14],[0,\"\\n\"]],\"locals\":[\"manager\"]},null],[0,\"        \"],[14],[0,\"\\n      \"],[14],[0,\"\\n  \\n      \"],[11,\"button\",[]],[15,\"type\",\"submit\"],[15,\"class\",\"btn-primary\"],[13],[1,[33,[\"if\"],[[28,[\"isEdit\"]],\"Update Branch\",\"Create Branch\"],null],false],[14],[0,\"\\n      \\n\"],[6,[\"link-to\"],[\"banks.bank.branches\",[28,[\"bankId\"]]],null,{\"statements\":[[0,\"        \"],[11,\"button\",[]],[15,\"class\",\"btn-secondary\"],[5,[\"action\"],[[28,[null]],\"cancel\"]],[13],[0,\"Cancel\"],[14],[0,\"\\n\"]],\"locals\":[]},null],[0,\"\\n\"],[6,[\"if\"],[[28,[\"errorMessage\"]]],null,{\"statements\":[[0,\"        \"],[11,\"div\",[]],[15,\"class\",\"error-message\"],[13],[0,\"* \"],[1,[26,[\"errorMessage\"]],false],[14],[0,\"\\n\"]],\"locals\":[]},null],[0,\"    \"],[14],[0,\"\\n  \"],[14],[0,\"\\n  \"],[1,[33,[\"notify-box\"],null,[[\"message\",\"type\"],[[28,[\"notification\",\"message\"]],[28,[\"notification\",\"type\"]]]]],false],[0,\"\\n\"],[14],[0,\"\\n\"]],\"locals\":[],\"named\":[],\"yields\":[],\"hasPartials\":false}", "meta": { "moduleName": "banker/templates/components/branch-input.hbs" } });
+  exports.default = Ember.HTMLBars.template({ "id": "DZfCCks/", "block": "{\"statements\":[[11,\"body\",[]],[13],[0,\"\\n  \"],[11,\"div\",[]],[15,\"class\",\"branch-form\"],[15,\"style\",\"margin-top:40px;padding:40px 70px;\"],[13],[0,\"\\n    \"],[11,\"h2\",[]],[13],[1,[33,[\"if\"],[[28,[\"isEdit\"]],\"Edit Branch\",\"Create New Branch\"],null],false],[14],[0,\"\\n    \\n    \"],[11,\"form\",[]],[5,[\"action\"],[[28,[null]],\"submitForm\"],[[\"on\"],[\"submit\"]]],[13],[0,\"\\n     \\n      \"],[11,\"div\",[]],[15,\"class\",\"form-group\"],[13],[0,\"\\n        \"],[11,\"label\",[]],[15,\"for\",\"name\"],[13],[0,\"Branch Name\"],[11,\"span\",[]],[15,\"style\",\"color:rgb(237, 69, 69);\"],[13],[0,\"*\"],[14],[14],[0,\"\\n        \"],[11,\"input\",[]],[15,\"type\",\"text\"],[15,\"id\",\"name\"],[16,\"value\",[26,[\"name\"]],null],[15,\"class\",\"form-control\"],[16,\"oninput\",[33,[\"action\"],[[28,[null]],[33,[\"mut\"],[[28,[\"name\"]]],null]],[[\"value\"],[\"target.value\"]]],null],[13],[14],[0,\"\\n      \"],[14],[0,\"\\n  \\n      \"],[11,\"div\",[]],[15,\"class\",\"form-group\"],[13],[0,\"\\n        \"],[11,\"label\",[]],[15,\"for\",\"address\"],[13],[0,\"Branch Address\"],[11,\"span\",[]],[15,\"style\",\"color:rgb(237, 69, 69);\"],[13],[0,\"*\"],[14],[14],[0,\"\\n        \"],[11,\"input\",[]],[15,\"type\",\"text\"],[15,\"id\",\"address\"],[16,\"value\",[26,[\"address\"]],null],[15,\"class\",\"form-control\"],[16,\"oninput\",[33,[\"action\"],[[28,[null]],[33,[\"mut\"],[[28,[\"address\"]]],null]],[[\"value\"],[\"target.value\"]]],null],[13],[14],[0,\"\\n      \"],[14],[0,\"\\n\\n\"],[6,[\"if\"],[[28,[\"isEdit\"]]],null,{\"statements\":[[0,\"        \"],[11,\"div\",[]],[15,\"class\",\"form-group\"],[13],[0,\"\\n          \"],[11,\"label\",[]],[15,\"for\",\"branch_number\"],[13],[0,\"Branch Number\"],[11,\"span\",[]],[15,\"style\",\"color:rgb(237, 69, 69);\"],[13],[0,\"*\"],[14],[14],[0,\"\\n          \"],[11,\"input\",[]],[15,\"type\",\"text\"],[15,\"id\",\"branch_number\"],[16,\"value\",[26,[\"branch_number\"]],null],[15,\"class\",\"form-control\"],[16,\"oninput\",[33,[\"action\"],[[28,[null]],[33,[\"mut\"],[[28,[\"branch_number\"]]],null]],[[\"value\"],[\"target.value\"]]],null],[15,\"disabled\",\"\"],[13],[14],[0,\"\\n        \"],[14],[0,\"\\n\"]],\"locals\":[]},null],[0,\"\\n      \"],[11,\"div\",[]],[15,\"class\",\"form-group\"],[13],[0,\"\\n        \"],[11,\"label\",[]],[15,\"for\",\"manager_id\"],[13],[0,\"Manager Name\"],[11,\"span\",[]],[15,\"style\",\"color:rgb(237, 69, 69);\"],[13],[0,\"*\"],[14],[14],[0,\"\\n        \"],[11,\"select\",[]],[15,\"id\",\"manager_id\"],[15,\"class\",\"form-control\"],[16,\"value\",[26,[\"manager_id\"]],null],[16,\"onchange\",[33,[\"action\"],[[28,[null]],[33,[\"mut\"],[[28,[\"manager_id\"]]],null]],[[\"value\"],[\"target.value\"]]],null],[13],[0,\"\\n\"],[6,[\"if\"],[[28,[\"isEdit\"]]],null,{\"statements\":[[0,\"            \"],[11,\"option\",[]],[16,\"value\",[26,[\"manager_id\"]],null],[13],[1,[26,[\"manager_name\"]],false],[14],[0,\"\\n\"]],\"locals\":[]},{\"statements\":[[0,\"            \"],[11,\"option\",[]],[15,\"value\",\"\"],[13],[0,\"Select Manager\"],[14],[0,\"\\n\"]],\"locals\":[]}],[6,[\"each\"],[[28,[\"availableManagers\"]]],null,{\"statements\":[[0,\"            \"],[11,\"option\",[]],[16,\"value\",[28,[\"manager\",\"manager_id\"]],null],[13],[1,[28,[\"manager\",\"manager_name\"]],false],[14],[0,\"\\n\"]],\"locals\":[\"manager\"]},null],[0,\"        \"],[14],[0,\"\\n      \"],[14],[0,\"\\n  \\n      \"],[11,\"button\",[]],[15,\"type\",\"submit\"],[15,\"class\",\"btn-primary\"],[13],[1,[33,[\"if\"],[[28,[\"isEdit\"]],\"Update Branch\",\"Create Branch\"],null],false],[14],[0,\"\\n      \\n\"],[6,[\"link-to\"],[\"banks.bank.branches\",[28,[\"bankId\"]]],null,{\"statements\":[[0,\"        \"],[11,\"button\",[]],[15,\"class\",\"btn-secondary\"],[5,[\"action\"],[[28,[null]],\"cancel\"]],[13],[0,\"Cancel\"],[14],[0,\"\\n\"]],\"locals\":[]},null],[0,\"\\n\"],[6,[\"if\"],[[28,[\"errorMessage\"]]],null,{\"statements\":[[0,\"        \"],[11,\"div\",[]],[15,\"class\",\"error-message\"],[13],[0,\"* \"],[1,[26,[\"errorMessage\"]],false],[14],[0,\"\\n\"]],\"locals\":[]},null],[0,\"    \"],[14],[0,\"\\n  \"],[14],[0,\"\\n  \"],[1,[33,[\"notify-box\"],null,[[\"message\",\"type\"],[[28,[\"notification\",\"message\"]],[28,[\"notification\",\"type\"]]]]],false],[0,\"\\n\"],[14],[0,\"\\n\"]],\"locals\":[],\"named\":[],\"yields\":[],\"hasPartials\":false}", "meta": { "moduleName": "banker/templates/components/branch-input.hbs" } });
 });
 define("banker/templates/components/customer-dashboard", ["exports"], function (exports) {
   "use strict";
@@ -6656,7 +6481,7 @@ define("banker/templates/components/loan-input", ["exports"], function (exports)
   Object.defineProperty(exports, "__esModule", {
     value: true
   });
-  exports.default = Ember.HTMLBars.template({ "id": "w7Tcwn9I", "block": "{\"statements\":[[11,\"body\",[]],[13],[0,\"\\n\"],[11,\"div\",[]],[15,\"class\",\"auth-form\"],[13],[0,\"\\n  \"],[11,\"h2\",[]],[13],[1,[33,[\"if\"],[[28,[\"isEdit\"]],\"Edit Loan\",\"Create New Loan\"],null],false],[14],[0,\"\\n  \\n  \"],[11,\"form\",[]],[5,[\"action\"],[[28,[null]],\"submitForm\"],[[\"on\"],[\"submit\"]]],[13],[0,\"\\n\\n\"],[6,[\"if\"],[[28,[\"isEdit\"]]],null,{\"statements\":[[0,\"    \"],[11,\"div\",[]],[15,\"class\",\"form-group\"],[13],[0,\"\\n      \"],[11,\"label\",[]],[15,\"for\",\"loan_id\"],[13],[0,\"Loan ID\"],[11,\"span\",[]],[15,\"style\",\"color:rgb(237, 69, 69);\"],[13],[0,\"*\"],[14],[14],[0,\"\\n      \"],[11,\"input\",[]],[15,\"type\",\"text\"],[15,\"id\",\"loan_id\"],[16,\"value\",[26,[\"loan_id\"]],null],[15,\"class\",\"form-control\"],[16,\"oninput\",[33,[\"action\"],[[28,[null]],[33,[\"mut\"],[[28,[\"loan_id\"]]],null]],[[\"value\"],[\"target.value\"]]],null],[16,\"disabled\",[26,[\"isEdit\"]],null],[13],[14],[0,\"\\n    \"],[14],[0,\"\\n\"]],\"locals\":[]},null],[0,\"\\n    \"],[11,\"div\",[]],[15,\"class\",\"form-group\"],[13],[0,\"\\n      \"],[11,\"label\",[]],[15,\"for\",\"loan_type\"],[13],[0,\"Loan Type\"],[11,\"span\",[]],[15,\"style\",\"color:rgb(237, 69, 69);\"],[13],[0,\"*\"],[14],[14],[0,\"\\n      \"],[11,\"select\",[]],[15,\"id\",\"loan_type\"],[15,\"class\",\"form-control\"],[16,\"onchange\",[33,[\"action\"],[[28,[null]],[33,[\"mut\"],[[28,[\"loan_type\"]]],null]],[[\"value\"],[\"target.value\"]]],null],[13],[0,\"\\n        \"],[11,\"option\",[]],[15,\"value\",\"\"],[13],[0,\"Select type\"],[14],[0,\"\\n\"],[6,[\"each\"],[[28,[\"types\"]]],null,{\"statements\":[[0,\"          \"],[11,\"option\",[]],[16,\"value\",[28,[\"type\"]],null],[16,\"selected\",[33,[\"if\"],[[33,[\"eq\"],[[28,[\"type\"]],[28,[\"loan_type\"]]],null],\"selected\"],null],null],[13],[1,[28,[\"type\"]],false],[14],[0,\"\\n\"]],\"locals\":[\"type\"]},null],[0,\"      \"],[14],[0,\"\\n    \"],[14],[0,\"\\n\\n\"],[6,[\"if\"],[[28,[\"isDirect\"]]],null,{\"statements\":[[0,\"    \"],[11,\"div\",[]],[15,\"class\",\"form-group\"],[13],[0,\"\\n      \"],[11,\"label\",[]],[15,\"for\",\"accNo\"],[13],[0,\"Account Number\"],[11,\"span\",[]],[15,\"style\",\"color:rgb(237, 69, 69);\"],[13],[0,\"*\"],[14],[14],[0,\"\\n      \"],[11,\"select\",[]],[15,\"id\",\"accNo\"],[15,\"class\",\"form-control\"],[16,\"onchange\",[33,[\"action\"],[[28,[null]],[33,[\"mut\"],[[28,[\"accNo\"]]],null]],[[\"value\"],[\"target.value\"]]],null],[13],[0,\"\\n        \"],[11,\"option\",[]],[15,\"value\",\"\"],[13],[0,\"Select Account Number\"],[14],[0,\"\\n\"],[6,[\"each\"],[[28,[\"accounts\"]]],null,{\"statements\":[[0,\"          \"],[11,\"option\",[]],[16,\"value\",[28,[\"account\",\"acc_no\"]],null],[13],[1,[28,[\"account\",\"acc_no\"]],false],[14],[0,\"\\n\"]],\"locals\":[\"account\"]},null],[0,\"      \"],[14],[0,\"\\n    \"],[14],[0,\"\\n\"]],\"locals\":[]},null],[0,\"\\n    \"],[11,\"div\",[]],[15,\"class\",\"form-group\"],[13],[0,\"\\n      \"],[11,\"label\",[]],[15,\"for\",\"loan_amount\"],[13],[0,\"Loan Amount\"],[11,\"span\",[]],[15,\"style\",\"color:rgb(237, 69, 69);\"],[13],[0,\"*\"],[14],[14],[0,\"\\n      \"],[11,\"input\",[]],[15,\"type\",\"number\"],[15,\"id\",\"loan_amount\"],[16,\"value\",[26,[\"loan_amount\"]],null],[15,\"class\",\"form-control\"],[16,\"oninput\",[33,[\"action\"],[[28,[null]],[33,[\"mut\"],[[28,[\"loan_amount\"]]],null]],[[\"value\"],[\"target.value\"]]],null],[13],[14],[0,\"\\n    \"],[14],[0,\"\\n\\n    \"],[11,\"div\",[]],[15,\"class\",\"form-group\"],[13],[0,\"\\n      \"],[11,\"label\",[]],[15,\"for\",\"loan_duration\"],[13],[0,\"Loan Duration\"],[11,\"span\",[]],[15,\"style\",\"color:rgb(237, 69, 69);\"],[13],[0,\"*\"],[14],[14],[0,\"\\n      \"],[11,\"select\",[]],[15,\"id\",\"loan_duration\"],[15,\"class\",\"form-control\"],[16,\"value\",[34,[[26,[\"loan_duration\"]]]]],[16,\"onchange\",[33,[\"action\"],[[28,[null]],[33,[\"mut\"],[[28,[\"loan_duration\"]]],null]],[[\"value\"],[\"target.value\"]]],null],[13],[0,\"\\n        \"],[11,\"option\",[]],[15,\"value\",\"\"],[13],[0,\"Select duration\"],[14],[0,\"\\n\"],[6,[\"each\"],[[28,[\"durations\"]]],null,{\"statements\":[[0,\"          \"],[11,\"option\",[]],[16,\"value\",[28,[\"duration\"]],null],[16,\"selected\",[33,[\"if\"],[[33,[\"eq\"],[[28,[\"duration\"]],[28,[\"loan_duration\"]]],null],\"selected\"],null],null],[13],[1,[28,[\"duration\"]],false],[0,\" Months\"],[14],[0,\"\\n\"]],\"locals\":[\"duration\"]},null],[0,\"      \"],[14],[0,\"\\n    \"],[14],[0,\"\\n\\n\"],[6,[\"unless\"],[[33,[\"eq\"],[[28,[\"role\"]],[28,[\"userRole\",\"CUSTOMER\"]]],null]],null,{\"statements\":[[6,[\"unless\"],[[28,[\"isEdit\"]]],null,{\"statements\":[[0,\"      \"],[11,\"div\",[]],[15,\"class\",\"form-group\"],[13],[0,\"\\n        \"],[11,\"label\",[]],[15,\"for\",\"loan_status\"],[13],[0,\"Loan Status\"],[11,\"span\",[]],[15,\"style\",\"color:rgb(237, 69, 69);\"],[13],[0,\"*\"],[14],[14],[0,\"\\n        \"],[11,\"select\",[]],[15,\"id\",\"loan_status\"],[15,\"class\",\"form-control\"],[16,\"onchange\",[33,[\"action\"],[[28,[null]],[33,[\"mut\"],[[28,[\"loan_status\"]]],null]],[[\"value\"],[\"target.value\"]]],null],[13],[0,\"\\n          \"],[11,\"option\",[]],[15,\"value\",\"\"],[13],[0,\"Select Status\"],[14],[0,\"\\n\"],[6,[\"each\"],[[28,[\"statuses\"]]],null,{\"statements\":[[0,\"            \"],[11,\"option\",[]],[16,\"value\",[28,[\"status\"]],null],[16,\"selected\",[33,[\"if\"],[[33,[\"eq\"],[[28,[\"status\"]],[28,[\"loan_status\"]]],null],\"selected\"],null],null],[13],[1,[28,[\"status\"]],false],[14],[0,\"\\n\"]],\"locals\":[\"status\"]},null],[0,\"        \"],[14],[0,\"\\n      \"],[14],[0,\"\\n\"]],\"locals\":[]},null],[6,[\"if\"],[[28,[\"isEdit\"]]],null,{\"statements\":[[0,\"    \"],[11,\"div\",[]],[15,\"class\",\"form-group\"],[13],[0,\"\\n      \"],[11,\"label\",[]],[15,\"for\",\"loan_status\"],[13],[0,\"Loan Status\"],[11,\"span\",[]],[15,\"style\",\"color:rgb(237, 69, 69);\"],[13],[0,\"*\"],[14],[14],[0,\"\\n      \"],[11,\"select\",[]],[15,\"id\",\"loan_status\"],[15,\"class\",\"form-control\"],[16,\"onchange\",[33,[\"action\"],[[28,[null]],[33,[\"mut\"],[[28,[\"loan_status\"]]],null]],[[\"value\"],[\"target.value\"]]],null],[13],[0,\"\\n        \"],[11,\"option\",[]],[15,\"value\",\"\"],[13],[0,\"Select Status\"],[14],[0,\"\\n\"],[6,[\"each\"],[[28,[\"filteredStatuses\"]]],null,{\"statements\":[[0,\"          \"],[11,\"option\",[]],[16,\"value\",[28,[\"status\"]],null],[16,\"selected\",[33,[\"if\"],[[33,[\"eq\"],[[28,[\"status\"]],[28,[\"loan_status\"]]],null],\"selected\"],null],null],[13],[1,[28,[\"status\"]],false],[14],[0,\"\\n\"]],\"locals\":[\"status\"]},null],[0,\"      \"],[14],[0,\"\\n    \"],[14],[0,\"\\n\"]],\"locals\":[]},null]],\"locals\":[]},null],[0,\"\\n    \"],[11,\"button\",[]],[15,\"type\",\"submit\"],[15,\"class\",\"btn-primary\"],[13],[1,[33,[\"if\"],[[28,[\"isEdit\"]],\"Update Loan\",\"Create Loan\"],null],false],[14],[0,\"\\n   \\n\"],[6,[\"if\"],[[28,[\"isDirect\"]]],null,{\"statements\":[[6,[\"link-to\"],[\"banks.bank.loans\",[28,[\"bankId\"]]],null,{\"statements\":[[0,\"          \"],[11,\"button\",[]],[15,\"class\",\"btn-secondary\"],[5,[\"action\"],[[28,[null]],\"cancel\"]],[13],[0,\"Cancel\"],[14],[0,\"\\n\"]],\"locals\":[]},null]],\"locals\":[]},null],[6,[\"unless\"],[[28,[\"isDirect\"]]],null,{\"statements\":[[6,[\"link-to\"],[\"banks.bank.accounts.account.loans\",[28,[\"bankId\"]],[28,[\"accNo\"]]],null,{\"statements\":[[0,\"      \"],[11,\"button\",[]],[15,\"class\",\"btn-secondary\"],[5,[\"action\"],[[28,[null]],\"cancel\"]],[13],[0,\"Cancel\"],[14],[0,\"\\n\"]],\"locals\":[]},null]],\"locals\":[]},null],[0,\"\\n\"],[6,[\"if\"],[[28,[\"errorMessage\"]]],null,{\"statements\":[[0,\"      \"],[11,\"div\",[]],[15,\"class\",\"error-message\"],[13],[0,\"* \"],[1,[26,[\"errorMessage\"]],false],[14],[0,\"\\n\"]],\"locals\":[]},null],[0,\"  \"],[14],[0,\"\\n\"],[14],[0,\"\\n\"],[1,[33,[\"notify-box\"],null,[[\"message\",\"type\"],[[28,[\"notification\",\"message\"]],[28,[\"notification\",\"type\"]]]]],false],[0,\"\\n\"],[14],[0,\"\\n\"]],\"locals\":[],\"named\":[],\"yields\":[],\"hasPartials\":false}", "meta": { "moduleName": "banker/templates/components/loan-input.hbs" } });
+  exports.default = Ember.HTMLBars.template({ "id": "lsIXSX/6", "block": "{\"statements\":[[11,\"body\",[]],[13],[0,\"\\n\"],[11,\"div\",[]],[15,\"class\",\"auth-form\"],[15,\"style\",\"margin-top:20px\"],[13],[0,\"\\n  \"],[11,\"h2\",[]],[13],[1,[33,[\"if\"],[[28,[\"isEdit\"]],\"Edit Loan\",\"Create New Loan\"],null],false],[14],[0,\"\\n  \\n  \"],[11,\"form\",[]],[5,[\"action\"],[[28,[null]],\"submitForm\"],[[\"on\"],[\"submit\"]]],[13],[0,\"\\n\\n\"],[6,[\"if\"],[[28,[\"isEdit\"]]],null,{\"statements\":[[0,\"    \"],[11,\"div\",[]],[15,\"class\",\"form-group\"],[13],[0,\"\\n      \"],[11,\"label\",[]],[15,\"for\",\"loan_id\"],[13],[0,\"Loan ID\"],[11,\"span\",[]],[15,\"style\",\"color:rgb(237, 69, 69);\"],[13],[0,\"*\"],[14],[14],[0,\"\\n      \"],[11,\"input\",[]],[15,\"type\",\"text\"],[15,\"id\",\"loan_id\"],[16,\"value\",[26,[\"loan_id\"]],null],[15,\"class\",\"form-control\"],[16,\"oninput\",[33,[\"action\"],[[28,[null]],[33,[\"mut\"],[[28,[\"loan_id\"]]],null]],[[\"value\"],[\"target.value\"]]],null],[16,\"disabled\",[26,[\"isEdit\"]],null],[13],[14],[0,\"\\n    \"],[14],[0,\"\\n\"]],\"locals\":[]},null],[0,\"\\n    \"],[11,\"div\",[]],[15,\"class\",\"form-group\"],[13],[0,\"\\n      \"],[11,\"label\",[]],[15,\"for\",\"loan_type\"],[13],[0,\"Loan Type\"],[11,\"span\",[]],[15,\"style\",\"color:rgb(237, 69, 69);\"],[13],[0,\"*\"],[14],[14],[0,\"\\n      \"],[11,\"select\",[]],[15,\"id\",\"loan_type\"],[15,\"class\",\"form-control\"],[16,\"onchange\",[33,[\"action\"],[[28,[null]],[33,[\"mut\"],[[28,[\"loan_type\"]]],null]],[[\"value\"],[\"target.value\"]]],null],[13],[0,\"\\n        \"],[11,\"option\",[]],[15,\"value\",\"\"],[13],[0,\"Select type\"],[14],[0,\"\\n\"],[6,[\"each\"],[[28,[\"types\"]]],null,{\"statements\":[[0,\"          \"],[11,\"option\",[]],[16,\"value\",[28,[\"type\"]],null],[16,\"selected\",[33,[\"if\"],[[33,[\"eq\"],[[28,[\"type\"]],[28,[\"loan_type\"]]],null],\"selected\"],null],null],[13],[1,[28,[\"type\"]],false],[14],[0,\"\\n\"]],\"locals\":[\"type\"]},null],[0,\"      \"],[14],[0,\"\\n    \"],[14],[0,\"\\n\\n\"],[6,[\"if\"],[[28,[\"isDirect\"]]],null,{\"statements\":[[0,\"    \"],[11,\"div\",[]],[15,\"class\",\"form-group\"],[13],[0,\"\\n      \"],[11,\"label\",[]],[15,\"for\",\"accNo\"],[13],[0,\"Account Number\"],[11,\"span\",[]],[15,\"style\",\"color:rgb(237, 69, 69);\"],[13],[0,\"*\"],[14],[14],[0,\"\\n      \"],[11,\"select\",[]],[15,\"id\",\"accNo\"],[16,\"value\",[26,[\"accNo\"]],null],[15,\"class\",\"form-control\"],[16,\"onchange\",[33,[\"action\"],[[28,[null]],[33,[\"mut\"],[[28,[\"accNo\"]]],null]],[[\"value\"],[\"target.value\"]]],null],[13],[0,\"\\n        \"],[11,\"option\",[]],[15,\"value\",\"\"],[13],[0,\"Select Account Number\"],[14],[0,\"\\n\"],[6,[\"each\"],[[28,[\"accounts\"]]],null,{\"statements\":[[0,\"          \"],[11,\"option\",[]],[16,\"value\",[28,[\"account\",\"acc_no\"]],null],[13],[1,[28,[\"account\",\"acc_no\"]],false],[14],[0,\"\\n\"]],\"locals\":[\"account\"]},null],[0,\"      \"],[14],[0,\"\\n    \"],[14],[0,\"\\n\"]],\"locals\":[]},null],[0,\"\\n    \"],[11,\"div\",[]],[15,\"class\",\"form-group\"],[13],[0,\"\\n      \"],[11,\"label\",[]],[15,\"for\",\"loan_amount\"],[13],[0,\"Loan Amount\"],[11,\"span\",[]],[15,\"style\",\"color:rgb(237, 69, 69);\"],[13],[0,\"*\"],[14],[14],[0,\"\\n      \"],[11,\"input\",[]],[15,\"type\",\"number\"],[15,\"id\",\"loan_amount\"],[16,\"value\",[26,[\"loan_amount\"]],null],[15,\"class\",\"form-control\"],[16,\"oninput\",[33,[\"action\"],[[28,[null]],[33,[\"mut\"],[[28,[\"loan_amount\"]]],null]],[[\"value\"],[\"target.value\"]]],null],[13],[14],[0,\"\\n    \"],[14],[0,\"\\n\\n    \"],[11,\"div\",[]],[15,\"class\",\"form-group\"],[13],[0,\"\\n      \"],[11,\"label\",[]],[15,\"for\",\"loan_duration\"],[13],[0,\"Loan Duration\"],[11,\"span\",[]],[15,\"style\",\"color:rgb(237, 69, 69);\"],[13],[0,\"*\"],[14],[14],[0,\"\\n      \"],[11,\"select\",[]],[15,\"id\",\"loan_duration\"],[15,\"class\",\"form-control\"],[16,\"value\",[34,[[26,[\"loan_duration\"]]]]],[16,\"onchange\",[33,[\"action\"],[[28,[null]],[33,[\"mut\"],[[28,[\"loan_duration\"]]],null]],[[\"value\"],[\"target.value\"]]],null],[13],[0,\"\\n        \"],[11,\"option\",[]],[15,\"value\",\"\"],[13],[0,\"Select duration\"],[14],[0,\"\\n\"],[6,[\"each\"],[[28,[\"durations\"]]],null,{\"statements\":[[0,\"          \"],[11,\"option\",[]],[16,\"value\",[28,[\"duration\"]],null],[16,\"selected\",[33,[\"if\"],[[33,[\"eq\"],[[28,[\"duration\"]],[28,[\"loan_duration\"]]],null],\"selected\"],null],null],[13],[1,[28,[\"duration\"]],false],[0,\" Months\"],[14],[0,\"\\n\"]],\"locals\":[\"duration\"]},null],[0,\"      \"],[14],[0,\"\\n    \"],[14],[0,\"\\n\\n\"],[6,[\"unless\"],[[33,[\"eq\"],[[28,[\"role\"]],[28,[\"userRole\",\"CUSTOMER\"]]],null]],null,{\"statements\":[[6,[\"unless\"],[[28,[\"isEdit\"]]],null,{\"statements\":[[0,\"      \"],[11,\"div\",[]],[15,\"class\",\"form-group\"],[13],[0,\"\\n        \"],[11,\"label\",[]],[15,\"for\",\"loan_status\"],[13],[0,\"Loan Status\"],[11,\"span\",[]],[15,\"style\",\"color:rgb(237, 69, 69);\"],[13],[0,\"*\"],[14],[14],[0,\"\\n        \"],[11,\"select\",[]],[15,\"id\",\"loan_status\"],[15,\"class\",\"form-control\"],[16,\"onchange\",[33,[\"action\"],[[28,[null]],[33,[\"mut\"],[[28,[\"loan_status\"]]],null]],[[\"value\"],[\"target.value\"]]],null],[13],[0,\"\\n          \"],[11,\"option\",[]],[15,\"value\",\"\"],[13],[0,\"Select Status\"],[14],[0,\"\\n\"],[6,[\"each\"],[[28,[\"statuses\"]]],null,{\"statements\":[[0,\"            \"],[11,\"option\",[]],[16,\"value\",[28,[\"status\"]],null],[16,\"selected\",[33,[\"if\"],[[33,[\"eq\"],[[28,[\"status\"]],[28,[\"loan_status\"]]],null],\"selected\"],null],null],[13],[1,[28,[\"status\"]],false],[14],[0,\"\\n\"]],\"locals\":[\"status\"]},null],[0,\"        \"],[14],[0,\"\\n      \"],[14],[0,\"\\n\"]],\"locals\":[]},null],[6,[\"if\"],[[28,[\"isEdit\"]]],null,{\"statements\":[[0,\"    \"],[11,\"div\",[]],[15,\"class\",\"form-group\"],[13],[0,\"\\n      \"],[11,\"label\",[]],[15,\"for\",\"loan_status\"],[13],[0,\"Loan Status\"],[11,\"span\",[]],[15,\"style\",\"color:rgb(237, 69, 69);\"],[13],[0,\"*\"],[14],[14],[0,\"\\n      \"],[11,\"select\",[]],[15,\"id\",\"loan_status\"],[15,\"class\",\"form-control\"],[16,\"onchange\",[33,[\"action\"],[[28,[null]],[33,[\"mut\"],[[28,[\"loan_status\"]]],null]],[[\"value\"],[\"target.value\"]]],null],[13],[0,\"\\n        \"],[11,\"option\",[]],[15,\"value\",\"\"],[13],[0,\"Select Status\"],[14],[0,\"\\n\"],[6,[\"each\"],[[28,[\"filteredStatuses\"]]],null,{\"statements\":[[0,\"          \"],[11,\"option\",[]],[16,\"value\",[28,[\"status\"]],null],[16,\"selected\",[33,[\"if\"],[[33,[\"eq\"],[[28,[\"status\"]],[28,[\"loan_status\"]]],null],\"selected\"],null],null],[13],[1,[28,[\"status\"]],false],[14],[0,\"\\n\"]],\"locals\":[\"status\"]},null],[0,\"      \"],[14],[0,\"\\n    \"],[14],[0,\"\\n\"]],\"locals\":[]},null]],\"locals\":[]},null],[0,\"\\n    \"],[11,\"button\",[]],[15,\"type\",\"submit\"],[15,\"class\",\"btn-primary\"],[13],[1,[33,[\"if\"],[[28,[\"isEdit\"]],\"Update Loan\",\"Create Loan\"],null],false],[14],[0,\"\\n   \\n\"],[6,[\"if\"],[[28,[\"isDirect\"]]],null,{\"statements\":[[6,[\"link-to\"],[\"banks.bank.loans\",[28,[\"bankId\"]]],null,{\"statements\":[[0,\"          \"],[11,\"button\",[]],[15,\"class\",\"btn-secondary\"],[5,[\"action\"],[[28,[null]],\"cancel\"]],[13],[0,\"Cancel\"],[14],[0,\"\\n\"]],\"locals\":[]},null]],\"locals\":[]},null],[6,[\"unless\"],[[28,[\"isDirect\"]]],null,{\"statements\":[[6,[\"link-to\"],[\"banks.bank.accounts.account.loans\",[28,[\"bankId\"]],[28,[\"accNo\"]]],null,{\"statements\":[[0,\"      \"],[11,\"button\",[]],[15,\"class\",\"btn-secondary\"],[5,[\"action\"],[[28,[null]],\"cancel\"]],[13],[0,\"Cancel\"],[14],[0,\"\\n\"]],\"locals\":[]},null]],\"locals\":[]},null],[0,\"\\n\"],[6,[\"if\"],[[28,[\"errorMessage\"]]],null,{\"statements\":[[0,\"      \"],[11,\"div\",[]],[15,\"class\",\"error-message\"],[13],[0,\"* \"],[1,[26,[\"errorMessage\"]],false],[14],[0,\"\\n\"]],\"locals\":[]},null],[0,\"  \"],[14],[0,\"\\n\"],[14],[0,\"\\n\"],[1,[33,[\"notify-box\"],null,[[\"message\",\"type\"],[[28,[\"notification\",\"message\"]],[28,[\"notification\",\"type\"]]]]],false],[0,\"\\n\"],[14],[0,\"\\n\"]],\"locals\":[],\"named\":[],\"yields\":[],\"hasPartials\":false}", "meta": { "moduleName": "banker/templates/components/loan-input.hbs" } });
 });
 define("banker/templates/components/manager-dashboard", ["exports"], function (exports) {
   "use strict";
@@ -6664,7 +6489,7 @@ define("banker/templates/components/manager-dashboard", ["exports"], function (e
   Object.defineProperty(exports, "__esModule", {
     value: true
   });
-  exports.default = Ember.HTMLBars.template({ "id": "JtA9hxs9", "block": "{\"statements\":[[11,\"div\",[]],[15,\"class\",\"card-container\"],[13],[0,\"\\n  \"],[11,\"div\",[]],[15,\"class\",\"card account-card\"],[13],[0,\"\\n    \"],[11,\"h3\",[]],[15,\"class\",\"card-title\"],[13],[0,\"Accounts\"],[14],[0,\"\\n    \"],[11,\"div\",[]],[15,\"class\",\"branch-field\"],[13],[0,\"\\n      \"],[11,\"span\",[]],[15,\"class\",\"field-label\"],[13],[0,\"Savings Accounts:\"],[14],[0,\"\\n      \"],[11,\"span\",[]],[15,\"class\",\"field-value\"],[13],[1,[28,[\"branch\",\"savingsAccountCount\"]],false],[14],[0,\"\\n    \"],[14],[0,\"\\n    \"],[11,\"div\",[]],[15,\"class\",\"branch-field\"],[13],[0,\"\\n      \"],[11,\"span\",[]],[15,\"class\",\"field-label\"],[13],[0,\"Business Accounts:\"],[14],[0,\"\\n      \"],[11,\"span\",[]],[15,\"class\",\"field-value\"],[13],[1,[28,[\"branch\",\"businessAccountCount\"]],false],[14],[0,\"\\n    \"],[14],[0,\"\\n  \"],[14],[0,\"\\n\\n  \"],[11,\"div\",[]],[15,\"class\",\"card deposit-card\"],[13],[0,\"\\n    \"],[11,\"h3\",[]],[15,\"class\",\"card-title\"],[13],[0,\"Deposits\"],[14],[0,\"\\n    \"],[11,\"div\",[]],[15,\"class\",\"branch-field\"],[13],[0,\"\\n      \"],[11,\"span\",[]],[15,\"class\",\"field-label\"],[13],[0,\"Savings Deposits:\"],[14],[0,\"\\n      \"],[11,\"span\",[]],[15,\"class\",\"field-value\"],[13],[0,\"Rs. \"],[1,[28,[\"branch\",\"totalSavingsDeposits\"]],false],[14],[0,\"\\n    \"],[14],[0,\"\\n    \"],[11,\"div\",[]],[15,\"class\",\"branch-field\"],[13],[0,\"\\n      \"],[11,\"span\",[]],[15,\"class\",\"field-label\"],[13],[0,\"Business Deposits:\"],[14],[0,\"\\n      \"],[11,\"span\",[]],[15,\"class\",\"field-value\"],[13],[0,\"Rs. \"],[1,[28,[\"branch\",\"totalBusinessDeposits\"]],false],[14],[0,\"\\n    \"],[14],[0,\"\\n  \"],[14],[0,\"\\n\\n  \"],[11,\"div\",[]],[15,\"class\",\"card loan-card\"],[13],[0,\"\\n    \"],[11,\"h3\",[]],[15,\"class\",\"card-title\"],[13],[0,\"Loans\"],[14],[0,\"\\n    \"],[11,\"div\",[]],[15,\"class\",\"branch-field\"],[13],[0,\"\\n      \"],[11,\"span\",[]],[15,\"class\",\"field-label\"],[13],[0,\"Home Loans:\"],[14],[0,\"\\n      \"],[11,\"span\",[]],[15,\"class\",\"field-value\"],[13],[1,[28,[\"branch\",\"homeLoanCount\"]],false],[14],[0,\"\\n    \"],[14],[0,\"\\n    \"],[11,\"div\",[]],[15,\"class\",\"branch-field\"],[13],[0,\"\\n      \"],[11,\"span\",[]],[15,\"class\",\"field-label\"],[13],[0,\"Education Loans:\"],[14],[0,\"\\n      \"],[11,\"span\",[]],[15,\"class\",\"field-value\"],[13],[1,[28,[\"branch\",\"educationLoanCount\"]],false],[14],[0,\"\\n    \"],[14],[0,\"\\n    \"],[11,\"div\",[]],[15,\"class\",\"branch-field\"],[13],[0,\"\\n      \"],[11,\"span\",[]],[15,\"class\",\"field-label\"],[13],[0,\"Business Loans:\"],[14],[0,\"\\n      \"],[11,\"span\",[]],[15,\"class\",\"field-value\"],[13],[1,[28,[\"branch\",\"businessLoanCount\"]],false],[14],[0,\"\\n    \"],[14],[0,\"\\n  \"],[14],[0,\"\\n\"],[14],[0,\"\\n\"]],\"locals\":[],\"named\":[],\"yields\":[],\"hasPartials\":false}", "meta": { "moduleName": "banker/templates/components/manager-dashboard.hbs" } });
+  exports.default = Ember.HTMLBars.template({ "id": "cZPgSuvZ", "block": "{\"statements\":[[11,\"div\",[]],[15,\"class\",\"card-container\"],[13],[0,\"\\n  \"],[11,\"div\",[]],[15,\"class\",\"card\"],[13],[0,\"\\n    \"],[11,\"h3\",[]],[15,\"class\",\"card-title\"],[13],[0,\"Accounts\"],[14],[0,\"\\n    \"],[11,\"div\",[]],[15,\"class\",\"branch-field\"],[15,\"style\",\"margin-left:-50px;margin-right:-50px;padding-left:60px\"],[15,\"style\",\"margin-left:-50px;margin-right:-50px;padding-left:60px\"],[13],[0,\"\\n      \"],[11,\"span\",[]],[15,\"class\",\"field-label\"],[13],[0,\"Savings Accounts:\"],[14],[0,\"\\n      \"],[11,\"span\",[]],[15,\"class\",\"field-value\"],[13],[1,[28,[\"branch\",\"savingsAccountCount\"]],false],[14],[0,\"\\n    \"],[14],[0,\"\\n    \"],[11,\"div\",[]],[15,\"class\",\"branch-field\"],[15,\"style\",\"margin-left:-50px;margin-right:-60px;padding-left:60px\"],[13],[0,\"\\n      \"],[11,\"span\",[]],[15,\"class\",\"field-label\"],[13],[0,\"Business Accounts:\"],[14],[0,\"\\n      \"],[11,\"span\",[]],[15,\"class\",\"field-value\"],[13],[1,[28,[\"branch\",\"businessAccountCount\"]],false],[14],[0,\"\\n    \"],[14],[0,\"\\n  \"],[14],[0,\"\\n\\n  \"],[11,\"div\",[]],[15,\"class\",\"card deposit-card\"],[13],[0,\"\\n    \"],[11,\"h3\",[]],[15,\"class\",\"card-title\"],[13],[0,\"Deposits\"],[14],[0,\"\\n    \"],[11,\"div\",[]],[15,\"class\",\"branch-field\"],[15,\"style\",\"margin-left:-50px;margin-right:-50px;padding-left:60px\"],[13],[0,\"\\n      \"],[11,\"span\",[]],[15,\"class\",\"field-label\"],[13],[0,\"Savings Deposits:\"],[14],[0,\"\\n      \"],[11,\"span\",[]],[15,\"class\",\"field-value\"],[13],[0,\"Rs. \"],[1,[28,[\"branch\",\"totalSavingsDeposits\"]],false],[14],[0,\"\\n    \"],[14],[0,\"\\n    \"],[11,\"div\",[]],[15,\"class\",\"branch-field\"],[15,\"style\",\"margin-left:-50px;margin-right:-50px;padding-left:60px\"],[13],[0,\"\\n      \"],[11,\"span\",[]],[15,\"class\",\"field-label\"],[13],[0,\"Business Deposits:\"],[14],[0,\"\\n      \"],[11,\"span\",[]],[15,\"class\",\"field-value\"],[13],[0,\"Rs. \"],[1,[28,[\"branch\",\"totalBusinessDeposits\"]],false],[14],[0,\"\\n    \"],[14],[0,\"\\n  \"],[14],[0,\"\\n\\n  \"],[11,\"div\",[]],[15,\"class\",\"card loan-card\"],[13],[0,\"\\n    \"],[11,\"h3\",[]],[15,\"class\",\"card-title\"],[13],[0,\"Loans\"],[14],[0,\"\\n    \"],[11,\"div\",[]],[15,\"class\",\"branch-field\"],[15,\"style\",\"margin-left:-50px;margin-right:-50px;padding-left:60px\"],[13],[0,\"\\n      \"],[11,\"span\",[]],[15,\"class\",\"field-label\"],[13],[0,\"Home Loans:\"],[14],[0,\"\\n      \"],[11,\"span\",[]],[15,\"class\",\"field-value\"],[13],[1,[28,[\"branch\",\"homeLoanCount\"]],false],[14],[0,\"\\n    \"],[14],[0,\"\\n    \"],[11,\"div\",[]],[15,\"class\",\"branch-field\"],[15,\"style\",\"margin-left:-50px;margin-right:-50px;padding-left:60px\"],[13],[0,\"\\n      \"],[11,\"span\",[]],[15,\"class\",\"field-label\"],[13],[0,\"Education Loans:\"],[14],[0,\"\\n      \"],[11,\"span\",[]],[15,\"class\",\"field-value\"],[13],[1,[28,[\"branch\",\"educationLoanCount\"]],false],[14],[0,\"\\n    \"],[14],[0,\"\\n    \"],[11,\"div\",[]],[15,\"class\",\"branch-field\"],[15,\"style\",\"margin-left:-50px;margin-right:-50px;padding-left:60px\"],[13],[0,\"\\n      \"],[11,\"span\",[]],[15,\"class\",\"field-label\"],[13],[0,\"Business Loans:\"],[14],[0,\"\\n      \"],[11,\"span\",[]],[15,\"class\",\"field-value\"],[13],[1,[28,[\"branch\",\"businessLoanCount\"]],false],[14],[0,\"\\n    \"],[14],[0,\"\\n  \"],[14],[0,\"\\n\"],[14],[0,\"\\n\"]],\"locals\":[],\"named\":[],\"yields\":[],\"hasPartials\":false}", "meta": { "moduleName": "banker/templates/components/manager-dashboard.hbs" } });
 });
 define("banker/templates/components/nav-bar", ["exports"], function (exports) {
   "use strict";
@@ -6672,7 +6497,7 @@ define("banker/templates/components/nav-bar", ["exports"], function (exports) {
   Object.defineProperty(exports, "__esModule", {
     value: true
   });
-  exports.default = Ember.HTMLBars.template({ "id": "qaqrr9n7", "block": "{\"statements\":[[11,\"div\",[]],[15,\"class\",\"navbar\"],[13],[0,\"\\n  \"],[11,\"ul\",[]],[15,\"class\",\"nav-items\"],[13],[0,\"\\n\"],[6,[\"if\"],[[33,[\"eq\"],[[28,[\"role\"]],[28,[\"userRole\",\"SUPERADMIN\"]]],null]],null,{\"statements\":[[0,\"      \"],[11,\"li\",[]],[16,\"class\",[33,[\"if\"],[[33,[\"eq\"],[[28,[\"currentRoute\"]],\"users\"],null],\"active\"],null],null],[5,[\"action\"],[[28,[null]],\"navigate\",\"users\"]],[13],[11,\"a\",[]],[13],[0,\"Users\"],[14],[14],[0,\"\\n      \"],[11,\"li\",[]],[16,\"class\",[33,[\"if\"],[[33,[\"eq\"],[[28,[\"currentRoute\"]],\"banks\"],null],\"active\"],null],null],[5,[\"action\"],[[28,[null]],\"navigate\",\"banks\"]],[13],[11,\"a\",[]],[13],[0,\"Banks\"],[14],[14],[0,\"\\n\"]],\"locals\":[]},null],[6,[\"unless\"],[[33,[\"eq\"],[[28,[\"role\"]],[28,[\"userRole\",\"SUPERADMIN\"]]],null]],null,{\"statements\":[[0,\"      \"],[11,\"li\",[]],[16,\"class\",[33,[\"if\"],[[33,[\"eq\"],[[28,[\"currentRoute\"]],\"dashboard\"],null],\"active\"],null],null],[5,[\"action\"],[[28,[null]],\"navigate\",\"dashboard\"]],[13],[11,\"a\",[]],[13],[0,\"Dashboard\"],[14],[14],[0,\"\\n      \"],[11,\"li\",[]],[16,\"class\",[33,[\"if\"],[[33,[\"eq\"],[[28,[\"currentRoute\"]],\"bank\"],null],\"active\"],null],null],[5,[\"action\"],[[28,[null]],\"navigate\",\"bank\"]],[13],[11,\"a\",[]],[13],[0,\"Bank\"],[14],[14],[0,\"\\n\"],[6,[\"if\"],[[33,[\"eq\"],[[28,[\"role\"]],[28,[\"userRole\",\"ADMIN\"]]],null]],null,{\"statements\":[[0,\"        \"],[11,\"li\",[]],[16,\"class\",[33,[\"if\"],[[33,[\"eq\"],[[28,[\"currentRoute\"]],\"branches\"],null],\"active\"],null],null],[5,[\"action\"],[[28,[null]],\"navigate\",\"branches\"]],[13],[11,\"a\",[]],[13],[0,\"Branches\"],[14],[14],[0,\"\\n\"]],\"locals\":[]},null],[6,[\"if\"],[[33,[\"eq\"],[[28,[\"role\"]],[28,[\"userRole\",\"MANAGER\"]]],null]],null,{\"statements\":[[0,\"        \"],[11,\"li\",[]],[16,\"class\",[33,[\"if\"],[[33,[\"eq\"],[[28,[\"currentRoute\"]],\"branch\"],null],\"active\"],null],null],[5,[\"action\"],[[28,[null]],\"navigate\",\"branch\"]],[13],[11,\"a\",[]],[13],[0,\"Branch\"],[14],[14],[0,\"\\n\"]],\"locals\":[]},null],[0,\"      \"],[11,\"li\",[]],[16,\"class\",[33,[\"if\"],[[33,[\"eq\"],[[28,[\"currentRoute\"]],\"accounts\"],null],\"active\"],null],null],[5,[\"action\"],[[28,[null]],\"navigate\",\"accounts\"]],[13],[11,\"a\",[]],[13],[0,\"Accounts\"],[14],[14],[0,\"\\n      \"],[11,\"li\",[]],[16,\"class\",[33,[\"if\"],[[33,[\"eq\"],[[28,[\"currentRoute\"]],\"transactions\"],null],\"active\"],null],null],[5,[\"action\"],[[28,[null]],\"navigate\",\"transactions\"]],[13],[11,\"a\",[]],[13],[0,\"Transactions\"],[14],[14],[0,\"\\n      \"],[11,\"li\",[]],[16,\"class\",[33,[\"if\"],[[33,[\"eq\"],[[28,[\"currentRoute\"]],\"loans\"],null],\"active\"],null],null],[5,[\"action\"],[[28,[null]],\"navigate\",\"loans\"]],[13],[11,\"a\",[]],[13],[0,\"Loans\"],[14],[14],[0,\"\\n\"]],\"locals\":[]},null],[0,\"    \"],[14],[0,\"\\n\"],[6,[\"unless\"],[[33,[\"eq\"],[[28,[\"role\"]],[28,[\"userRole\",\"SUPERADMIN\"]]],null]],null,{\"statements\":[[6,[\"unless\"],[[33,[\"eq\"],[[28,[\"role\"]],[28,[\"userRole\",\"MANAGER\"]]],null]],null,{\"statements\":[[0,\"      \"],[11,\"div\",[]],[15,\"class\",\"branch-dropdown\"],[13],[0,\"\\n        \"],[11,\"select\",[]],[15,\"id\",\"branch\"],[16,\"value\",[26,[\"branch_name\"]],null],[16,\"onchange\",[33,[\"action\"],[[28,[null]],\"setbranch\"],[[\"value\"],[\"target.value\"]]],null],[13],[0,\"\\n          \"],[11,\"option\",[]],[15,\"value\",\"all\"],[13],[0,\"All Branches\"],[14],[0,\"\\n\"],[6,[\"each\"],[[28,[\"branches\"]]],null,{\"statements\":[[0,\"            \"],[11,\"option\",[]],[16,\"value\",[28,[\"branch\",\"branch_name\"]],null],[13],[1,[28,[\"branch\",\"branch_name\"]],false],[14],[0,\"\\n\"]],\"locals\":[\"branch\"]},null],[0,\"        \"],[14],[0,\"\\n      \"],[14],[0,\"\\n\"]],\"locals\":[]},null]],\"locals\":[]},null],[0,\"  \"],[11,\"button\",[]],[15,\"class\",\"logout\"],[5,[\"action\"],[[28,[null]],\"logout\"]],[13],[11,\"i\",[]],[15,\"class\",\"bi bi-box-arrow-left\"],[13],[14],[0,\"  Logout\"],[14],[0,\"\\n\"],[14],[0,\"\\n\"]],\"locals\":[],\"named\":[],\"yields\":[],\"hasPartials\":false}", "meta": { "moduleName": "banker/templates/components/nav-bar.hbs" } });
+  exports.default = Ember.HTMLBars.template({ "id": "g63WQ7hU", "block": "{\"statements\":[[11,\"div\",[]],[15,\"class\",\"navbar\"],[13],[0,\"\\n  \"],[11,\"ul\",[]],[15,\"class\",\"nav-items\"],[13],[0,\"\\n\"],[6,[\"if\"],[[33,[\"eq\"],[[28,[\"role\"]],[28,[\"userRole\",\"SUPERADMIN\"]]],null]],null,{\"statements\":[[0,\"      \"],[11,\"li\",[]],[16,\"class\",[33,[\"if\"],[[33,[\"eq\"],[[28,[\"currentRoute\"]],\"users\"],null],\"active\"],null],null],[5,[\"action\"],[[28,[null]],\"navigate\",\"users\"]],[13],[11,\"a\",[]],[13],[0,\"Users\"],[14],[14],[0,\"\\n      \"],[11,\"li\",[]],[16,\"class\",[33,[\"if\"],[[33,[\"eq\"],[[28,[\"currentRoute\"]],\"banks\"],null],\"active\"],null],null],[5,[\"action\"],[[28,[null]],\"navigate\",\"banks\"]],[13],[11,\"a\",[]],[13],[0,\"Banks\"],[14],[14],[0,\"\\n\"]],\"locals\":[]},null],[6,[\"unless\"],[[33,[\"eq\"],[[28,[\"role\"]],[28,[\"userRole\",\"SUPERADMIN\"]]],null]],null,{\"statements\":[[0,\"      \"],[11,\"li\",[]],[16,\"class\",[33,[\"if\"],[[33,[\"eq\"],[[28,[\"currentRoute\"]],\"dashboard\"],null],\"active\"],null],null],[5,[\"action\"],[[28,[null]],\"navigate\",\"dashboard\"]],[13],[11,\"a\",[]],[13],[0,\"Dashboard\"],[14],[14],[0,\"\\n      \"],[11,\"li\",[]],[16,\"class\",[33,[\"if\"],[[33,[\"eq\"],[[28,[\"currentRoute\"]],\"bank\"],null],\"active\"],null],null],[5,[\"action\"],[[28,[null]],\"navigate\",\"bank\"]],[13],[11,\"a\",[]],[13],[0,\"Bank\"],[14],[14],[0,\"\\n\"],[6,[\"if\"],[[33,[\"eq\"],[[28,[\"role\"]],[28,[\"userRole\",\"ADMIN\"]]],null]],null,{\"statements\":[[0,\"        \"],[11,\"li\",[]],[16,\"class\",[33,[\"if\"],[[33,[\"eq\"],[[28,[\"currentRoute\"]],\"branches\"],null],\"active\"],null],null],[5,[\"action\"],[[28,[null]],\"navigate\",\"branches\"]],[13],[11,\"a\",[]],[13],[0,\"Branches\"],[14],[14],[0,\"\\n\"]],\"locals\":[]},null],[6,[\"if\"],[[33,[\"eq\"],[[28,[\"role\"]],[28,[\"userRole\",\"MANAGER\"]]],null]],null,{\"statements\":[[0,\"        \"],[11,\"li\",[]],[16,\"class\",[33,[\"if\"],[[33,[\"eq\"],[[28,[\"currentRoute\"]],\"branch\"],null],\"active\"],null],null],[5,[\"action\"],[[28,[null]],\"navigate\",\"branch\"]],[13],[11,\"a\",[]],[13],[0,\"Branch\"],[14],[14],[0,\"\\n\"]],\"locals\":[]},null],[0,\"      \"],[11,\"li\",[]],[16,\"class\",[33,[\"if\"],[[33,[\"eq\"],[[28,[\"currentRoute\"]],\"accounts\"],null],\"active\"],null],null],[5,[\"action\"],[[28,[null]],\"navigate\",\"accounts\"]],[13],[11,\"a\",[]],[13],[0,\"Accounts\"],[14],[14],[0,\"\\n      \"],[11,\"li\",[]],[16,\"class\",[33,[\"if\"],[[33,[\"eq\"],[[28,[\"currentRoute\"]],\"transactions\"],null],\"active\"],null],null],[5,[\"action\"],[[28,[null]],\"navigate\",\"transactions\"]],[13],[11,\"a\",[]],[13],[0,\"Transactions\"],[14],[14],[0,\"\\n      \"],[11,\"li\",[]],[16,\"class\",[33,[\"if\"],[[33,[\"eq\"],[[28,[\"currentRoute\"]],\"loans\"],null],\"active\"],null],null],[5,[\"action\"],[[28,[null]],\"navigate\",\"loans\"]],[13],[11,\"a\",[]],[13],[0,\"Loans\"],[14],[14],[0,\"\\n\"]],\"locals\":[]},null],[0,\"    \"],[14],[0,\"\\n\"],[6,[\"unless\"],[[33,[\"eq\"],[[28,[\"role\"]],[28,[\"userRole\",\"SUPERADMIN\"]]],null]],null,{\"statements\":[[6,[\"unless\"],[[33,[\"eq\"],[[28,[\"role\"]],[28,[\"userRole\",\"MANAGER\"]]],null]],null,{\"statements\":[[0,\"      \"],[11,\"div\",[]],[15,\"class\",\"branch-dropdown\"],[13],[0,\"\\n        \"],[11,\"select\",[]],[15,\"id\",\"branch\"],[16,\"value\",[26,[\"branch_name\"]],null],[16,\"onchange\",[33,[\"action\"],[[28,[null]],\"setbranch\"],[[\"value\"],[\"target.value\"]]],null],[13],[0,\"\\n          \"],[11,\"option\",[]],[15,\"value\",\"\"],[13],[0,\"All Branches\"],[14],[0,\"\\n\"],[6,[\"each\"],[[28,[\"branches\"]]],null,{\"statements\":[[0,\"            \"],[11,\"option\",[]],[16,\"value\",[28,[\"branch\",\"branch_name\"]],null],[13],[1,[28,[\"branch\",\"branch_name\"]],false],[14],[0,\"\\n\"]],\"locals\":[\"branch\"]},null],[0,\"        \"],[14],[0,\"\\n      \"],[14],[0,\"\\n\"]],\"locals\":[]},null]],\"locals\":[]},null],[0,\"  \"],[11,\"button\",[]],[15,\"class\",\"logout\"],[5,[\"action\"],[[28,[null]],\"logout\"]],[13],[11,\"i\",[]],[15,\"class\",\"bi bi-box-arrow-left\"],[13],[14],[0,\"  Logout\"],[14],[0,\"\\n\"],[14],[0,\"\\n\"]],\"locals\":[],\"named\":[],\"yields\":[],\"hasPartials\":false}", "meta": { "moduleName": "banker/templates/components/nav-bar.hbs" } });
 });
 define("banker/templates/components/notify-box", ["exports"], function (exports) {
   "use strict";
@@ -6688,7 +6513,7 @@ define("banker/templates/components/transaction-input", ["exports"], function (e
   Object.defineProperty(exports, "__esModule", {
     value: true
   });
-  exports.default = Ember.HTMLBars.template({ "id": "PoF73NAG", "block": "{\"statements\":[[11,\"body\",[]],[13],[0,\"\\n  \"],[11,\"div\",[]],[15,\"class\",\"auth-form\"],[13],[0,\"\\n    \"],[11,\"h2\",[]],[13],[0,\"Make New Payment\"],[14],[0,\"\\n    \\n    \"],[11,\"form\",[]],[5,[\"action\"],[[28,[null]],\"submitForm\"],[[\"on\"],[\"submit\"]]],[13],[0,\"\\n\"],[6,[\"unless\"],[[28,[\"isEmi\"]]],null,{\"statements\":[[0,\"        \"],[11,\"div\",[]],[15,\"class\",\"form-group\"],[13],[0,\"\\n          \"],[11,\"label\",[]],[15,\"for\",\"transaction_type\"],[13],[0,\"Transaction Type\"],[11,\"span\",[]],[15,\"style\",\"color:rgb(237, 69, 69);\"],[13],[0,\"*\"],[14],[14],[0,\"\\n          \"],[11,\"select\",[]],[15,\"id\",\"transaction_type\"],[15,\"class\",\"form-control\"],[16,\"onchange\",[33,[\"action\"],[[28,[null]],[33,[\"mut\"],[[28,[\"transaction_type\"]]],null]],[[\"value\"],[\"target.value\"]]],null],[13],[0,\"\\n            \"],[11,\"option\",[]],[15,\"value\",\"\"],[13],[0,\"Select type\"],[14],[0,\"\\n\"],[6,[\"each\"],[[28,[\"types\"]]],null,{\"statements\":[[0,\"              \"],[11,\"option\",[]],[16,\"value\",[28,[\"type\"]],null],[16,\"selected\",[33,[\"if\"],[[33,[\"eq\"],[[28,[\"type\"]],[28,[\"transaction_type\"]]],null],\"selected\"],null],null],[13],[1,[28,[\"type\"]],false],[14],[0,\"\\n\"]],\"locals\":[\"type\"]},null],[0,\"          \"],[14],[0,\"\\n        \"],[14],[0,\"\\n\"]],\"locals\":[]},null],[0,\"\\n\"],[6,[\"if\"],[[28,[\"isEmi\"]]],null,{\"statements\":[[0,\"        \"],[11,\"div\",[]],[15,\"class\",\"form-group\"],[13],[0,\"\\n          \"],[11,\"label\",[]],[15,\"for\",\"transaction_type\"],[13],[0,\"Transaction Type\"],[11,\"span\",[]],[15,\"style\",\"color:rgb(237, 69, 69);\"],[13],[0,\"*\"],[14],[14],[0,\"\\n          \"],[11,\"input\",[]],[15,\"type\",\"text\"],[15,\"id\",\"transaction_type\"],[16,\"value\",[26,[\"transaction_type\"]],null],[15,\"class\",\"form-control\"],[15,\"disabled\",\"\"],[13],[14],[0,\"\\n        \"],[14],[0,\"\\n\"]],\"locals\":[]},null],[0,\"\\n      \"],[11,\"div\",[]],[15,\"class\",\"form-group\"],[13],[0,\"\\n        \"],[11,\"label\",[]],[15,\"for\",\"transaction_amount\"],[13],[0,\"Transaction Amount\"],[11,\"span\",[]],[15,\"style\",\"color:rgb(237, 69, 69);\"],[13],[0,\"*\"],[14],[14],[0,\"\\n        \"],[11,\"input\",[]],[15,\"type\",\"number\"],[15,\"id\",\"transaction_amount\"],[16,\"value\",[26,[\"transaction_amount\"]],null],[15,\"class\",\"form-control\"],[16,\"oninput\",[33,[\"action\"],[[28,[null]],[33,[\"mut\"],[[28,[\"transaction_amount\"]]],null]],[[\"value\"],[\"target.value\"]]],null],[16,\"disabled\",[26,[\"isEmi\"]],null],[13],[14],[0,\"\\n      \"],[14],[0,\"\\n  \\n\"],[6,[\"if\"],[[28,[\"isDirect\"]]],null,{\"statements\":[[0,\"        \"],[11,\"div\",[]],[15,\"class\",\"form-group\"],[13],[0,\"\\n          \"],[11,\"label\",[]],[15,\"for\",\"accNo\"],[13],[0,\"Account Number\"],[11,\"span\",[]],[15,\"style\",\"color:rgb(237, 69, 69);\"],[13],[0,\"*\"],[14],[14],[0,\"\\n          \"],[11,\"select\",[]],[15,\"id\",\"accNo\"],[15,\"class\",\"form-control\"],[16,\"value\",[26,[\"accNo\"]],null],[16,\"onchange\",[33,[\"action\"],[[28,[null]],[33,[\"mut\"],[[28,[\"accNo\"]]],null]],[[\"value\"],[\"target.value\"]]],null],[13],[0,\"\\n            \"],[11,\"option\",[]],[15,\"value\",\"\"],[13],[0,\"Select Account Number\"],[14],[0,\"\\n\"],[6,[\"each\"],[[28,[\"accounts\"]]],null,{\"statements\":[[0,\"              \"],[11,\"option\",[]],[16,\"value\",[28,[\"account\",\"acc_no\"]],null],[13],[1,[28,[\"account\",\"acc_no\"]],false],[14],[0,\"\\n\"]],\"locals\":[\"account\"]},null],[0,\"          \"],[14],[0,\"\\n        \"],[14],[0,\"\\n\"]],\"locals\":[]},null],[0,\"  \\n      \"],[11,\"button\",[]],[15,\"type\",\"submit\"],[15,\"class\",\"btn-primary\"],[13],[0,\"Proceed\"],[14],[0,\"\\n      \\n\"],[0,\"        \"],[11,\"button\",[]],[15,\"class\",\"btn-secondary\"],[5,[\"action\"],[[28,[null]],\"cancel\"]],[13],[0,\"Cancel\"],[14],[0,\"\\n\"],[0,\"  \\n\"],[6,[\"if\"],[[28,[\"errorMessage\"]]],null,{\"statements\":[[0,\"        \"],[11,\"div\",[]],[15,\"class\",\"error-message\"],[13],[0,\"* \"],[1,[26,[\"errorMessage\"]],false],[14],[0,\"\\n\"]],\"locals\":[]},null],[0,\"    \"],[14],[0,\"\\n  \"],[14],[0,\"\\n  \"],[1,[33,[\"notify-box\"],null,[[\"message\",\"type\"],[[28,[\"notification\",\"message\"]],[28,[\"notification\",\"type\"]]]]],false],[0,\"\\n\"],[14],[0,\"\\n\"]],\"locals\":[],\"named\":[],\"yields\":[],\"hasPartials\":false}", "meta": { "moduleName": "banker/templates/components/transaction-input.hbs" } });
+  exports.default = Ember.HTMLBars.template({ "id": "Vknyr6Fp", "block": "{\"statements\":[[11,\"body\",[]],[13],[0,\"\\n  \"],[11,\"div\",[]],[15,\"class\",\"auth-form\"],[13],[0,\"\\n    \"],[11,\"h2\",[]],[13],[0,\"Make New Payment\"],[14],[0,\"\\n    \\n    \"],[11,\"form\",[]],[5,[\"action\"],[[28,[null]],\"submitForm\"],[[\"on\"],[\"submit\"]]],[13],[0,\"\\n\"],[6,[\"unless\"],[[28,[\"isEmi\"]]],null,{\"statements\":[[0,\"        \"],[11,\"div\",[]],[15,\"class\",\"form-group\"],[13],[0,\"\\n          \"],[11,\"label\",[]],[15,\"for\",\"transaction_type\"],[13],[0,\"Transaction Type\"],[11,\"span\",[]],[15,\"style\",\"color:rgb(237, 69, 69);\"],[13],[0,\"*\"],[14],[14],[0,\"\\n          \"],[11,\"select\",[]],[15,\"id\",\"transaction_type\"],[15,\"class\",\"form-control\"],[16,\"onchange\",[33,[\"action\"],[[28,[null]],[33,[\"mut\"],[[28,[\"transaction_type\"]]],null]],[[\"value\"],[\"target.value\"]]],null],[13],[0,\"\\n            \"],[11,\"option\",[]],[15,\"value\",\"\"],[13],[0,\"Select type\"],[14],[0,\"\\n\"],[6,[\"each\"],[[28,[\"types\"]]],null,{\"statements\":[[0,\"              \"],[11,\"option\",[]],[16,\"value\",[28,[\"type\"]],null],[16,\"selected\",[33,[\"if\"],[[33,[\"eq\"],[[28,[\"type\"]],[28,[\"transaction_type\"]]],null],\"selected\"],null],null],[13],[1,[28,[\"type\"]],false],[14],[0,\"\\n\"]],\"locals\":[\"type\"]},null],[0,\"          \"],[14],[0,\"\\n        \"],[14],[0,\"\\n\"]],\"locals\":[]},null],[0,\"\\n\"],[6,[\"if\"],[[28,[\"isEmi\"]]],null,{\"statements\":[[0,\"        \"],[11,\"div\",[]],[15,\"class\",\"form-group\"],[13],[0,\"\\n          \"],[11,\"label\",[]],[15,\"for\",\"transaction_type\"],[13],[0,\"Transaction Type\"],[11,\"span\",[]],[15,\"style\",\"color:rgb(237, 69, 69);\"],[13],[0,\"*\"],[14],[14],[0,\"\\n          \"],[11,\"input\",[]],[15,\"type\",\"text\"],[15,\"id\",\"transaction_type\"],[16,\"value\",[26,[\"transaction_type\"]],null],[15,\"class\",\"form-control\"],[15,\"disabled\",\"\"],[13],[14],[0,\"\\n        \"],[14],[0,\"\\n\"]],\"locals\":[]},null],[0,\"\\n      \"],[11,\"div\",[]],[15,\"class\",\"form-group\"],[13],[0,\"\\n        \"],[11,\"label\",[]],[15,\"for\",\"transaction_amount\"],[13],[0,\"Transaction Amount\"],[11,\"span\",[]],[15,\"style\",\"color:rgb(237, 69, 69);\"],[13],[0,\"*\"],[14],[14],[0,\"\\n        \"],[11,\"input\",[]],[15,\"type\",\"number\"],[15,\"id\",\"transaction_amount\"],[16,\"value\",[26,[\"transaction_amount\"]],null],[15,\"class\",\"form-control\"],[16,\"oninput\",[33,[\"action\"],[[28,[null]],[33,[\"mut\"],[[28,[\"transaction_amount\"]]],null]],[[\"value\"],[\"target.value\"]]],null],[16,\"disabled\",[26,[\"isEmi\"]],null],[13],[14],[0,\"\\n      \"],[14],[0,\"\\n  \\n\"],[6,[\"if\"],[[28,[\"isDirect\"]]],null,{\"statements\":[[0,\"        \"],[11,\"div\",[]],[15,\"class\",\"form-group\"],[13],[0,\"\\n          \"],[11,\"label\",[]],[15,\"for\",\"accNo\"],[13],[0,\"Account Number\"],[11,\"span\",[]],[15,\"style\",\"color:rgb(237, 69, 69);\"],[13],[0,\"*\"],[14],[14],[0,\"\\n          \"],[11,\"select\",[]],[15,\"id\",\"accNo\"],[15,\"class\",\"form-control\"],[16,\"value\",[26,[\"accNo\"]],null],[16,\"onchange\",[33,[\"action\"],[[28,[null]],[33,[\"mut\"],[[28,[\"accNo\"]]],null]],[[\"value\"],[\"target.value\"]]],null],[13],[0,\"\\n            \"],[11,\"option\",[]],[15,\"value\",\"\"],[13],[0,\"Select Account Number\"],[14],[0,\"\\n\"],[6,[\"each\"],[[28,[\"accounts\"]]],null,{\"statements\":[[0,\"              \"],[11,\"option\",[]],[16,\"value\",[28,[\"account\",\"acc_no\"]],null],[13],[1,[28,[\"account\",\"acc_no\"]],false],[14],[0,\"\\n\"]],\"locals\":[\"account\"]},null],[0,\"          \"],[14],[0,\"\\n        \"],[14],[0,\"\\n\"]],\"locals\":[]},null],[0,\"  \\n      \"],[11,\"button\",[]],[15,\"type\",\"submit\"],[15,\"class\",\"btn-primary\"],[13],[0,\"Proceed\"],[14],[0,\"\\n      \\n      \"],[11,\"button\",[]],[15,\"class\",\"btn-secondary\"],[5,[\"action\"],[[28,[null]],\"cancel\"]],[13],[0,\"Cancel\"],[14],[0,\"\\n     \\n  \\n\"],[6,[\"if\"],[[28,[\"errorMessage\"]]],null,{\"statements\":[[0,\"        \"],[11,\"div\",[]],[15,\"class\",\"error-message\"],[13],[0,\"* \"],[1,[26,[\"errorMessage\"]],false],[14],[0,\"\\n\"]],\"locals\":[]},null],[0,\"    \"],[14],[0,\"\\n  \"],[14],[0,\"\\n  \"],[1,[33,[\"notify-box\"],null,[[\"message\",\"type\"],[[28,[\"notification\",\"message\"]],[28,[\"notification\",\"type\"]]]]],false],[0,\"\\n\"],[14],[0,\"\\n\"]],\"locals\":[],\"named\":[],\"yields\":[],\"hasPartials\":false}", "meta": { "moduleName": "banker/templates/components/transaction-input.hbs" } });
 });
 define("banker/templates/components/view-account", ["exports"], function (exports) {
   "use strict";
@@ -6704,7 +6529,7 @@ define("banker/templates/components/view-accounts", ["exports"], function (expor
   Object.defineProperty(exports, "__esModule", {
     value: true
   });
-  exports.default = Ember.HTMLBars.template({ "id": "rxQusRkz", "block": "{\"statements\":[[11,\"div\",[]],[15,\"class\",\"accounts-list\"],[13],[0,\"\\n  \"],[11,\"button\",[]],[15,\"class\",\"new-account-btn\"],[5,[\"action\"],[[28,[null]],\"addNewAccount\"]],[13],[0,\"New Account\"],[14],[0,\"\\n\\n  \"],[11,\"div\",[]],[15,\"class\",\"filters\"],[13],[0,\"\\n    \"],[11,\"label\",[]],[15,\"for\",\"accountType\"],[13],[0,\"Type: \"],[14],[0,\"\\n    \"],[11,\"select\",[]],[15,\"id\",\"accountType\"],[16,\"value\",[26,[\"selectedAccountType\"]],null],[16,\"oninput\",[33,[\"action\"],[[28,[null]],\"AccountType\"],[[\"value\"],[\"target.value\"]]],null],[13],[0,\"\\n      \"],[11,\"option\",[]],[15,\"value\",\"\"],[13],[0,\"All\"],[14],[0,\"\\n      \"],[11,\"option\",[]],[15,\"value\",\"savings\"],[13],[0,\"Savings\"],[14],[0,\"\\n      \"],[11,\"option\",[]],[15,\"value\",\"business\"],[13],[0,\"Business\"],[14],[0,\"\\n    \"],[14],[0,\"\\n\\n    \"],[11,\"label\",[]],[15,\"for\",\"accountStatus\"],[13],[0,\"Status: \"],[14],[0,\"\\n    \"],[11,\"select\",[]],[15,\"id\",\"accountStatus\"],[16,\"value\",[26,[\"selectedAccountStatus\"]],null],[16,\"oninput\",[33,[\"action\"],[[28,[null]],\"AccountStatus\"],[[\"value\"],[\"target.value\"]]],null],[13],[0,\"\\n      \"],[11,\"option\",[]],[15,\"value\",\"\"],[13],[0,\"All\"],[14],[0,\"\\n      \"],[11,\"option\",[]],[15,\"value\",\"active\"],[13],[0,\"Active\"],[14],[0,\"\\n      \"],[11,\"option\",[]],[15,\"value\",\"inactive\"],[13],[0,\"Inactive\"],[14],[0,\"\\n      \"],[11,\"option\",[]],[15,\"value\",\"pending\"],[13],[0,\"Pending\"],[14],[0,\"\\n    \"],[14],[0,\"\\n    \"],[11,\"button\",[]],[15,\"class\",\"clear\"],[15,\"style\",\"margin-top:7px;padding: 8px 10px 8px 10px;\"],[5,[\"action\"],[[28,[null]],\"FilterReset\"]],[13],[0,\"Reset\"],[14],[0,\"\\n  \"],[14],[0,\"\\n\\n\"],[6,[\"unless\"],[[33,[\"eq\"],[[28,[\"role\"]],[28,[\"userRole\",\"CUSTOMER\"]]],null]],null,{\"statements\":[[0,\"  \"],[11,\"div\",[]],[15,\"class\",\"search-container\"],[13],[0,\"\\n    \"],[11,\"input\",[]],[15,\"type\",\"text\"],[15,\"class\",\"search-input\"],[15,\"placeholder\",\"Search Username\"],[16,\"value\",[26,[\"searchQuery\"]],null],[16,\"oninput\",[33,[\"action\"],[[28,[null]],\"updateSearchQuery\"],[[\"value\"],[\"target.value\"]]],null],[13],[14],[0,\"\\n    \"],[11,\"button\",[]],[15,\"class\",\"new-branch-btn\"],[15,\"style\",\"margin-right: 42%;padding:10px;margin-top:-3px\"],[5,[\"action\"],[[28,[null]],\"performSearch\"]],[13],[0,\"Search\"],[14],[0,\"\\n\\n\"],[6,[\"if\"],[[28,[\"searchSuggestions\",\"length\"]]],null,{\"statements\":[[0,\"      \"],[11,\"ul\",[]],[15,\"class\",\"suggestions-list\"],[13],[0,\"\\n\"],[6,[\"each\"],[[28,[\"searchSuggestions\"]]],null,{\"statements\":[[0,\"          \"],[11,\"li\",[]],[5,[\"action\"],[[28,[null]],\"selectSuggestion\",[28,[\"suggestion\"]]]],[13],[1,[28,[\"suggestion\"]],false],[14],[0,\"\\n\"]],\"locals\":[\"suggestion\"]},null],[0,\"      \"],[14],[0,\"\\n\"]],\"locals\":[]},null],[0,\"  \"],[14],[0,\"\\n\"]],\"locals\":[]},null],[0,\"  \"],[11,\"table\",[]],[15,\"class\",\"accounts-table\"],[13],[0,\"\\n    \"],[11,\"thead\",[]],[13],[0,\"\\n      \"],[11,\"tr\",[]],[13],[0,\"\\n        \"],[11,\"th\",[]],[13],[0,\"Account No\"],[14],[0,\"\\n        \"],[11,\"th\",[]],[13],[0,\"Type\"],[14],[0,\"\\n        \"],[11,\"th\",[]],[13],[0,\"Status\"],[14],[0,\"\\n\"],[6,[\"unless\"],[[33,[\"eq\"],[[28,[\"role\"]],[28,[\"userRole\",\"CUSTOMER\"]]],null]],null,{\"statements\":[[0,\"          \"],[11,\"th\",[]],[13],[0,\"Username\"],[14],[0,\"\\n\"]],\"locals\":[]},null],[6,[\"unless\"],[[33,[\"eq\"],[[28,[\"role\"]],[28,[\"userRole\",\"MANAGER\"]]],null]],null,{\"statements\":[[0,\"          \"],[11,\"th\",[]],[13],[0,\"Branch Name\"],[14],[0,\"\\n\"]],\"locals\":[]},null],[6,[\"unless\"],[[33,[\"eq\"],[[28,[\"role\"]],[28,[\"userRole\",\"CUSTOMER\"]]],null]],null,{\"statements\":[[0,\"          \"],[11,\"th\",[]],[13],[0,\"Actions\"],[14],[0,\"\\n\"]],\"locals\":[]},null],[0,\"      \"],[14],[0,\"\\n    \"],[14],[0,\"\\n    \"],[11,\"tbody\",[]],[13],[0,\"\\n\"],[6,[\"unless\"],[[33,[\"eq\"],[[28,[\"accounts\",\"length\"]],0],null]],null,{\"statements\":[[6,[\"each\"],[[28,[\"accounts\"]]],null,{\"statements\":[[0,\"          \"],[11,\"tr\",[]],[5,[\"action\"],[[28,[null]],\"viewAccount\",[28,[\"account\"]]]],[13],[0,\"\\n            \"],[11,\"td\",[]],[13],[1,[28,[\"account\",\"acc_no\"]],false],[14],[0,\"\\n            \"],[11,\"td\",[]],[13],[1,[28,[\"account\",\"acc_type\"]],false],[14],[0,\"\\n            \"],[11,\"td\",[]],[13],[1,[28,[\"account\",\"acc_status\"]],false],[14],[0,\"\\n\"],[6,[\"unless\"],[[33,[\"eq\"],[[28,[\"role\"]],[28,[\"userRole\",\"CUSTOMER\"]]],null]],null,{\"statements\":[[0,\"              \"],[11,\"td\",[]],[13],[1,[28,[\"account\",\"username\"]],false],[14],[0,\"\\n\"]],\"locals\":[]},null],[6,[\"unless\"],[[33,[\"eq\"],[[28,[\"role\"]],[28,[\"userRole\",\"MANAGER\"]]],null]],null,{\"statements\":[[0,\"              \"],[11,\"td\",[]],[13],[1,[28,[\"account\",\"branch_name\"]],false],[14],[0,\"\\n\"]],\"locals\":[]},null],[6,[\"unless\"],[[33,[\"eq\"],[[28,[\"role\"]],[28,[\"userRole\",\"CUSTOMER\"]]],null]],null,{\"statements\":[[0,\"              \"],[11,\"td\",[]],[13],[0,\"\\n                \"],[11,\"button\",[]],[5,[\"action\"],[[28,[null]],\"editAccount\",[28,[\"account\"]]]],[13],[11,\"i\",[]],[15,\"class\",\"bi bi-pencil\"],[13],[14],[0,\" Edit\"],[14],[0,\"\\n              \"],[14],[0,\"\\n\"]],\"locals\":[]},null],[0,\"          \"],[14],[0,\"\\n\"]],\"locals\":[\"account\"]},null]],\"locals\":[]},null],[0,\"    \"],[14],[0,\"\\n  \"],[14],[0,\"\\n\"],[6,[\"if\"],[[33,[\"eq\"],[[28,[\"accounts\",\"length\"]],0],null]],null,{\"statements\":[[0,\"         \"],[11,\"button\",[]],[15,\"style\",\"margin-top:60px;cursor:default;margin-right:40%;\"],[15,\"class\",\"new-account-btn\"],[13],[0,\"No Accounts Found!\"],[14],[0,\"\\n\"]],\"locals\":[]},null],[0,\"\\n\"],[6,[\"unless\"],[[33,[\"eq\"],[[28,[\"accounts\",\"length\"]],0],null]],null,{\"statements\":[[0,\"    \"],[11,\"div\",[]],[15,\"class\",\"pagination-controls\"],[13],[0,\"\\n    \"],[11,\"button\",[]],[16,\"disabled\",[33,[\"if\"],[[33,[\"eq\"],[[28,[\"currentPage\"]],1],null],\"disabled\"],null],null],[5,[\"action\"],[[28,[null]],\"previousPage\"]],[13],[0,\"Previous\"],[14],[0,\"\\n\\n\"],[6,[\"if\"],[[28,[\"showFirstPage\"]]],null,{\"statements\":[[0,\"      \"],[11,\"button\",[]],[16,\"class\",[34,[\"page-number \",[33,[\"if\"],[[33,[\"eq\"],[[28,[\"currentPage\"]],1],null],\"active\",\"\"],null]]]],[5,[\"action\"],[[28,[null]],\"goToPage\",1]],[13],[0,\"1\"],[14],[0,\"\\n\"]],\"locals\":[]},null],[0,\"\\n\"],[6,[\"if\"],[[28,[\"showLeftEllipsis\"]]],null,{\"statements\":[[0,\"      \"],[11,\"span\",[]],[15,\"class\",\"ellipsis\"],[13],[0,\"...\"],[14],[0,\"\\n\"]],\"locals\":[]},null],[0,\"\\n\"],[6,[\"each\"],[[28,[\"visiblePages\"]]],null,{\"statements\":[[0,\"      \"],[11,\"button\",[]],[16,\"class\",[34,[\"page-number \",[33,[\"if\"],[[33,[\"eq\"],[[28,[\"page\"]],[28,[\"currentPage\"]]],null],\"active\",\"\"],null]]]],[5,[\"action\"],[[28,[null]],\"goToPage\",[28,[\"page\"]]]],[13],[0,\"\\n        \"],[1,[28,[\"page\"]],false],[0,\"\\n      \"],[14],[0,\"\\n\"]],\"locals\":[\"page\"]},null],[0,\"\\n\"],[6,[\"if\"],[[28,[\"showRightEllipsis\"]]],null,{\"statements\":[[0,\"      \"],[11,\"span\",[]],[15,\"class\",\"ellipsis\"],[13],[0,\"...\"],[14],[0,\"\\n\"]],\"locals\":[]},null],[0,\"\\n\"],[6,[\"if\"],[[28,[\"showLastPage\"]]],null,{\"statements\":[[0,\"      \"],[11,\"button\",[]],[16,\"class\",[34,[\"page-number \",[33,[\"if\"],[[33,[\"eq\"],[[28,[\"currentPage\"]],[28,[\"totalPages\"]]],null],\"active\",\"\"],null]]]],[5,[\"action\"],[[28,[null]],\"goToPage\",[28,[\"totalPages\"]]]],[13],[0,\"\\n        \"],[1,[26,[\"totalPages\"]],false],[0,\"\\n      \"],[14],[0,\"\\n\"]],\"locals\":[]},null],[0,\"\\n    \"],[11,\"button\",[]],[16,\"disabled\",[33,[\"if\"],[[33,[\"eq\"],[[28,[\"currentPage\"]],[28,[\"totalPages\"]]],null],\"disabled\"],null],null],[5,[\"action\"],[[28,[null]],\"nextPage\"]],[13],[0,\"Next\"],[14],[0,\"\\n  \"],[14],[0,\"\\n\"]],\"locals\":[]},null],[14],[0,\"\\n\"]],\"locals\":[],\"named\":[],\"yields\":[],\"hasPartials\":false}", "meta": { "moduleName": "banker/templates/components/view-accounts.hbs" } });
+  exports.default = Ember.HTMLBars.template({ "id": "SDfWb8Dv", "block": "{\"statements\":[[11,\"div\",[]],[15,\"class\",\"accounts-list\"],[13],[0,\"\\n  \"],[11,\"button\",[]],[15,\"style\",\"margin-top:50px\"],[15,\"class\",\"new-account-btn\"],[5,[\"action\"],[[28,[null]],\"addNewAccount\"]],[13],[0,\"New Account\"],[14],[0,\"\\n\\n  \"],[11,\"div\",[]],[15,\"class\",\"filters\"],[15,\"style\",\"margin-top:-10px\"],[13],[0,\"\\n    \"],[11,\"label\",[]],[15,\"for\",\"accountType\"],[13],[0,\"Type: \"],[14],[0,\"\\n    \"],[11,\"select\",[]],[15,\"id\",\"accountType\"],[16,\"value\",[26,[\"selectedAccountType\"]],null],[16,\"oninput\",[33,[\"action\"],[[28,[null]],\"AccountType\"],[[\"value\"],[\"target.value\"]]],null],[13],[0,\"\\n      \"],[11,\"option\",[]],[15,\"value\",\"\"],[13],[0,\"All\"],[14],[0,\"\\n      \"],[11,\"option\",[]],[15,\"value\",\"savings\"],[13],[0,\"Savings\"],[14],[0,\"\\n      \"],[11,\"option\",[]],[15,\"value\",\"business\"],[13],[0,\"Business\"],[14],[0,\"\\n    \"],[14],[0,\"\\n\\n    \"],[11,\"label\",[]],[15,\"for\",\"accountStatus\"],[13],[0,\"Status: \"],[14],[0,\"\\n    \"],[11,\"select\",[]],[15,\"id\",\"accountStatus\"],[16,\"value\",[26,[\"selectedAccountStatus\"]],null],[16,\"oninput\",[33,[\"action\"],[[28,[null]],\"AccountStatus\"],[[\"value\"],[\"target.value\"]]],null],[13],[0,\"\\n      \"],[11,\"option\",[]],[15,\"value\",\"\"],[13],[0,\"All\"],[14],[0,\"\\n      \"],[11,\"option\",[]],[15,\"value\",\"active\"],[13],[0,\"Active\"],[14],[0,\"\\n      \"],[11,\"option\",[]],[15,\"value\",\"inactive\"],[13],[0,\"Inactive\"],[14],[0,\"\\n      \"],[11,\"option\",[]],[15,\"value\",\"pending\"],[13],[0,\"Pending\"],[14],[0,\"\\n    \"],[14],[0,\"\\n    \"],[11,\"button\",[]],[15,\"class\",\"clear\"],[15,\"style\",\"margin-top:7px;padding: 8px 10px 8px 10px;\"],[5,[\"action\"],[[28,[null]],\"FilterReset\"]],[13],[0,\"Reset\"],[14],[0,\"\\n  \"],[14],[0,\"\\n\\n\"],[6,[\"unless\"],[[33,[\"eq\"],[[28,[\"role\"]],[28,[\"userRole\",\"CUSTOMER\"]]],null]],null,{\"statements\":[[0,\"  \"],[11,\"div\",[]],[15,\"class\",\"search-container\"],[15,\"style\",\"margin-top:-10px\"],[13],[0,\"\\n    \"],[11,\"input\",[]],[15,\"type\",\"text\"],[15,\"class\",\"search-input\"],[15,\"placeholder\",\"Search Username\"],[16,\"value\",[26,[\"searchQuery\"]],null],[16,\"oninput\",[33,[\"action\"],[[28,[null]],\"updateSearchQuery\"],[[\"value\"],[\"target.value\"]]],null],[13],[14],[0,\"\\n    \"],[11,\"button\",[]],[15,\"class\",\"new-branch-btn\"],[15,\"style\",\"margin-right: 42%;padding:10px;margin-top:-3px\"],[5,[\"action\"],[[28,[null]],\"performSearch\"]],[13],[0,\"Search\"],[14],[0,\"\\n\\n\"],[6,[\"if\"],[[28,[\"searchSuggestions\",\"length\"]]],null,{\"statements\":[[0,\"      \"],[11,\"ul\",[]],[15,\"class\",\"suggestions-list\"],[13],[0,\"\\n\"],[6,[\"each\"],[[28,[\"searchSuggestions\"]]],null,{\"statements\":[[0,\"          \"],[11,\"li\",[]],[5,[\"action\"],[[28,[null]],\"selectSuggestion\",[28,[\"suggestion\"]]]],[13],[1,[28,[\"suggestion\"]],false],[14],[0,\"\\n\"]],\"locals\":[\"suggestion\"]},null],[0,\"      \"],[14],[0,\"\\n\"]],\"locals\":[]},null],[0,\"  \"],[14],[0,\"\\n\"]],\"locals\":[]},null],[0,\"  \"],[11,\"table\",[]],[15,\"class\",\"accounts-table\"],[13],[0,\"\\n    \"],[11,\"thead\",[]],[13],[0,\"\\n      \"],[11,\"tr\",[]],[13],[0,\"\\n        \"],[11,\"th\",[]],[13],[0,\"Account No\"],[14],[0,\"\\n        \"],[11,\"th\",[]],[13],[0,\"Type\"],[14],[0,\"\\n        \"],[11,\"th\",[]],[13],[0,\"Status\"],[14],[0,\"\\n\"],[6,[\"unless\"],[[33,[\"eq\"],[[28,[\"role\"]],[28,[\"userRole\",\"CUSTOMER\"]]],null]],null,{\"statements\":[[0,\"          \"],[11,\"th\",[]],[13],[0,\"Username\"],[14],[0,\"\\n\"]],\"locals\":[]},null],[6,[\"unless\"],[[33,[\"eq\"],[[28,[\"role\"]],[28,[\"userRole\",\"MANAGER\"]]],null]],null,{\"statements\":[[0,\"          \"],[11,\"th\",[]],[13],[0,\"Branch Name\"],[14],[0,\"\\n\"]],\"locals\":[]},null],[6,[\"unless\"],[[33,[\"eq\"],[[28,[\"role\"]],[28,[\"userRole\",\"CUSTOMER\"]]],null]],null,{\"statements\":[[0,\"          \"],[11,\"th\",[]],[13],[0,\"Actions\"],[14],[0,\"\\n\"]],\"locals\":[]},null],[0,\"      \"],[14],[0,\"\\n    \"],[14],[0,\"\\n    \"],[11,\"tbody\",[]],[13],[0,\"\\n\"],[6,[\"unless\"],[[33,[\"eq\"],[[28,[\"accounts\",\"length\"]],0],null]],null,{\"statements\":[[6,[\"each\"],[[28,[\"accounts\"]]],null,{\"statements\":[[0,\"          \"],[11,\"tr\",[]],[5,[\"action\"],[[28,[null]],\"viewAccount\",[28,[\"account\"]]]],[13],[0,\"\\n            \"],[11,\"td\",[]],[13],[1,[28,[\"account\",\"acc_no\"]],false],[14],[0,\"\\n            \"],[11,\"td\",[]],[13],[1,[28,[\"account\",\"acc_type\"]],false],[14],[0,\"\\n            \"],[11,\"td\",[]],[13],[1,[28,[\"account\",\"acc_status\"]],false],[14],[0,\"\\n\"],[6,[\"unless\"],[[33,[\"eq\"],[[28,[\"role\"]],[28,[\"userRole\",\"CUSTOMER\"]]],null]],null,{\"statements\":[[0,\"              \"],[11,\"td\",[]],[13],[1,[28,[\"account\",\"username\"]],false],[14],[0,\"\\n\"]],\"locals\":[]},null],[6,[\"unless\"],[[33,[\"eq\"],[[28,[\"role\"]],[28,[\"userRole\",\"MANAGER\"]]],null]],null,{\"statements\":[[0,\"              \"],[11,\"td\",[]],[13],[1,[28,[\"account\",\"branch_name\"]],false],[14],[0,\"\\n\"]],\"locals\":[]},null],[6,[\"unless\"],[[33,[\"eq\"],[[28,[\"role\"]],[28,[\"userRole\",\"CUSTOMER\"]]],null]],null,{\"statements\":[[0,\"              \"],[11,\"td\",[]],[13],[0,\"\\n                \"],[11,\"button\",[]],[5,[\"action\"],[[28,[null]],\"editAccount\",[28,[\"account\"]]]],[13],[11,\"i\",[]],[15,\"class\",\"bi bi-pencil\"],[13],[14],[0,\" Edit\"],[14],[0,\"\\n              \"],[14],[0,\"\\n\"]],\"locals\":[]},null],[0,\"          \"],[14],[0,\"\\n\"]],\"locals\":[\"account\"]},null]],\"locals\":[]},null],[0,\"    \"],[14],[0,\"\\n  \"],[14],[0,\"\\n\"],[6,[\"if\"],[[33,[\"eq\"],[[28,[\"accounts\",\"length\"]],0],null]],null,{\"statements\":[[0,\"         \"],[11,\"button\",[]],[15,\"style\",\"margin-top:60px;cursor:default;margin-right:40%;\"],[15,\"class\",\"new-account-btn\"],[13],[0,\"No Accounts Found!\"],[14],[0,\"\\n\"]],\"locals\":[]},null],[0,\"\\n\"],[6,[\"unless\"],[[33,[\"eq\"],[[28,[\"accounts\",\"length\"]],0],null]],null,{\"statements\":[[0,\"    \"],[11,\"div\",[]],[15,\"class\",\"pagination-controls\"],[13],[0,\"\\n    \"],[11,\"button\",[]],[16,\"disabled\",[33,[\"if\"],[[33,[\"eq\"],[[28,[\"currentPage\"]],1],null],\"disabled\"],null],null],[5,[\"action\"],[[28,[null]],\"previousPage\"]],[13],[0,\"Previous\"],[14],[0,\"\\n\\n\"],[6,[\"if\"],[[28,[\"showFirstPage\"]]],null,{\"statements\":[[0,\"      \"],[11,\"button\",[]],[16,\"class\",[34,[\"page-number \",[33,[\"if\"],[[33,[\"eq\"],[[28,[\"currentPage\"]],1],null],\"active\",\"\"],null]]]],[5,[\"action\"],[[28,[null]],\"goToPage\",1]],[13],[0,\"1\"],[14],[0,\"\\n\"]],\"locals\":[]},null],[0,\"\\n\"],[6,[\"if\"],[[28,[\"showLeftEllipsis\"]]],null,{\"statements\":[[0,\"      \"],[11,\"span\",[]],[15,\"class\",\"ellipsis\"],[13],[0,\"...\"],[14],[0,\"\\n\"]],\"locals\":[]},null],[0,\"\\n\"],[6,[\"each\"],[[28,[\"visiblePages\"]]],null,{\"statements\":[[0,\"      \"],[11,\"button\",[]],[16,\"class\",[34,[\"page-number \",[33,[\"if\"],[[33,[\"eq\"],[[28,[\"page\"]],[28,[\"currentPage\"]]],null],\"active\",\"\"],null]]]],[5,[\"action\"],[[28,[null]],\"goToPage\",[28,[\"page\"]]]],[13],[0,\"\\n        \"],[1,[28,[\"page\"]],false],[0,\"\\n      \"],[14],[0,\"\\n\"]],\"locals\":[\"page\"]},null],[0,\"\\n\"],[6,[\"if\"],[[28,[\"showRightEllipsis\"]]],null,{\"statements\":[[0,\"      \"],[11,\"span\",[]],[15,\"class\",\"ellipsis\"],[13],[0,\"...\"],[14],[0,\"\\n\"]],\"locals\":[]},null],[0,\"\\n\"],[6,[\"if\"],[[28,[\"showLastPage\"]]],null,{\"statements\":[[0,\"      \"],[11,\"button\",[]],[16,\"class\",[34,[\"page-number \",[33,[\"if\"],[[33,[\"eq\"],[[28,[\"currentPage\"]],[28,[\"totalPages\"]]],null],\"active\",\"\"],null]]]],[5,[\"action\"],[[28,[null]],\"goToPage\",[28,[\"totalPages\"]]]],[13],[0,\"\\n        \"],[1,[26,[\"totalPages\"]],false],[0,\"\\n      \"],[14],[0,\"\\n\"]],\"locals\":[]},null],[0,\"\\n    \"],[11,\"button\",[]],[16,\"disabled\",[33,[\"if\"],[[33,[\"eq\"],[[28,[\"currentPage\"]],[28,[\"totalPages\"]]],null],\"disabled\"],null],null],[5,[\"action\"],[[28,[null]],\"nextPage\"]],[13],[0,\"Next\"],[14],[0,\"\\n  \"],[14],[0,\"\\n\"]],\"locals\":[]},null],[14],[0,\"\\n\"]],\"locals\":[],\"named\":[],\"yields\":[],\"hasPartials\":false}", "meta": { "moduleName": "banker/templates/components/view-accounts.hbs" } });
 });
 define("banker/templates/components/view-loan", ["exports"], function (exports) {
   "use strict";
@@ -6712,7 +6537,7 @@ define("banker/templates/components/view-loan", ["exports"], function (exports) 
   Object.defineProperty(exports, "__esModule", {
     value: true
   });
-  exports.default = Ember.HTMLBars.template({ "id": "uNFElefF", "block": "{\"statements\":[[11,\"div\",[]],[15,\"class\",\"loan-card-wrapper\"],[13],[0,\"\\n  \"],[11,\"div\",[]],[15,\"class\",\"loan-card\"],[13],[0,\"\\n    \"],[11,\"h2\",[]],[13],[0,\"Loan Details\"],[14],[0,\"\\n    \"],[11,\"div\",[]],[15,\"class\",\"loan-field\"],[13],[0,\"\\n      \"],[11,\"span\",[]],[15,\"class\",\"field-label\"],[13],[0,\"Loan Id:\"],[14],[0,\"\\n      \"],[11,\"span\",[]],[15,\"class\",\"field-value\"],[13],[1,[28,[\"loan\",\"loan_id\"]],false],[14],[0,\"\\n    \"],[14],[0,\"\\n    \"],[11,\"div\",[]],[15,\"class\",\"loan-field\"],[13],[0,\"\\n      \"],[11,\"span\",[]],[15,\"class\",\"field-label\"],[13],[0,\"Loan Type:\"],[14],[0,\"\\n      \"],[11,\"span\",[]],[15,\"class\",\"field-value\"],[13],[1,[28,[\"loan\",\"loan_type\"]],false],[14],[0,\"\\n    \"],[14],[0,\"\\n    \"],[11,\"div\",[]],[15,\"class\",\"loan-field\"],[13],[0,\"\\n      \"],[11,\"span\",[]],[15,\"class\",\"field-label\"],[13],[0,\"Loan Amount:\"],[14],[0,\"\\n      \"],[11,\"span\",[]],[15,\"class\",\"field-value\"],[13],[0,\"Rs.\"],[1,[28,[\"loan\",\"loan_amount\"]],false],[14],[0,\"\\n    \"],[14],[0,\"\\n    \"],[11,\"div\",[]],[15,\"class\",\"loan-field\"],[13],[0,\"\\n      \"],[11,\"span\",[]],[15,\"class\",\"field-label\"],[13],[0,\"Interest:\"],[14],[0,\"\\n      \"],[11,\"span\",[]],[15,\"class\",\"field-value\"],[13],[1,[28,[\"loan\",\"loan_interest\"]],false],[0,\"%\"],[14],[0,\"\\n    \"],[14],[0,\"\\n    \"],[11,\"div\",[]],[15,\"class\",\"loan-field\"],[13],[0,\"\\n      \"],[11,\"span\",[]],[15,\"class\",\"field-label\"],[13],[0,\"Duration:\"],[14],[0,\"\\n      \"],[11,\"span\",[]],[15,\"class\",\"field-value\"],[13],[1,[28,[\"loan\",\"loan_duration\"]],false],[0,\" Months\"],[14],[0,\"\\n    \"],[14],[0,\"\\n     \"],[11,\"div\",[]],[15,\"class\",\"loan-field\"],[13],[0,\"\\n      \"],[11,\"span\",[]],[15,\"class\",\"field-label\"],[13],[0,\"Status:\"],[14],[0,\"\\n      \"],[11,\"span\",[]],[15,\"class\",\"field-value\"],[13],[1,[28,[\"loan\",\"loan_status\"]],false],[14],[0,\"\\n    \"],[14],[0,\"\\n     \"],[11,\"div\",[]],[15,\"class\",\"loan-field\"],[13],[0,\"\\n      \"],[11,\"span\",[]],[15,\"class\",\"field-label\"],[13],[0,\"Availed Date:\"],[14],[0,\"\\n      \"],[11,\"span\",[]],[15,\"class\",\"field-value\"],[13],[1,[28,[\"loan\",\"loan_availed_date\"]],false],[14],[0,\"\\n    \"],[14],[0,\"\\n    \"],[11,\"div\",[]],[15,\"class\",\"loan-field\"],[13],[0,\"\\n      \"],[11,\"span\",[]],[15,\"class\",\"field-label\"],[13],[0,\"Account Number:\"],[14],[0,\"\\n      \"],[11,\"span\",[]],[15,\"class\",\"field-value\"],[13],[1,[28,[\"loan\",\"acc_number\"]],false],[14],[0,\"\\n    \"],[14],[0,\"\\n\"],[6,[\"if\"],[[33,[\"eq\"],[[28,[\"loan\",\"loan_status\"]],[28,[\"status\",\"APPROVED\"]]],null]],null,{\"statements\":[[0,\"    \"],[11,\"div\",[]],[15,\"class\",\"view-wrap\"],[13],[0,\"\\n        \"],[11,\"button\",[]],[15,\"class\",\"view-btn\"],[5,[\"action\"],[[28,[null]],\"toEmis\",[28,[\"loan\"]]]],[13],[0,\"View Emis\"],[14],[0,\"\\n    \"],[14],[0,\"\\n\"]],\"locals\":[]},null],[0,\"  \"],[14],[0,\"\\n\"],[14],[0,\"\\n\"]],\"locals\":[],\"named\":[],\"yields\":[],\"hasPartials\":false}", "meta": { "moduleName": "banker/templates/components/view-loan.hbs" } });
+  exports.default = Ember.HTMLBars.template({ "id": "n0l8l6kn", "block": "{\"statements\":[[11,\"div\",[]],[15,\"class\",\"loan-card-wrapper\"],[13],[0,\"\\n  \"],[11,\"div\",[]],[15,\"class\",\"loan-card\"],[13],[0,\"\\n    \"],[11,\"h2\",[]],[13],[0,\"Loan Details\"],[14],[0,\"\\n    \"],[11,\"div\",[]],[15,\"class\",\"loan-field\"],[13],[0,\"\\n      \"],[11,\"span\",[]],[15,\"class\",\"field-label\"],[15,\"style\",\"padding-left:40px\"],[13],[0,\"Loan Id:\"],[14],[0,\"\\n      \"],[11,\"span\",[]],[15,\"class\",\"field-value\"],[13],[1,[28,[\"loan\",\"loan_id\"]],false],[14],[0,\"\\n    \"],[14],[0,\"\\n    \"],[11,\"div\",[]],[15,\"class\",\"loan-field\"],[13],[0,\"\\n      \"],[11,\"span\",[]],[15,\"class\",\"field-label\"],[15,\"style\",\"padding-left:40px\"],[13],[0,\"Loan Type:\"],[14],[0,\"\\n      \"],[11,\"span\",[]],[15,\"class\",\"field-value\"],[13],[1,[28,[\"loan\",\"loan_type\"]],false],[14],[0,\"\\n    \"],[14],[0,\"\\n    \"],[11,\"div\",[]],[15,\"class\",\"loan-field\"],[13],[0,\"\\n      \"],[11,\"span\",[]],[15,\"class\",\"field-label\"],[15,\"style\",\"padding-left:40px\"],[13],[0,\"Loan Amount:\"],[14],[0,\"\\n      \"],[11,\"span\",[]],[15,\"class\",\"field-value\"],[13],[0,\"Rs.\"],[1,[28,[\"loan\",\"loan_amount\"]],false],[14],[0,\"\\n    \"],[14],[0,\"\\n    \"],[11,\"div\",[]],[15,\"class\",\"loan-field\"],[13],[0,\"\\n      \"],[11,\"span\",[]],[15,\"class\",\"field-label\"],[15,\"style\",\"padding-left:40px\"],[13],[0,\"Interest:\"],[14],[0,\"\\n      \"],[11,\"span\",[]],[15,\"class\",\"field-value\"],[13],[1,[28,[\"loan\",\"loan_interest\"]],false],[0,\"%\"],[14],[0,\"\\n    \"],[14],[0,\"\\n    \"],[11,\"div\",[]],[15,\"class\",\"loan-field\"],[13],[0,\"\\n      \"],[11,\"span\",[]],[15,\"class\",\"field-label\"],[15,\"style\",\"padding-left:40px\"],[13],[0,\"Duration:\"],[14],[0,\"\\n      \"],[11,\"span\",[]],[15,\"class\",\"field-value\"],[13],[1,[28,[\"loan\",\"loan_duration\"]],false],[0,\" Months\"],[14],[0,\"\\n    \"],[14],[0,\"\\n     \"],[11,\"div\",[]],[15,\"class\",\"loan-field\"],[13],[0,\"\\n      \"],[11,\"span\",[]],[15,\"class\",\"field-label\"],[15,\"style\",\"padding-left:40px\"],[13],[0,\"Status:\"],[14],[0,\"\\n      \"],[11,\"span\",[]],[15,\"class\",\"field-value\"],[13],[1,[28,[\"loan\",\"loan_status\"]],false],[14],[0,\"\\n    \"],[14],[0,\"\\n     \"],[11,\"div\",[]],[15,\"class\",\"loan-field\"],[13],[0,\"\\n      \"],[11,\"span\",[]],[15,\"class\",\"field-label\"],[15,\"style\",\"padding-left:40px\"],[13],[0,\"Availed Date:\"],[14],[0,\"\\n      \"],[11,\"span\",[]],[15,\"class\",\"field-value\"],[13],[1,[28,[\"loan\",\"loan_availed_date\"]],false],[14],[0,\"\\n    \"],[14],[0,\"\\n    \"],[11,\"div\",[]],[15,\"class\",\"loan-field\"],[13],[0,\"\\n      \"],[11,\"span\",[]],[15,\"class\",\"field-label\"],[15,\"style\",\"padding-left:40px\"],[13],[0,\"Account Number:\"],[14],[0,\"\\n      \"],[11,\"span\",[]],[15,\"class\",\"field-value\"],[13],[1,[28,[\"loan\",\"acc_number\"]],false],[14],[0,\"\\n    \"],[14],[0,\"\\n\"],[6,[\"unless\"],[[33,[\"eq\"],[[28,[\"loan\",\"loan_status\"]],[28,[\"status\",\"REJECTED\"]]],null]],null,{\"statements\":[[6,[\"unless\"],[[33,[\"eq\"],[[28,[\"loan\",\"loan_status\"]],[28,[\"status\",\"PENDING\"]]],null]],null,{\"statements\":[[0,\"    \"],[11,\"div\",[]],[15,\"class\",\"view-wrap\"],[13],[0,\"\\n        \"],[11,\"button\",[]],[15,\"class\",\"view-btn\"],[5,[\"action\"],[[28,[null]],\"toEmis\",[28,[\"loan\"]]]],[13],[0,\"View Emis\"],[14],[0,\"\\n    \"],[14],[0,\"\\n\"]],\"locals\":[]},null]],\"locals\":[]},null],[0,\"  \"],[14],[0,\"\\n\"],[14],[0,\"\\n\"]],\"locals\":[],\"named\":[],\"yields\":[],\"hasPartials\":false}", "meta": { "moduleName": "banker/templates/components/view-loan.hbs" } });
 });
 define("banker/templates/components/view-loans", ["exports"], function (exports) {
   "use strict";
@@ -6720,7 +6545,7 @@ define("banker/templates/components/view-loans", ["exports"], function (exports)
   Object.defineProperty(exports, "__esModule", {
     value: true
   });
-  exports.default = Ember.HTMLBars.template({ "id": "1n7OmVVa", "block": "{\"statements\":[[11,\"div\",[]],[15,\"class\",\"loans-list\"],[13],[0,\"\\n  \"],[11,\"button\",[]],[15,\"class\",\"new-loan-btn\"],[5,[\"action\"],[[28,[null]],\"addNewLoan\"]],[13],[0,\"New Loan\"],[14],[0,\"\\n\\n  \"],[11,\"div\",[]],[15,\"class\",\"filters\"],[13],[0,\"\\n    \"],[11,\"label\",[]],[15,\"for\",\"loanType\"],[13],[0,\"Type:\"],[14],[0,\"\\n    \"],[11,\"select\",[]],[15,\"id\",\"loanType\"],[16,\"value\",[26,[\"selectedLoanType\"]],null],[16,\"oninput\",[33,[\"action\"],[[28,[null]],\"LoanType\"],[[\"value\"],[\"target.value\"]]],null],[13],[0,\"\\n      \"],[11,\"option\",[]],[15,\"value\",\"\"],[13],[0,\"All\"],[14],[0,\"\\n      \"],[11,\"option\",[]],[15,\"value\",\"homeloan\"],[13],[0,\"Home Loan\"],[14],[0,\"\\n      \"],[11,\"option\",[]],[15,\"value\",\"businessloan\"],[13],[0,\"Business Loan\"],[14],[0,\"\\n      \"],[11,\"option\",[]],[15,\"value\",\"educationloan\"],[13],[0,\"Education Loan\"],[14],[0,\"\\n    \"],[14],[0,\"\\n\\n    \"],[11,\"label\",[]],[15,\"for\",\"loanStatus\"],[13],[0,\"Status:\"],[14],[0,\"\\n    \"],[11,\"select\",[]],[15,\"id\",\"loanStatus\"],[16,\"value\",[26,[\"selectedLoanStatus\"]],null],[16,\"oninput\",[33,[\"action\"],[[28,[null]],\"LoanStatus\"],[[\"value\"],[\"target.value\"]]],null],[13],[0,\"\\n      \"],[11,\"option\",[]],[15,\"value\",\"\"],[13],[0,\"All\"],[14],[0,\"\\n      \"],[11,\"option\",[]],[15,\"value\",\"approved\"],[13],[0,\"Approved\"],[14],[0,\"\\n      \"],[11,\"option\",[]],[15,\"value\",\"pending\"],[13],[0,\"Pending\"],[14],[0,\"\\n      \"],[11,\"option\",[]],[15,\"value\",\"rejected\"],[13],[0,\"Rejected\"],[14],[0,\"\\n      \"],[11,\"option\",[]],[15,\"value\",\"closed\"],[13],[0,\"Closed\"],[14],[0,\"\\n    \"],[14],[0,\"\\n    \"],[11,\"button\",[]],[15,\"class\",\"clear\"],[15,\"style\",\"margin-top:7px;padding: 8px 10px 8px 10px;\"],[5,[\"action\"],[[28,[null]],\"FilterReset\"]],[13],[0,\"Reset\"],[14],[0,\"\\n  \"],[14],[0,\"\\n\\n\"],[6,[\"if\"],[[28,[\"isDirect\"]]],null,{\"statements\":[[0,\"    \"],[11,\"div\",[]],[15,\"class\",\"search-container\"],[13],[0,\"\\n      \"],[11,\"input\",[]],[15,\"type\",\"text\"],[15,\"class\",\"search-input\"],[15,\"placeholder\",\"Search Account Number\"],[16,\"value\",[26,[\"searchQuery\"]],null],[16,\"oninput\",[33,[\"action\"],[[28,[null]],\"updateSearchQuery\"],[[\"value\"],[\"target.value\"]]],null],[13],[14],[0,\"\\n      \"],[11,\"button\",[]],[15,\"class\",\"new-branch-btn\"],[15,\"style\",\"margin-right: 42%;padding:10px;margin-top:-3px\"],[5,[\"action\"],[[28,[null]],\"performSearch\"]],[13],[0,\"Search\"],[14],[0,\"\\n\\n\"],[6,[\"if\"],[[28,[\"searchSuggestions\",\"length\"]]],null,{\"statements\":[[0,\"        \"],[11,\"ul\",[]],[15,\"class\",\"suggestions-list\"],[13],[0,\"\\n\"],[6,[\"each\"],[[28,[\"searchSuggestions\"]]],null,{\"statements\":[[0,\"            \"],[11,\"li\",[]],[5,[\"action\"],[[28,[null]],\"selectSuggestion\",[28,[\"suggestion\"]]]],[13],[1,[28,[\"suggestion\"]],false],[14],[0,\"\\n\"]],\"locals\":[\"suggestion\"]},null],[0,\"        \"],[14],[0,\"\\n\"]],\"locals\":[]},null],[0,\"    \"],[14],[0,\"\\n\"]],\"locals\":[]},null],[0,\"  \\n  \"],[11,\"table\",[]],[15,\"class\",\"loans-table\"],[13],[0,\"\\n    \"],[11,\"thead\",[]],[13],[0,\"\\n      \"],[11,\"tr\",[]],[13],[0,\"\\n        \"],[11,\"th\",[]],[13],[0,\"Loan ID\"],[14],[0,\"\\n        \"],[11,\"th\",[]],[13],[0,\"Loan Type\"],[14],[0,\"\\n        \"],[11,\"th\",[]],[13],[0,\"Loan Status\"],[14],[0,\"\\n        \"],[11,\"th\",[]],[13],[0,\"Account Number\"],[14],[0,\"\\n        \"],[11,\"th\",[]],[13],[0,\"Amount\"],[14],[0,\"\\n\"],[6,[\"unless\"],[[33,[\"eq\"],[[28,[\"role\"]],[28,[\"userRole\",\"CUSTOMER\"]]],null]],null,{\"statements\":[[0,\"          \"],[11,\"th\",[]],[13],[0,\"Action\"],[14],[0,\"\\n\"]],\"locals\":[]},null],[0,\"      \"],[14],[0,\"\\n    \"],[14],[0,\"\\n    \"],[11,\"tbody\",[]],[13],[0,\"\\n\"],[6,[\"unless\"],[[33,[\"eq\"],[[28,[\"loans\",\"length\"]],0],null]],null,{\"statements\":[[6,[\"each\"],[[28,[\"loans\"]]],null,{\"statements\":[[0,\"          \"],[11,\"tr\",[]],[5,[\"action\"],[[28,[null]],\"viewLoan\",[28,[\"loan\"]]]],[13],[0,\"\\n            \"],[11,\"td\",[]],[13],[1,[28,[\"loan\",\"loan_id\"]],false],[14],[0,\"\\n            \"],[11,\"td\",[]],[13],[1,[28,[\"loan\",\"loan_type\"]],false],[14],[0,\"\\n            \"],[11,\"td\",[]],[13],[1,[28,[\"loan\",\"loan_status\"]],false],[14],[0,\"\\n            \"],[11,\"td\",[]],[13],[1,[28,[\"loan\",\"acc_number\"]],false],[14],[0,\"\\n            \"],[11,\"td\",[]],[13],[0,\"Rs. \"],[1,[28,[\"loan\",\"loan_amount\"]],false],[14],[0,\"\\n\"],[6,[\"unless\"],[[33,[\"eq\"],[[28,[\"role\"]],[28,[\"userRole\",\"CUSTOMER\"]]],null]],null,{\"statements\":[[0,\"              \"],[11,\"td\",[]],[13],[0,\"\\n                \"],[11,\"button\",[]],[15,\"class\",\"view-btn\"],[5,[\"action\"],[[28,[null]],\"editLoan\",[28,[\"loan\"]]]],[13],[11,\"i\",[]],[15,\"class\",\"bi bi-pencil\"],[13],[14],[0,\" Edit\"],[14],[0,\"\\n              \"],[14],[0,\"\\n\"]],\"locals\":[]},null],[0,\"          \"],[14],[0,\"\\n\"]],\"locals\":[\"loan\"]},null]],\"locals\":[]},null],[0,\"    \"],[14],[0,\"\\n  \"],[14],[0,\"\\n\\n\"],[6,[\"if\"],[[33,[\"eq\"],[[28,[\"loans\",\"length\"]],0],null]],null,{\"statements\":[[0,\"     \"],[11,\"button\",[]],[15,\"style\",\"margin-top:60px;cursor:default;margin-right:40%;\"],[15,\"class\",\"new-transaction-btn\"],[13],[0,\"No Loans Found!\"],[14],[0,\"\\n\"]],\"locals\":[]},{\"statements\":[[0,\"    \"],[11,\"div\",[]],[15,\"class\",\"pagination-controls\"],[13],[0,\"\\n      \"],[11,\"button\",[]],[16,\"disabled\",[33,[\"if\"],[[33,[\"eq\"],[[28,[\"currentPage\"]],1],null],\"disabled\"],null],null],[5,[\"action\"],[[28,[null]],\"previousPage\"]],[13],[0,\"Previous\"],[14],[0,\"\\n\\n\"],[6,[\"if\"],[[28,[\"showFirstPage\"]]],null,{\"statements\":[[0,\"        \"],[11,\"button\",[]],[16,\"class\",[34,[\"page-number \",[33,[\"if\"],[[33,[\"eq\"],[[28,[\"currentPage\"]],1],null],\"active\",\"\"],null]]]],[5,[\"action\"],[[28,[null]],\"goToPage\",1]],[13],[0,\"1\"],[14],[0,\"\\n\"]],\"locals\":[]},null],[0,\"\\n\"],[6,[\"if\"],[[28,[\"showLeftEllipsis\"]]],null,{\"statements\":[[0,\"        \"],[11,\"span\",[]],[15,\"class\",\"ellipsis\"],[13],[0,\"...\"],[14],[0,\"\\n\"]],\"locals\":[]},null],[0,\"\\n\"],[6,[\"each\"],[[28,[\"visiblePages\"]]],null,{\"statements\":[[0,\"        \"],[11,\"button\",[]],[16,\"class\",[34,[\"page-number \",[33,[\"if\"],[[33,[\"eq\"],[[28,[\"page\"]],[28,[\"currentPage\"]]],null],\"active\",\"\"],null]]]],[5,[\"action\"],[[28,[null]],\"goToPage\",[28,[\"page\"]]]],[13],[0,\"\\n          \"],[1,[28,[\"page\"]],false],[0,\"\\n        \"],[14],[0,\"\\n\"]],\"locals\":[\"page\"]},null],[0,\"\\n\"],[6,[\"if\"],[[28,[\"showRightEllipsis\"]]],null,{\"statements\":[[0,\"        \"],[11,\"span\",[]],[15,\"class\",\"ellipsis\"],[13],[0,\"...\"],[14],[0,\"\\n\"]],\"locals\":[]},null],[0,\"\\n\"],[6,[\"if\"],[[28,[\"showLastPage\"]]],null,{\"statements\":[[0,\"        \"],[11,\"button\",[]],[16,\"class\",[34,[\"page-number \",[33,[\"if\"],[[33,[\"eq\"],[[28,[\"currentPage\"]],[28,[\"totalPages\"]]],null],\"active\",\"\"],null]]]],[5,[\"action\"],[[28,[null]],\"goToPage\",[28,[\"totalPages\"]]]],[13],[0,\"\\n          \"],[1,[26,[\"totalPages\"]],false],[0,\"\\n        \"],[14],[0,\"\\n\"]],\"locals\":[]},null],[0,\"\\n      \"],[11,\"button\",[]],[16,\"disabled\",[33,[\"if\"],[[33,[\"eq\"],[[28,[\"currentPage\"]],[28,[\"totalPages\"]]],null],\"disabled\"],null],null],[5,[\"action\"],[[28,[null]],\"nextPage\"]],[13],[0,\"Next\"],[14],[0,\"\\n    \"],[14],[0,\"\\n\"]],\"locals\":[]}],[14],[0,\"\\n\"]],\"locals\":[],\"named\":[],\"yields\":[],\"hasPartials\":false}", "meta": { "moduleName": "banker/templates/components/view-loans.hbs" } });
+  exports.default = Ember.HTMLBars.template({ "id": "eOD+n+5W", "block": "{\"statements\":[[11,\"div\",[]],[15,\"class\",\"loans-list\"],[13],[0,\"\\n  \"],[11,\"button\",[]],[15,\"style\",\"margin-top:65px\"],[15,\"class\",\"new-loan-btn\"],[5,[\"action\"],[[28,[null]],\"addNewLoan\"]],[13],[0,\"New Loan\"],[14],[0,\"\\n\\n  \"],[11,\"div\",[]],[15,\"class\",\"filters\"],[13],[0,\"\\n    \"],[11,\"label\",[]],[15,\"for\",\"loanType\"],[13],[0,\"Type:\"],[14],[0,\"\\n    \"],[11,\"select\",[]],[15,\"id\",\"loanType\"],[16,\"value\",[26,[\"selectedLoanType\"]],null],[16,\"oninput\",[33,[\"action\"],[[28,[null]],\"LoanType\"],[[\"value\"],[\"target.value\"]]],null],[13],[0,\"\\n      \"],[11,\"option\",[]],[15,\"value\",\"\"],[13],[0,\"All\"],[14],[0,\"\\n      \"],[11,\"option\",[]],[15,\"value\",\"homeloan\"],[13],[0,\"Home Loan\"],[14],[0,\"\\n      \"],[11,\"option\",[]],[15,\"value\",\"businessloan\"],[13],[0,\"Business Loan\"],[14],[0,\"\\n      \"],[11,\"option\",[]],[15,\"value\",\"educationloan\"],[13],[0,\"Education Loan\"],[14],[0,\"\\n    \"],[14],[0,\"\\n\\n    \"],[11,\"label\",[]],[15,\"for\",\"loanStatus\"],[13],[0,\"Status:\"],[14],[0,\"\\n    \"],[11,\"select\",[]],[15,\"id\",\"loanStatus\"],[16,\"value\",[26,[\"selectedLoanStatus\"]],null],[16,\"oninput\",[33,[\"action\"],[[28,[null]],\"LoanStatus\"],[[\"value\"],[\"target.value\"]]],null],[13],[0,\"\\n      \"],[11,\"option\",[]],[15,\"value\",\"\"],[13],[0,\"All\"],[14],[0,\"\\n      \"],[11,\"option\",[]],[15,\"value\",\"approved\"],[13],[0,\"Approved\"],[14],[0,\"\\n      \"],[11,\"option\",[]],[15,\"value\",\"pending\"],[13],[0,\"Pending\"],[14],[0,\"\\n      \"],[11,\"option\",[]],[15,\"value\",\"rejected\"],[13],[0,\"Rejected\"],[14],[0,\"\\n      \"],[11,\"option\",[]],[15,\"value\",\"closed\"],[13],[0,\"Closed\"],[14],[0,\"\\n    \"],[14],[0,\"\\n    \"],[11,\"button\",[]],[15,\"class\",\"clear\"],[15,\"style\",\"margin-top:7px;padding: 8px 10px 8px 10px;\"],[5,[\"action\"],[[28,[null]],\"FilterReset\"]],[13],[0,\"Reset\"],[14],[0,\"\\n  \"],[14],[0,\"\\n\\n\"],[6,[\"if\"],[[28,[\"isDirect\"]]],null,{\"statements\":[[0,\"    \"],[11,\"div\",[]],[15,\"class\",\"search-container\"],[13],[0,\"\\n      \"],[11,\"input\",[]],[15,\"type\",\"text\"],[15,\"class\",\"search-input\"],[15,\"placeholder\",\"Search Account Number\"],[16,\"value\",[26,[\"searchQuery\"]],null],[16,\"oninput\",[33,[\"action\"],[[28,[null]],\"updateSearchQuery\"],[[\"value\"],[\"target.value\"]]],null],[13],[14],[0,\"\\n      \"],[11,\"button\",[]],[15,\"class\",\"new-branch-btn\"],[15,\"style\",\"margin-right: 52%;padding:10px;margin-top:-3px\"],[5,[\"action\"],[[28,[null]],\"performSearch\"]],[13],[0,\"Search\"],[14],[0,\"\\n\\n\"],[6,[\"if\"],[[28,[\"searchSuggestions\",\"length\"]]],null,{\"statements\":[[0,\"        \"],[11,\"ul\",[]],[15,\"class\",\"suggestions-list\"],[13],[0,\"\\n\"],[6,[\"each\"],[[28,[\"searchSuggestions\"]]],null,{\"statements\":[[0,\"            \"],[11,\"li\",[]],[5,[\"action\"],[[28,[null]],\"selectSuggestion\",[28,[\"suggestion\"]]]],[13],[1,[28,[\"suggestion\"]],false],[14],[0,\"\\n\"]],\"locals\":[\"suggestion\"]},null],[0,\"        \"],[14],[0,\"\\n\"]],\"locals\":[]},null],[0,\"    \"],[14],[0,\"\\n\"]],\"locals\":[]},null],[0,\"  \\n  \"],[11,\"table\",[]],[15,\"class\",\"loans-table\"],[13],[0,\"\\n    \"],[11,\"thead\",[]],[13],[0,\"\\n      \"],[11,\"tr\",[]],[13],[0,\"\\n        \"],[11,\"th\",[]],[13],[0,\"Loan ID\"],[14],[0,\"\\n        \"],[11,\"th\",[]],[13],[0,\"Loan Type\"],[14],[0,\"\\n        \"],[11,\"th\",[]],[13],[0,\"Loan Status\"],[14],[0,\"\\n        \"],[11,\"th\",[]],[13],[0,\"Account Number\"],[14],[0,\"\\n        \"],[11,\"th\",[]],[13],[0,\"Amount\"],[14],[0,\"\\n\"],[6,[\"unless\"],[[33,[\"eq\"],[[28,[\"role\"]],[28,[\"userRole\",\"CUSTOMER\"]]],null]],null,{\"statements\":[[0,\"          \"],[11,\"th\",[]],[13],[0,\"Action\"],[14],[0,\"\\n\"]],\"locals\":[]},null],[0,\"      \"],[14],[0,\"\\n    \"],[14],[0,\"\\n    \"],[11,\"tbody\",[]],[13],[0,\"\\n\"],[6,[\"unless\"],[[33,[\"eq\"],[[28,[\"loans\",\"length\"]],0],null]],null,{\"statements\":[[6,[\"each\"],[[28,[\"loans\"]]],null,{\"statements\":[[0,\"          \"],[11,\"tr\",[]],[5,[\"action\"],[[28,[null]],\"viewLoan\",[28,[\"loan\"]]]],[13],[0,\"\\n            \"],[11,\"td\",[]],[13],[1,[28,[\"loan\",\"loan_id\"]],false],[14],[0,\"\\n            \"],[11,\"td\",[]],[13],[1,[28,[\"loan\",\"loan_type\"]],false],[14],[0,\"\\n            \"],[11,\"td\",[]],[13],[1,[28,[\"loan\",\"loan_status\"]],false],[14],[0,\"\\n            \"],[11,\"td\",[]],[13],[1,[28,[\"loan\",\"acc_number\"]],false],[14],[0,\"\\n            \"],[11,\"td\",[]],[13],[0,\"Rs. \"],[1,[28,[\"loan\",\"loan_amount\"]],false],[14],[0,\"\\n\"],[6,[\"unless\"],[[33,[\"eq\"],[[28,[\"role\"]],[28,[\"userRole\",\"CUSTOMER\"]]],null]],null,{\"statements\":[[0,\"              \"],[11,\"td\",[]],[13],[0,\"\\n\"],[6,[\"unless\"],[[33,[\"eq\"],[[28,[\"status\",\"CLOSED\"]],[28,[\"loan\",\"loan_status\"]]],null]],null,{\"statements\":[[6,[\"unless\"],[[33,[\"eq\"],[[28,[\"status\",\"REJECTED\"]],[28,[\"loan\",\"loan_status\"]]],null]],null,{\"statements\":[[0,\"                    \"],[11,\"button\",[]],[15,\"class\",\"view-btn\"],[5,[\"action\"],[[28,[null]],\"editLoan\",[28,[\"loan\"]]]],[13],[11,\"i\",[]],[15,\"class\",\"bi bi-pencil\"],[13],[14],[0,\" Edit\"],[14],[0,\"\\n\"]],\"locals\":[]},null]],\"locals\":[]},null],[0,\"              \"],[14],[0,\"\\n\"]],\"locals\":[]},null],[0,\"          \"],[14],[0,\"\\n\"]],\"locals\":[\"loan\"]},null]],\"locals\":[]},null],[0,\"    \"],[14],[0,\"\\n  \"],[14],[0,\"\\n\\n\"],[6,[\"if\"],[[33,[\"eq\"],[[28,[\"loans\",\"length\"]],0],null]],null,{\"statements\":[[0,\"     \"],[11,\"button\",[]],[15,\"style\",\"margin-top:60px;cursor:default;margin-right:40%;\"],[15,\"class\",\"new-transaction-btn\"],[13],[0,\"No Loans Found!\"],[14],[0,\"\\n\"]],\"locals\":[]},{\"statements\":[[0,\"    \"],[11,\"div\",[]],[15,\"class\",\"pagination-controls\"],[13],[0,\"\\n      \"],[11,\"button\",[]],[16,\"disabled\",[33,[\"if\"],[[33,[\"eq\"],[[28,[\"currentPage\"]],1],null],\"disabled\"],null],null],[5,[\"action\"],[[28,[null]],\"previousPage\"]],[13],[0,\"Previous\"],[14],[0,\"\\n\\n\"],[6,[\"if\"],[[28,[\"showFirstPage\"]]],null,{\"statements\":[[0,\"        \"],[11,\"button\",[]],[16,\"class\",[34,[\"page-number \",[33,[\"if\"],[[33,[\"eq\"],[[28,[\"currentPage\"]],1],null],\"active\",\"\"],null]]]],[5,[\"action\"],[[28,[null]],\"goToPage\",1]],[13],[0,\"1\"],[14],[0,\"\\n\"]],\"locals\":[]},null],[0,\"\\n\"],[6,[\"if\"],[[28,[\"showLeftEllipsis\"]]],null,{\"statements\":[[0,\"        \"],[11,\"span\",[]],[15,\"class\",\"ellipsis\"],[13],[0,\"...\"],[14],[0,\"\\n\"]],\"locals\":[]},null],[0,\"\\n\"],[6,[\"each\"],[[28,[\"visiblePages\"]]],null,{\"statements\":[[0,\"        \"],[11,\"button\",[]],[16,\"class\",[34,[\"page-number \",[33,[\"if\"],[[33,[\"eq\"],[[28,[\"page\"]],[28,[\"currentPage\"]]],null],\"active\",\"\"],null]]]],[5,[\"action\"],[[28,[null]],\"goToPage\",[28,[\"page\"]]]],[13],[0,\"\\n          \"],[1,[28,[\"page\"]],false],[0,\"\\n        \"],[14],[0,\"\\n\"]],\"locals\":[\"page\"]},null],[0,\"\\n\"],[6,[\"if\"],[[28,[\"showRightEllipsis\"]]],null,{\"statements\":[[0,\"        \"],[11,\"span\",[]],[15,\"class\",\"ellipsis\"],[13],[0,\"...\"],[14],[0,\"\\n\"]],\"locals\":[]},null],[0,\"\\n\"],[6,[\"if\"],[[28,[\"showLastPage\"]]],null,{\"statements\":[[0,\"        \"],[11,\"button\",[]],[16,\"class\",[34,[\"page-number \",[33,[\"if\"],[[33,[\"eq\"],[[28,[\"currentPage\"]],[28,[\"totalPages\"]]],null],\"active\",\"\"],null]]]],[5,[\"action\"],[[28,[null]],\"goToPage\",[28,[\"totalPages\"]]]],[13],[0,\"\\n          \"],[1,[26,[\"totalPages\"]],false],[0,\"\\n        \"],[14],[0,\"\\n\"]],\"locals\":[]},null],[0,\"\\n      \"],[11,\"button\",[]],[16,\"disabled\",[33,[\"if\"],[[33,[\"eq\"],[[28,[\"currentPage\"]],[28,[\"totalPages\"]]],null],\"disabled\"],null],null],[5,[\"action\"],[[28,[null]],\"nextPage\"]],[13],[0,\"Next\"],[14],[0,\"\\n    \"],[14],[0,\"\\n\"]],\"locals\":[]}],[14],[0,\"\\n\"]],\"locals\":[],\"named\":[],\"yields\":[],\"hasPartials\":false}", "meta": { "moduleName": "banker/templates/components/view-loans.hbs" } });
 });
 define("banker/templates/components/view-transaction", ["exports"], function (exports) {
   "use strict";
@@ -6736,7 +6561,7 @@ define("banker/templates/components/view-transactions", ["exports"], function (e
   Object.defineProperty(exports, "__esModule", {
     value: true
   });
-  exports.default = Ember.HTMLBars.template({ "id": "LevvzFcZ", "block": "{\"statements\":[[11,\"div\",[]],[15,\"class\",\"transactions-list\"],[13],[0,\"\\n  \"],[11,\"button\",[]],[15,\"class\",\"new-transaction-btn\"],[5,[\"action\"],[[28,[null]],\"addNewTransaction\"]],[13],[0,\"New Transaction\"],[14],[0,\"\\n\\n  \"],[11,\"div\",[]],[15,\"class\",\"filters\"],[13],[0,\"\\n    \"],[11,\"label\",[]],[15,\"for\",\"transactionType\"],[13],[0,\"Type\"],[14],[0,\"\\n    \"],[11,\"select\",[]],[15,\"id\",\"transactionType\"],[16,\"value\",[26,[\"selectedTransactionType\"]],null],[16,\"oninput\",[33,[\"action\"],[[28,[null]],\"TransactionType\"],[[\"value\"],[\"target.value\"]]],null],[13],[0,\"\\n      \"],[11,\"option\",[]],[15,\"value\",\"\"],[13],[0,\"All\"],[14],[0,\"\\n      \"],[11,\"option\",[]],[15,\"value\",\"emi\"],[13],[0,\"EMI\"],[14],[0,\"\\n      \"],[11,\"option\",[]],[15,\"value\",\"debit\"],[13],[0,\"Debit\"],[14],[0,\"\\n      \"],[11,\"option\",[]],[15,\"value\",\"credit\"],[13],[0,\"Credit\"],[14],[0,\"\\n    \"],[14],[0,\"\\n\\n    \"],[11,\"label\",[]],[15,\"for\",\"transactionStatus\"],[13],[0,\"Status\"],[14],[0,\"\\n    \"],[11,\"select\",[]],[15,\"id\",\"transactionStatus\"],[16,\"value\",[26,[\"selectedTransactionStatus\"]],null],[16,\"oninput\",[33,[\"action\"],[[28,[null]],\"TransactionStatus\"],[[\"value\"],[\"target.value\"]]],null],[13],[0,\"\\n      \"],[11,\"option\",[]],[15,\"value\",\"\"],[13],[0,\"All\"],[14],[0,\"\\n      \"],[11,\"option\",[]],[15,\"value\",\"success\"],[13],[0,\"Success\"],[14],[0,\"\\n      \"],[11,\"option\",[]],[15,\"value\",\"pending\"],[13],[0,\"Pending\"],[14],[0,\"\\n    \"],[14],[0,\"\\n    \\n    \"],[11,\"button\",[]],[15,\"class\",\"clear\"],[15,\"style\",\"margin-top:7px;padding: 8px 10px 8px 10px;\"],[5,[\"action\"],[[28,[null]],\"FilterReset\"]],[13],[0,\"Reset\"],[14],[0,\"\\n  \"],[14],[0,\"\\n\"],[6,[\"if\"],[[28,[\"isDirect\"]]],null,{\"statements\":[[0,\"  \"],[11,\"div\",[]],[15,\"class\",\"search-container\"],[13],[0,\"\\n    \"],[11,\"input\",[]],[15,\"type\",\"text\"],[15,\"class\",\"search-input\"],[15,\"placeholder\",\"Search Account Number\"],[16,\"value\",[26,[\"searchQuery\"]],null],[16,\"oninput\",[33,[\"action\"],[[28,[null]],\"updateSearchQuery\"],[[\"value\"],[\"target.value\"]]],null],[13],[14],[0,\"\\n    \"],[11,\"button\",[]],[15,\"class\",\"new-branch-btn\"],[15,\"style\",\"margin-right: 42%;padding:10px;margin-top:-3px\"],[5,[\"action\"],[[28,[null]],\"performSearch\"]],[13],[0,\"Search\"],[14],[0,\"\\n\\n\"],[6,[\"if\"],[[28,[\"searchSuggestions\",\"length\"]]],null,{\"statements\":[[0,\"      \"],[11,\"ul\",[]],[15,\"class\",\"suggestions-list\"],[13],[0,\"\\n\"],[6,[\"each\"],[[28,[\"searchSuggestions\"]]],null,{\"statements\":[[0,\"          \"],[11,\"li\",[]],[5,[\"action\"],[[28,[null]],\"selectSuggestion\",[28,[\"suggestion\"]]]],[13],[1,[28,[\"suggestion\"]],false],[14],[0,\"\\n\"]],\"locals\":[\"suggestion\"]},null],[0,\"      \"],[14],[0,\"\\n\"]],\"locals\":[]},null],[0,\"  \"],[14],[0,\"\\n\"]],\"locals\":[]},null],[0,\"  \"],[11,\"table\",[]],[15,\"class\",\"transactions-table\"],[13],[0,\"\\n    \"],[11,\"thead\",[]],[13],[0,\"\\n      \"],[11,\"tr\",[]],[13],[0,\"\\n        \"],[11,\"th\",[]],[13],[0,\"Transaction ID\"],[14],[0,\"\\n        \"],[11,\"th\",[]],[13],[0,\"Transaction Type\"],[14],[0,\"\\n        \"],[11,\"th\",[]],[13],[0,\"Account Number\"],[14],[0,\"\\n        \"],[11,\"th\",[]],[13],[0,\"Amount\"],[14],[0,\"\\n        \"],[11,\"th\",[]],[13],[0,\"Date and Time\"],[14],[0,\"\\n      \"],[14],[0,\"\\n    \"],[14],[0,\"\\n    \"],[11,\"tbody\",[]],[13],[0,\"\\n\"],[6,[\"unless\"],[[33,[\"eq\"],[[28,[\"transactions\",\"length\"]],0],null]],null,{\"statements\":[[6,[\"each\"],[[28,[\"transactions\"]]],null,{\"statements\":[[0,\"          \"],[11,\"tr\",[]],[5,[\"action\"],[[28,[null]],\"viewTransaction\",[28,[\"transaction\"]]]],[13],[0,\"\\n            \"],[11,\"td\",[]],[13],[1,[28,[\"transaction\",\"transaction_id\"]],false],[14],[0,\"\\n            \"],[11,\"td\",[]],[13],[1,[28,[\"transaction\",\"transaction_type\"]],false],[14],[0,\"\\n            \"],[11,\"td\",[]],[13],[1,[28,[\"transaction\",\"acc_number\"]],false],[14],[0,\"\\n            \"],[11,\"td\",[]],[13],[0,\"Rs.\"],[1,[28,[\"transaction\",\"transaction_amount\"]],false],[14],[0,\"\\n            \"],[11,\"td\",[]],[13],[1,[28,[\"transaction\",\"transaction_datetime\"]],false],[14],[0,\"\\n          \"],[14],[0,\"\\n\"]],\"locals\":[\"transaction\"]},null]],\"locals\":[]},null],[0,\"    \"],[14],[0,\"\\n  \"],[14],[0,\"\\n\\n\"],[6,[\"if\"],[[33,[\"eq\"],[[28,[\"transactions\",\"length\"]],0],null]],null,{\"statements\":[[0,\"    \"],[11,\"button\",[]],[15,\"style\",\"margin-top:60px;cursor:default;margin-right:40%;\"],[15,\"class\",\"new-transaction-btn\"],[13],[0,\"No Transactions Found!\"],[14],[0,\"\\n\"]],\"locals\":[]},null],[0,\"\\n\"],[6,[\"unless\"],[[33,[\"eq\"],[[28,[\"transactions\",\"length\"]],0],null]],null,{\"statements\":[[0,\"    \"],[11,\"div\",[]],[15,\"class\",\"pagination-controls\"],[13],[0,\"\\n      \"],[11,\"button\",[]],[16,\"disabled\",[33,[\"if\"],[[33,[\"eq\"],[[28,[\"currentPage\"]],1],null],\"disabled\"],null],null],[5,[\"action\"],[[28,[null]],\"previousPage\"]],[13],[0,\"Previous\"],[14],[0,\"\\n\\n\"],[6,[\"if\"],[[28,[\"showFirstPage\"]]],null,{\"statements\":[[0,\"        \"],[11,\"button\",[]],[16,\"class\",[34,[\"page-number \",[33,[\"if\"],[[33,[\"eq\"],[[28,[\"currentPage\"]],1],null],\"active\",\"\"],null]]]],[5,[\"action\"],[[28,[null]],\"goToPage\",1]],[13],[0,\"1\"],[14],[0,\"\\n\"]],\"locals\":[]},null],[0,\"\\n\"],[6,[\"if\"],[[28,[\"showLeftEllipsis\"]]],null,{\"statements\":[[0,\"        \"],[11,\"span\",[]],[15,\"class\",\"ellipsis\"],[13],[0,\"...\"],[14],[0,\"\\n\"]],\"locals\":[]},null],[0,\"\\n\"],[6,[\"each\"],[[28,[\"visiblePages\"]]],null,{\"statements\":[[0,\"        \"],[11,\"button\",[]],[16,\"class\",[34,[\"page-number \",[33,[\"if\"],[[33,[\"eq\"],[[28,[\"page\"]],[28,[\"currentPage\"]]],null],\"active\",\"\"],null]]]],[5,[\"action\"],[[28,[null]],\"goToPage\",[28,[\"page\"]]]],[13],[0,\"\\n          \"],[1,[28,[\"page\"]],false],[0,\"\\n        \"],[14],[0,\"\\n\"]],\"locals\":[\"page\"]},null],[0,\"\\n\"],[6,[\"if\"],[[28,[\"showRightEllipsis\"]]],null,{\"statements\":[[0,\"        \"],[11,\"span\",[]],[15,\"class\",\"ellipsis\"],[13],[0,\"...\"],[14],[0,\"\\n\"]],\"locals\":[]},null],[0,\"\\n\"],[6,[\"if\"],[[28,[\"showLastPage\"]]],null,{\"statements\":[[0,\"        \"],[11,\"button\",[]],[16,\"class\",[34,[\"page-number \",[33,[\"if\"],[[33,[\"eq\"],[[28,[\"currentPage\"]],[28,[\"totalPages\"]]],null],\"active\",\"\"],null]]]],[5,[\"action\"],[[28,[null]],\"goToPage\",[28,[\"totalPages\"]]]],[13],[0,\"\\n          \"],[1,[26,[\"totalPages\"]],false],[0,\"\\n        \"],[14],[0,\"\\n\"]],\"locals\":[]},null],[0,\"\\n      \"],[11,\"button\",[]],[16,\"disabled\",[33,[\"if\"],[[33,[\"eq\"],[[28,[\"currentPage\"]],[28,[\"totalPages\"]]],null],\"disabled\"],null],null],[5,[\"action\"],[[28,[null]],\"nextPage\"]],[13],[0,\"Next\"],[14],[0,\"\\n    \"],[14],[0,\"\\n\"]],\"locals\":[]},null],[14],[0,\"\\n\"]],\"locals\":[],\"named\":[],\"yields\":[],\"hasPartials\":false}", "meta": { "moduleName": "banker/templates/components/view-transactions.hbs" } });
+  exports.default = Ember.HTMLBars.template({ "id": "Ze/mr977", "block": "{\"statements\":[[11,\"div\",[]],[15,\"class\",\"transactions-list\"],[13],[0,\"\\n  \"],[11,\"button\",[]],[15,\"style\",\"margin-top:65px\"],[15,\"class\",\"new-transaction-btn\"],[5,[\"action\"],[[28,[null]],\"addNewTransaction\"]],[13],[0,\"New Transaction\"],[14],[0,\"\\n\\n  \"],[11,\"div\",[]],[15,\"class\",\"filters\"],[13],[0,\"\\n    \"],[11,\"label\",[]],[15,\"for\",\"transactionType\"],[13],[0,\"Type\"],[14],[0,\"\\n    \"],[11,\"select\",[]],[15,\"id\",\"transactionType\"],[16,\"value\",[26,[\"selectedTransactionType\"]],null],[16,\"oninput\",[33,[\"action\"],[[28,[null]],\"TransactionType\"],[[\"value\"],[\"target.value\"]]],null],[13],[0,\"\\n      \"],[11,\"option\",[]],[15,\"value\",\"\"],[13],[0,\"All\"],[14],[0,\"\\n      \"],[11,\"option\",[]],[15,\"value\",\"emi\"],[13],[0,\"EMI\"],[14],[0,\"\\n      \"],[11,\"option\",[]],[15,\"value\",\"debit\"],[13],[0,\"Debit\"],[14],[0,\"\\n      \"],[11,\"option\",[]],[15,\"value\",\"credit\"],[13],[0,\"Credit\"],[14],[0,\"\\n    \"],[14],[0,\"\\n\\n    \"],[11,\"label\",[]],[15,\"for\",\"transactionStatus\"],[13],[0,\"Status\"],[14],[0,\"\\n    \"],[11,\"select\",[]],[15,\"id\",\"transactionStatus\"],[16,\"value\",[26,[\"selectedTransactionStatus\"]],null],[16,\"oninput\",[33,[\"action\"],[[28,[null]],\"TransactionStatus\"],[[\"value\"],[\"target.value\"]]],null],[13],[0,\"\\n      \"],[11,\"option\",[]],[15,\"value\",\"\"],[13],[0,\"All\"],[14],[0,\"\\n      \"],[11,\"option\",[]],[15,\"value\",\"success\"],[13],[0,\"Success\"],[14],[0,\"\\n      \"],[11,\"option\",[]],[15,\"value\",\"pending\"],[13],[0,\"Pending\"],[14],[0,\"\\n    \"],[14],[0,\"\\n    \\n    \"],[11,\"button\",[]],[15,\"class\",\"clear\"],[15,\"style\",\"margin-top:7px;padding: 8px 10px 8px 10px;\"],[5,[\"action\"],[[28,[null]],\"FilterReset\"]],[13],[0,\"Reset\"],[14],[0,\"\\n  \"],[14],[0,\"\\n\"],[6,[\"if\"],[[28,[\"isDirect\"]]],null,{\"statements\":[[0,\"  \"],[11,\"div\",[]],[15,\"class\",\"search-container\"],[13],[0,\"\\n    \"],[11,\"input\",[]],[15,\"type\",\"text\"],[15,\"class\",\"search-input\"],[15,\"placeholder\",\"Search Account Number\"],[16,\"value\",[26,[\"searchQuery\"]],null],[16,\"oninput\",[33,[\"action\"],[[28,[null]],\"updateSearchQuery\"],[[\"value\"],[\"target.value\"]]],null],[13],[14],[0,\"\\n    \"],[11,\"button\",[]],[15,\"class\",\"new-branch-btn\"],[15,\"style\",\"margin-right: 49%;padding:10px;margin-top:-3px\"],[5,[\"action\"],[[28,[null]],\"performSearch\"]],[13],[0,\"Search\"],[14],[0,\"\\n\\n\"],[6,[\"if\"],[[28,[\"searchSuggestions\",\"length\"]]],null,{\"statements\":[[0,\"      \"],[11,\"ul\",[]],[15,\"class\",\"suggestions-list\"],[13],[0,\"\\n\"],[6,[\"each\"],[[28,[\"searchSuggestions\"]]],null,{\"statements\":[[0,\"          \"],[11,\"li\",[]],[5,[\"action\"],[[28,[null]],\"selectSuggestion\",[28,[\"suggestion\"]]]],[13],[1,[28,[\"suggestion\"]],false],[14],[0,\"\\n\"]],\"locals\":[\"suggestion\"]},null],[0,\"      \"],[14],[0,\"\\n\"]],\"locals\":[]},null],[0,\"  \"],[14],[0,\"\\n\"]],\"locals\":[]},null],[0,\"  \"],[11,\"table\",[]],[15,\"class\",\"transactions-table\"],[13],[0,\"\\n    \"],[11,\"thead\",[]],[13],[0,\"\\n      \"],[11,\"tr\",[]],[13],[0,\"\\n        \"],[11,\"th\",[]],[13],[0,\"Transaction ID\"],[14],[0,\"\\n        \"],[11,\"th\",[]],[13],[0,\"Transaction Type\"],[14],[0,\"\\n        \"],[11,\"th\",[]],[13],[0,\"Account Number\"],[14],[0,\"\\n        \"],[11,\"th\",[]],[13],[0,\"Amount\"],[14],[0,\"\\n        \"],[11,\"th\",[]],[13],[0,\"Date and Time\"],[14],[0,\"\\n      \"],[14],[0,\"\\n    \"],[14],[0,\"\\n    \"],[11,\"tbody\",[]],[13],[0,\"\\n\"],[6,[\"unless\"],[[33,[\"eq\"],[[28,[\"transactions\",\"length\"]],0],null]],null,{\"statements\":[[6,[\"each\"],[[28,[\"transactions\"]]],null,{\"statements\":[[0,\"          \"],[11,\"tr\",[]],[5,[\"action\"],[[28,[null]],\"viewTransaction\",[28,[\"transaction\"]]]],[13],[0,\"\\n            \"],[11,\"td\",[]],[13],[1,[28,[\"transaction\",\"transaction_id\"]],false],[14],[0,\"\\n            \"],[11,\"td\",[]],[13],[1,[28,[\"transaction\",\"transaction_type\"]],false],[14],[0,\"\\n            \"],[11,\"td\",[]],[13],[1,[28,[\"transaction\",\"acc_number\"]],false],[14],[0,\"\\n            \"],[11,\"td\",[]],[13],[0,\"Rs.\"],[1,[28,[\"transaction\",\"transaction_amount\"]],false],[14],[0,\"\\n            \"],[11,\"td\",[]],[13],[1,[28,[\"transaction\",\"transaction_datetime\"]],false],[14],[0,\"\\n          \"],[14],[0,\"\\n\"]],\"locals\":[\"transaction\"]},null]],\"locals\":[]},null],[0,\"    \"],[14],[0,\"\\n  \"],[14],[0,\"\\n\\n\"],[6,[\"if\"],[[33,[\"eq\"],[[28,[\"transactions\",\"length\"]],0],null]],null,{\"statements\":[[0,\"    \"],[11,\"button\",[]],[15,\"style\",\"margin-top:60px;cursor:default;margin-right:40%;\"],[15,\"class\",\"new-transaction-btn\"],[13],[0,\"No Transactions Found!\"],[14],[0,\"\\n\"]],\"locals\":[]},null],[0,\"\\n\"],[6,[\"unless\"],[[33,[\"eq\"],[[28,[\"transactions\",\"length\"]],0],null]],null,{\"statements\":[[0,\"    \"],[11,\"div\",[]],[15,\"class\",\"pagination-controls\"],[13],[0,\"\\n      \"],[11,\"button\",[]],[16,\"disabled\",[33,[\"if\"],[[33,[\"eq\"],[[28,[\"currentPage\"]],1],null],\"disabled\"],null],null],[5,[\"action\"],[[28,[null]],\"previousPage\"]],[13],[0,\"Previous\"],[14],[0,\"\\n\\n\"],[6,[\"if\"],[[28,[\"showFirstPage\"]]],null,{\"statements\":[[0,\"        \"],[11,\"button\",[]],[16,\"class\",[34,[\"page-number \",[33,[\"if\"],[[33,[\"eq\"],[[28,[\"currentPage\"]],1],null],\"active\",\"\"],null]]]],[5,[\"action\"],[[28,[null]],\"goToPage\",1]],[13],[0,\"1\"],[14],[0,\"\\n\"]],\"locals\":[]},null],[0,\"\\n\"],[6,[\"if\"],[[28,[\"showLeftEllipsis\"]]],null,{\"statements\":[[0,\"        \"],[11,\"span\",[]],[15,\"class\",\"ellipsis\"],[13],[0,\"...\"],[14],[0,\"\\n\"]],\"locals\":[]},null],[0,\"\\n\"],[6,[\"each\"],[[28,[\"visiblePages\"]]],null,{\"statements\":[[0,\"        \"],[11,\"button\",[]],[16,\"class\",[34,[\"page-number \",[33,[\"if\"],[[33,[\"eq\"],[[28,[\"page\"]],[28,[\"currentPage\"]]],null],\"active\",\"\"],null]]]],[5,[\"action\"],[[28,[null]],\"goToPage\",[28,[\"page\"]]]],[13],[0,\"\\n          \"],[1,[28,[\"page\"]],false],[0,\"\\n        \"],[14],[0,\"\\n\"]],\"locals\":[\"page\"]},null],[0,\"\\n\"],[6,[\"if\"],[[28,[\"showRightEllipsis\"]]],null,{\"statements\":[[0,\"        \"],[11,\"span\",[]],[15,\"class\",\"ellipsis\"],[13],[0,\"...\"],[14],[0,\"\\n\"]],\"locals\":[]},null],[0,\"\\n\"],[6,[\"if\"],[[28,[\"showLastPage\"]]],null,{\"statements\":[[0,\"        \"],[11,\"button\",[]],[16,\"class\",[34,[\"page-number \",[33,[\"if\"],[[33,[\"eq\"],[[28,[\"currentPage\"]],[28,[\"totalPages\"]]],null],\"active\",\"\"],null]]]],[5,[\"action\"],[[28,[null]],\"goToPage\",[28,[\"totalPages\"]]]],[13],[0,\"\\n          \"],[1,[26,[\"totalPages\"]],false],[0,\"\\n        \"],[14],[0,\"\\n\"]],\"locals\":[]},null],[0,\"\\n      \"],[11,\"button\",[]],[16,\"disabled\",[33,[\"if\"],[[33,[\"eq\"],[[28,[\"currentPage\"]],[28,[\"totalPages\"]]],null],\"disabled\"],null],null],[5,[\"action\"],[[28,[null]],\"nextPage\"]],[13],[0,\"Next\"],[14],[0,\"\\n    \"],[14],[0,\"\\n\"]],\"locals\":[]},null],[14],[0,\"\\n\"]],\"locals\":[],\"named\":[],\"yields\":[],\"hasPartials\":false}", "meta": { "moduleName": "banker/templates/components/view-transactions.hbs" } });
 });
 define("banker/templates/login", ["exports"], function (exports) {
   "use strict";
@@ -6784,7 +6609,7 @@ define("banker/templates/users/index", ["exports"], function (exports) {
   Object.defineProperty(exports, "__esModule", {
     value: true
   });
-  exports.default = Ember.HTMLBars.template({ "id": "6RPKfySb", "block": "{\"statements\":[[11,\"div\",[]],[15,\"class\",\"users-list\"],[13],[0,\"\\n  \"],[11,\"div\",[]],[15,\"class\",\"filters\"],[13],[0,\"\\n    \"],[11,\"label\",[]],[15,\"for\",\"userRole\"],[13],[0,\"Role\"],[14],[0,\"\\n    \"],[11,\"select\",[]],[15,\"id\",\"userRole\"],[16,\"value\",[26,[\"selectedUserRole\"]],null],[16,\"oninput\",[33,[\"action\"],[[28,[null]],\"UserRole\"],[[\"value\"],[\"target.value\"]]],null],[13],[0,\"\\n      \"],[11,\"option\",[]],[15,\"value\",\"\"],[13],[0,\"All\"],[14],[0,\"\\n      \"],[11,\"option\",[]],[15,\"value\",\"admin\"],[13],[0,\"Admin\"],[14],[0,\"\\n      \"],[11,\"option\",[]],[15,\"value\",\"customer\"],[13],[0,\"Customer\"],[14],[0,\"\\n      \"],[11,\"option\",[]],[15,\"value\",\"manager\"],[13],[0,\"Manager\"],[14],[0,\"\\n    \"],[14],[0,\"\\n\\n    \"],[11,\"label\",[]],[15,\"for\",\"userStatus\"],[13],[0,\"Status\"],[14],[0,\"\\n    \"],[11,\"select\",[]],[15,\"id\",\"userStatus\"],[16,\"value\",[26,[\"selectedUserStatus\"]],null],[16,\"oninput\",[33,[\"action\"],[[28,[null]],\"UserStatus\"],[[\"value\"],[\"target.value\"]]],null],[13],[0,\"\\n      \"],[11,\"option\",[]],[15,\"value\",\"\"],[13],[0,\"All\"],[14],[0,\"\\n      \"],[11,\"option\",[]],[15,\"value\",\"pending\"],[13],[0,\"Pending\"],[14],[0,\"\\n      \"],[11,\"option\",[]],[15,\"value\",\"active\"],[13],[0,\"Active\"],[14],[0,\"\\n      \"],[11,\"option\",[]],[15,\"value\",\"inactive\"],[13],[0,\"Inactive\"],[14],[0,\"\\n    \\n    \"],[14],[0,\"\\n    \"],[11,\"button\",[]],[15,\"class\",\"clear\"],[15,\"style\",\"margin-top:5px;padding:10px 15px 10px 15px\"],[5,[\"action\"],[[28,[null]],\"FilterReset\"]],[13],[0,\"Reset\"],[14],[0,\"\\n    \\n  \"],[14],[0,\"\\n\\n \"],[11,\"div\",[]],[15,\"class\",\"search-container\"],[15,\"style\",\"margin-top:-70px;margin-left:71%;width:29%;\"],[13],[0,\"\\n    \"],[11,\"input\",[]],[15,\"style\",\"width:170px;\"],[15,\"type\",\"text\"],[15,\"class\",\"search-input\"],[15,\"placeholder\",\"Search Username\"],[16,\"value\",[26,[\"searchQuery\"]],null],[16,\"oninput\",[33,[\"action\"],[[28,[null]],\"updateSearchQuery\"],[[\"value\"],[\"target.value\"]]],null],[13],[14],[0,\"\\n    \"],[11,\"button\",[]],[15,\"class\",\"new-branch-btn\"],[15,\"style\",\"padding:10px;margin-top:-3px\"],[5,[\"action\"],[[28,[null]],\"performSearch\"]],[13],[0,\"Search\"],[14],[0,\"\\n\\n\"],[6,[\"if\"],[[28,[\"searchSuggestions\",\"length\"]]],null,{\"statements\":[[0,\"      \"],[11,\"ul\",[]],[15,\"class\",\"suggestions-list\"],[15,\"style\",\"width:170px;\"],[13],[0,\"\\n\"],[6,[\"each\"],[[28,[\"searchSuggestions\"]]],null,{\"statements\":[[0,\"          \"],[11,\"li\",[]],[5,[\"action\"],[[28,[null]],\"selectSuggestion\",[28,[\"suggestion\"]]]],[13],[1,[28,[\"suggestion\"]],false],[14],[0,\"\\n\"]],\"locals\":[\"suggestion\"]},null],[0,\"      \"],[14],[0,\"\\n\"]],\"locals\":[]},null],[0,\"  \"],[14],[0,\"\\n\\n  \"],[11,\"table\",[]],[15,\"class\",\"users-table\"],[13],[0,\"\\n    \"],[11,\"thead\",[]],[13],[0,\"\\n      \"],[11,\"tr\",[]],[13],[0,\"\\n        \"],[11,\"th\",[]],[13],[0,\"Username\"],[14],[0,\"\\n        \"],[11,\"th\",[]],[13],[0,\"Role\"],[14],[0,\"\\n        \"],[11,\"th\",[]],[13],[0,\"Status\"],[14],[0,\"\\n        \"],[11,\"th\",[]],[13],[0,\"Actions\"],[14],[0,\"\\n      \"],[14],[0,\"\\n    \"],[14],[0,\"\\n    \"],[11,\"tbody\",[]],[13],[0,\"\\n\"],[6,[\"unless\"],[[33,[\"eq\"],[[28,[\"users\",\"length\"]],0],null]],null,{\"statements\":[[6,[\"each\"],[[28,[\"users\"]]],null,{\"statements\":[[0,\"        \"],[11,\"tr\",[]],[5,[\"action\"],[[28,[null]],\"viewUser\",[28,[\"user\"]]]],[13],[0,\"\\n          \"],[11,\"td\",[]],[13],[1,[28,[\"user\",\"username\"]],false],[14],[0,\"\\n          \"],[11,\"td\",[]],[13],[1,[28,[\"user\",\"user_role\"]],false],[14],[0,\"\\n          \"],[11,\"td\",[]],[13],[1,[28,[\"user\",\"user_status\"]],false],[14],[0,\"\\n          \"],[11,\"td\",[]],[13],[0,\"\\n            \"],[11,\"button\",[]],[5,[\"action\"],[[28,[null]],\"editUser\",[28,[\"user\"]]]],[13],[11,\"i\",[]],[15,\"class\",\"bi bi-pencil\"],[13],[14],[0,\" Edit\"],[14],[0,\"\\n\"],[6,[\"if\"],[[33,[\"eq\"],[[28,[\"user\",\"user_status\"]],[28,[\"status\",\"PENDING\"]]],null]],null,{\"statements\":[[0,\"            \"],[11,\"button\",[]],[5,[\"action\"],[[28,[null]],\"deleteUser\",[28,[\"user\"]]],[[\"bubbles\"],[false]]],[13],[11,\"i\",[]],[15,\"class\",\"bi bi-trash-fill\"],[13],[14],[0,\" Delete\"],[14],[0,\"\\n\"]],\"locals\":[]},null],[0,\"          \"],[14],[0,\"\\n        \"],[14],[0,\"\\n\"]],\"locals\":[\"user\"]},null]],\"locals\":[]},null],[0,\"    \"],[14],[0,\"\\n  \"],[14],[0,\"\\n\"],[6,[\"if\"],[[33,[\"eq\"],[[28,[\"users\",\"length\"]],0],null]],null,{\"statements\":[[0,\"         \"],[11,\"button\",[]],[15,\"style\",\"margin-top:60px;cursor:default;margin-right:40%;\"],[15,\"class\",\"new-account-btn\"],[13],[0,\"No Users Found!\"],[14],[0,\"\\n\"]],\"locals\":[]},null],[0,\"\\n\"],[6,[\"unless\"],[[33,[\"eq\"],[[28,[\"users\",\"length\"]],0],null]],null,{\"statements\":[[0,\"    \"],[11,\"div\",[]],[15,\"class\",\"pagination-controls\"],[13],[0,\"\\n      \"],[11,\"button\",[]],[16,\"disabled\",[33,[\"if\"],[[33,[\"eq\"],[[28,[\"currentPage\"]],1],null],\"disabled\"],null],null],[5,[\"action\"],[[28,[null]],\"previousPage\"]],[13],[0,\"Previous\"],[14],[0,\"\\n\\n\"],[6,[\"if\"],[[28,[\"showFirstPage\"]]],null,{\"statements\":[[0,\"        \"],[11,\"button\",[]],[16,\"class\",[34,[\"page-number \",[33,[\"if\"],[[33,[\"eq\"],[[28,[\"currentPage\"]],1],null],\"active\",\"\"],null]]]],[5,[\"action\"],[[28,[null]],\"goToPage\",1]],[13],[0,\"1\"],[14],[0,\"\\n\"]],\"locals\":[]},null],[0,\"\\n\"],[6,[\"if\"],[[28,[\"showLeftEllipsis\"]]],null,{\"statements\":[[0,\"        \"],[11,\"span\",[]],[15,\"class\",\"ellipsis\"],[13],[0,\"...\"],[14],[0,\"\\n\"]],\"locals\":[]},null],[0,\"\\n\"],[6,[\"each\"],[[28,[\"visiblePages\"]]],null,{\"statements\":[[0,\"        \"],[11,\"button\",[]],[16,\"class\",[34,[\"page-number \",[33,[\"if\"],[[33,[\"eq\"],[[28,[\"page\"]],[28,[\"currentPage\"]]],null],\"active\",\"\"],null]]]],[5,[\"action\"],[[28,[null]],\"goToPage\",[28,[\"page\"]]]],[13],[0,\"\\n          \"],[1,[28,[\"page\"]],false],[0,\"\\n        \"],[14],[0,\"\\n\"]],\"locals\":[\"page\"]},null],[0,\"\\n\"],[6,[\"if\"],[[28,[\"showRightEllipsis\"]]],null,{\"statements\":[[0,\"        \"],[11,\"span\",[]],[15,\"class\",\"ellipsis\"],[13],[0,\"...\"],[14],[0,\"\\n\"]],\"locals\":[]},null],[0,\"\\n\"],[6,[\"if\"],[[28,[\"showLastPage\"]]],null,{\"statements\":[[0,\"        \"],[11,\"button\",[]],[16,\"class\",[34,[\"page-number \",[33,[\"if\"],[[33,[\"eq\"],[[28,[\"currentPage\"]],[28,[\"totalPages\"]]],null],\"active\",\"\"],null]]]],[5,[\"action\"],[[28,[null]],\"goToPage\",[28,[\"totalPages\"]]]],[13],[0,\"\\n          \"],[1,[26,[\"totalPages\"]],false],[0,\"\\n        \"],[14],[0,\"\\n\"]],\"locals\":[]},null],[0,\"\\n      \"],[11,\"button\",[]],[16,\"disabled\",[33,[\"if\"],[[33,[\"eq\"],[[28,[\"currentPage\"]],[28,[\"totalPages\"]]],null],\"disabled\"],null],null],[5,[\"action\"],[[28,[null]],\"nextPage\"]],[13],[0,\"Next\"],[14],[0,\"\\n    \"],[14],[0,\"\\n\"]],\"locals\":[]},null],[14],[0,\"\\n \"],[1,[33,[\"notify-box\"],null,[[\"message\",\"type\"],[[28,[\"notification\",\"message\"]],[28,[\"notification\",\"type\"]]]]],false],[0,\"\\n\\n\"]],\"locals\":[],\"named\":[],\"yields\":[],\"hasPartials\":false}", "meta": { "moduleName": "banker/templates/users/index.hbs" } });
+  exports.default = Ember.HTMLBars.template({ "id": "1GcDQrwu", "block": "{\"statements\":[[11,\"div\",[]],[15,\"class\",\"users-list\"],[13],[0,\"\\n  \"],[11,\"div\",[]],[15,\"class\",\"filters\"],[13],[0,\"\\n    \"],[11,\"label\",[]],[15,\"for\",\"userRole\"],[13],[0,\"Role\"],[14],[0,\"\\n    \"],[11,\"select\",[]],[15,\"id\",\"userRole\"],[16,\"value\",[26,[\"selectedUserRole\"]],null],[16,\"oninput\",[33,[\"action\"],[[28,[null]],\"UserRole\"],[[\"value\"],[\"target.value\"]]],null],[13],[0,\"\\n      \"],[11,\"option\",[]],[15,\"value\",\"\"],[13],[0,\"All\"],[14],[0,\"\\n      \"],[11,\"option\",[]],[15,\"value\",\"admin\"],[13],[0,\"Admin\"],[14],[0,\"\\n      \"],[11,\"option\",[]],[15,\"value\",\"customer\"],[13],[0,\"Customer\"],[14],[0,\"\\n      \"],[11,\"option\",[]],[15,\"value\",\"manager\"],[13],[0,\"Manager\"],[14],[0,\"\\n    \"],[14],[0,\"\\n\\n    \"],[11,\"label\",[]],[15,\"for\",\"userStatus\"],[13],[0,\"Status\"],[14],[0,\"\\n    \"],[11,\"select\",[]],[15,\"id\",\"userStatus\"],[16,\"value\",[26,[\"selectedUserStatus\"]],null],[16,\"oninput\",[33,[\"action\"],[[28,[null]],\"UserStatus\"],[[\"value\"],[\"target.value\"]]],null],[13],[0,\"\\n      \"],[11,\"option\",[]],[15,\"value\",\"\"],[13],[0,\"All\"],[14],[0,\"\\n      \"],[11,\"option\",[]],[15,\"value\",\"pending\"],[13],[0,\"Pending\"],[14],[0,\"\\n      \"],[11,\"option\",[]],[15,\"value\",\"active\"],[13],[0,\"Active\"],[14],[0,\"\\n      \"],[11,\"option\",[]],[15,\"value\",\"inactive\"],[13],[0,\"Inactive\"],[14],[0,\"\\n    \\n    \"],[14],[0,\"\\n    \"],[11,\"button\",[]],[15,\"class\",\"clear\"],[15,\"style\",\"margin-top:5px;padding:10px 15px 10px 15px\"],[5,[\"action\"],[[28,[null]],\"FilterReset\"]],[13],[0,\"Reset\"],[14],[0,\"\\n    \\n  \"],[14],[0,\"\\n\\n \"],[11,\"div\",[]],[15,\"class\",\"search-container\"],[15,\"style\",\"margin-top:-70px;margin-left:71%;width:29%;\"],[13],[0,\"\\n    \"],[11,\"input\",[]],[15,\"style\",\"width:170px;\"],[15,\"type\",\"text\"],[15,\"class\",\"search-input\"],[15,\"placeholder\",\"Search Username\"],[16,\"value\",[26,[\"searchQuery\"]],null],[16,\"oninput\",[33,[\"action\"],[[28,[null]],\"updateSearchQuery\"],[[\"value\"],[\"target.value\"]]],null],[13],[14],[0,\"\\n    \"],[11,\"button\",[]],[15,\"class\",\"new-branch-btn\"],[15,\"style\",\"padding:10px;margin-top:-3px\"],[5,[\"action\"],[[28,[null]],\"performSearch\"]],[13],[0,\"Search\"],[14],[0,\"\\n\\n\"],[6,[\"if\"],[[28,[\"searchSuggestions\",\"length\"]]],null,{\"statements\":[[0,\"      \"],[11,\"ul\",[]],[15,\"class\",\"suggestions-list\"],[15,\"style\",\"width:170px;\"],[13],[0,\"\\n\"],[6,[\"each\"],[[28,[\"searchSuggestions\"]]],null,{\"statements\":[[0,\"          \"],[11,\"li\",[]],[5,[\"action\"],[[28,[null]],\"selectSuggestion\",[28,[\"suggestion\"]]]],[13],[1,[28,[\"suggestion\"]],false],[14],[0,\"\\n\"]],\"locals\":[\"suggestion\"]},null],[0,\"      \"],[14],[0,\"\\n\"]],\"locals\":[]},null],[0,\"  \"],[14],[0,\"\\n\\n  \"],[11,\"table\",[]],[15,\"class\",\"users-table\"],[15,\"style\",\"margin-top:50px;\"],[13],[0,\"\\n    \"],[11,\"thead\",[]],[13],[0,\"\\n      \"],[11,\"tr\",[]],[13],[0,\"\\n        \"],[11,\"th\",[]],[13],[0,\"Username\"],[14],[0,\"\\n        \"],[11,\"th\",[]],[13],[0,\"Role\"],[14],[0,\"\\n        \"],[11,\"th\",[]],[13],[0,\"Status\"],[14],[0,\"\\n        \"],[11,\"th\",[]],[13],[0,\"Actions\"],[14],[0,\"\\n      \"],[14],[0,\"\\n    \"],[14],[0,\"\\n    \"],[11,\"tbody\",[]],[13],[0,\"\\n\"],[6,[\"unless\"],[[33,[\"eq\"],[[28,[\"users\",\"length\"]],0],null]],null,{\"statements\":[[6,[\"each\"],[[28,[\"users\"]]],null,{\"statements\":[[0,\"        \"],[11,\"tr\",[]],[5,[\"action\"],[[28,[null]],\"viewUser\",[28,[\"user\"]]]],[13],[0,\"\\n          \"],[11,\"td\",[]],[13],[1,[28,[\"user\",\"username\"]],false],[14],[0,\"\\n          \"],[11,\"td\",[]],[13],[1,[28,[\"user\",\"user_role\"]],false],[14],[0,\"\\n          \"],[11,\"td\",[]],[13],[1,[28,[\"user\",\"user_status\"]],false],[14],[0,\"\\n          \"],[11,\"td\",[]],[13],[0,\"\\n            \"],[11,\"button\",[]],[5,[\"action\"],[[28,[null]],\"editUser\",[28,[\"user\"]]]],[13],[11,\"i\",[]],[15,\"class\",\"bi bi-pencil\"],[13],[14],[0,\" Edit\"],[14],[0,\"\\n\"],[6,[\"if\"],[[33,[\"eq\"],[[28,[\"user\",\"user_status\"]],[28,[\"status\",\"PENDING\"]]],null]],null,{\"statements\":[[0,\"            \"],[11,\"button\",[]],[5,[\"action\"],[[28,[null]],\"deleteUser\",[28,[\"user\"]]],[[\"bubbles\"],[false]]],[13],[11,\"i\",[]],[15,\"class\",\"bi bi-trash-fill\"],[13],[14],[0,\" Delete\"],[14],[0,\"\\n\"]],\"locals\":[]},null],[0,\"          \"],[14],[0,\"\\n        \"],[14],[0,\"\\n\"]],\"locals\":[\"user\"]},null]],\"locals\":[]},null],[0,\"    \"],[14],[0,\"\\n  \"],[14],[0,\"\\n\"],[6,[\"if\"],[[33,[\"eq\"],[[28,[\"users\",\"length\"]],0],null]],null,{\"statements\":[[0,\"         \"],[11,\"button\",[]],[15,\"style\",\"margin-top:60px;cursor:default;margin-right:40%;\"],[15,\"class\",\"new-account-btn\"],[13],[0,\"No Users Found!\"],[14],[0,\"\\n\"]],\"locals\":[]},null],[0,\"\\n\"],[6,[\"unless\"],[[33,[\"eq\"],[[28,[\"users\",\"length\"]],0],null]],null,{\"statements\":[[0,\"    \"],[11,\"div\",[]],[15,\"class\",\"pagination-controls\"],[13],[0,\"\\n      \"],[11,\"button\",[]],[16,\"disabled\",[33,[\"if\"],[[33,[\"eq\"],[[28,[\"currentPage\"]],1],null],\"disabled\"],null],null],[5,[\"action\"],[[28,[null]],\"previousPage\"]],[13],[0,\"Previous\"],[14],[0,\"\\n\\n\"],[6,[\"if\"],[[28,[\"showFirstPage\"]]],null,{\"statements\":[[0,\"        \"],[11,\"button\",[]],[16,\"class\",[34,[\"page-number \",[33,[\"if\"],[[33,[\"eq\"],[[28,[\"currentPage\"]],1],null],\"active\",\"\"],null]]]],[5,[\"action\"],[[28,[null]],\"goToPage\",1]],[13],[0,\"1\"],[14],[0,\"\\n\"]],\"locals\":[]},null],[0,\"\\n\"],[6,[\"if\"],[[28,[\"showLeftEllipsis\"]]],null,{\"statements\":[[0,\"        \"],[11,\"span\",[]],[15,\"class\",\"ellipsis\"],[13],[0,\"...\"],[14],[0,\"\\n\"]],\"locals\":[]},null],[0,\"\\n\"],[6,[\"each\"],[[28,[\"visiblePages\"]]],null,{\"statements\":[[0,\"        \"],[11,\"button\",[]],[16,\"class\",[34,[\"page-number \",[33,[\"if\"],[[33,[\"eq\"],[[28,[\"page\"]],[28,[\"currentPage\"]]],null],\"active\",\"\"],null]]]],[5,[\"action\"],[[28,[null]],\"goToPage\",[28,[\"page\"]]]],[13],[0,\"\\n          \"],[1,[28,[\"page\"]],false],[0,\"\\n        \"],[14],[0,\"\\n\"]],\"locals\":[\"page\"]},null],[0,\"\\n\"],[6,[\"if\"],[[28,[\"showRightEllipsis\"]]],null,{\"statements\":[[0,\"        \"],[11,\"span\",[]],[15,\"class\",\"ellipsis\"],[13],[0,\"...\"],[14],[0,\"\\n\"]],\"locals\":[]},null],[0,\"\\n\"],[6,[\"if\"],[[28,[\"showLastPage\"]]],null,{\"statements\":[[0,\"        \"],[11,\"button\",[]],[16,\"class\",[34,[\"page-number \",[33,[\"if\"],[[33,[\"eq\"],[[28,[\"currentPage\"]],[28,[\"totalPages\"]]],null],\"active\",\"\"],null]]]],[5,[\"action\"],[[28,[null]],\"goToPage\",[28,[\"totalPages\"]]]],[13],[0,\"\\n          \"],[1,[26,[\"totalPages\"]],false],[0,\"\\n        \"],[14],[0,\"\\n\"]],\"locals\":[]},null],[0,\"\\n      \"],[11,\"button\",[]],[16,\"disabled\",[33,[\"if\"],[[33,[\"eq\"],[[28,[\"currentPage\"]],[28,[\"totalPages\"]]],null],\"disabled\"],null],null],[5,[\"action\"],[[28,[null]],\"nextPage\"]],[13],[0,\"Next\"],[14],[0,\"\\n    \"],[14],[0,\"\\n\"]],\"locals\":[]},null],[14],[0,\"\\n \"],[1,[33,[\"notify-box\"],null,[[\"message\",\"type\"],[[28,[\"notification\",\"message\"]],[28,[\"notification\",\"type\"]]]]],false],[0,\"\\n\\n\"]],\"locals\":[],\"named\":[],\"yields\":[],\"hasPartials\":false}", "meta": { "moduleName": "banker/templates/users/index.hbs" } });
 });
 define("banker/templates/users/user", ["exports"], function (exports) {
   "use strict";
@@ -6800,7 +6625,7 @@ define("banker/templates/users/user/edit", ["exports"], function (exports) {
   Object.defineProperty(exports, "__esModule", {
     value: true
   });
-  exports.default = Ember.HTMLBars.template({ "id": "P5ZG+BiL", "block": "{\"statements\":[[11,\"body\",[]],[13],[0,\"\\n  \"],[11,\"div\",[]],[15,\"class\",\"user-form\"],[13],[0,\"\\n    \"],[11,\"h2\",[]],[13],[0,\"Edit User\"],[14],[0,\"\\n    \\n    \"],[11,\"form\",[]],[5,[\"action\"],[[28,[null]],\"submitForm\"],[[\"on\"],[\"submit\"]]],[13],[0,\"\\n\"],[0,\"\\n      \"],[11,\"div\",[]],[15,\"class\",\"form-group\"],[13],[0,\"\\n        \"],[11,\"label\",[]],[15,\"for\",\"userId\"],[13],[0,\"Username\"],[11,\"span\",[]],[15,\"style\",\"color:rgb(237, 69, 69);\"],[13],[0,\"*\"],[14],[14],[0,\"\\n        \"],[11,\"input\",[]],[15,\"type\",\"text\"],[15,\"id\",\"userId\"],[16,\"value\",[26,[\"username\"]],null],[15,\"class\",\"form-control\"],[15,\"disabled\",\"\"],[13],[14],[0,\"\\n      \"],[14],[0,\"\\n\\n      \"],[11,\"div\",[]],[15,\"class\",\"form-group\"],[13],[0,\"\\n        \"],[11,\"label\",[]],[15,\"for\",\"user_status\"],[13],[0,\"User Status\"],[11,\"span\",[]],[15,\"style\",\"color:rgb(237, 69, 69);\"],[13],[0,\"*\"],[14],[14],[0,\"\\n        \"],[11,\"select\",[]],[15,\"id\",\"user_status\"],[15,\"class\",\"form-control\"],[16,\"onchange\",[33,[\"action\"],[[28,[null]],[33,[\"mut\"],[[28,[\"user_status\"]]],null]],[[\"value\"],[\"target.value\"]]],null],[13],[0,\"\\n          \"],[11,\"option\",[]],[15,\"value\",\"\"],[13],[0,\"Select Status\"],[14],[0,\"\\n\"],[6,[\"each\"],[[28,[\"statuses\"]]],null,{\"statements\":[[0,\"            \"],[11,\"option\",[]],[16,\"value\",[28,[\"status\"]],null],[16,\"selected\",[33,[\"if\"],[[33,[\"eq\"],[[28,[\"status\"]],[28,[\"user_status\"]]],null],\"selected\"],null],null],[13],[1,[28,[\"status\"]],false],[14],[0,\"\\n\"]],\"locals\":[\"status\"]},null],[0,\"        \"],[14],[0,\"\\n      \"],[14],[0,\"\\n\\n      \"],[11,\"button\",[]],[15,\"type\",\"submit\"],[15,\"class\",\"btn-primary\"],[13],[0,\"Update User\"],[14],[0,\"\\n      \\n\"],[6,[\"link-to\"],[\"users\"],null,{\"statements\":[[0,\"        \"],[11,\"button\",[]],[15,\"class\",\"btn-secondary\"],[13],[0,\"Cancel\"],[14],[0,\"\\n\"]],\"locals\":[]},null],[0,\"\\n\"],[6,[\"if\"],[[28,[\"errorMessage\"]]],null,{\"statements\":[[0,\"        \"],[11,\"div\",[]],[15,\"class\",\"error-message\"],[13],[0,\"* \"],[1,[26,[\"errorMessage\"]],false],[14],[0,\"\\n\"]],\"locals\":[]},null],[0,\"    \"],[14],[0,\"\\n  \"],[14],[0,\"\\n  \"],[1,[33,[\"notify-box\"],null,[[\"message\",\"type\"],[[28,[\"notification\",\"message\"]],[28,[\"notification\",\"type\"]]]]],false],[0,\"\\n\"],[14],[0,\"\\n\"]],\"locals\":[],\"named\":[],\"yields\":[],\"hasPartials\":false}", "meta": { "moduleName": "banker/templates/users/user/edit.hbs" } });
+  exports.default = Ember.HTMLBars.template({ "id": "9GVO/GFr", "block": "{\"statements\":[[11,\"body\",[]],[13],[0,\"\\n  \"],[11,\"div\",[]],[15,\"class\",\"user-form\"],[13],[0,\"\\n    \"],[11,\"h2\",[]],[13],[0,\"Edit User\"],[14],[0,\"\\n    \\n    \"],[11,\"form\",[]],[5,[\"action\"],[[28,[null]],\"submitForm\"],[[\"on\"],[\"submit\"]]],[13],[0,\"\\n      \"],[11,\"div\",[]],[15,\"class\",\"form-group\"],[13],[0,\"\\n        \"],[11,\"label\",[]],[15,\"for\",\"userId\"],[13],[0,\"Username\"],[11,\"span\",[]],[15,\"style\",\"color:rgb(237, 69, 69);\"],[13],[0,\"*\"],[14],[14],[0,\"\\n        \"],[11,\"input\",[]],[15,\"type\",\"text\"],[15,\"id\",\"userId\"],[16,\"value\",[26,[\"username\"]],null],[15,\"class\",\"form-control\"],[15,\"disabled\",\"\"],[13],[14],[0,\"\\n      \"],[14],[0,\"\\n\\n      \"],[11,\"div\",[]],[15,\"class\",\"form-group\"],[13],[0,\"\\n        \"],[11,\"label\",[]],[15,\"for\",\"user_status\"],[13],[0,\"User Status\"],[11,\"span\",[]],[15,\"style\",\"color:rgb(237, 69, 69);\"],[13],[0,\"*\"],[14],[14],[0,\"\\n        \"],[11,\"select\",[]],[15,\"id\",\"user_status\"],[15,\"class\",\"form-control\"],[16,\"onchange\",[33,[\"action\"],[[28,[null]],[33,[\"mut\"],[[28,[\"user_status\"]]],null]],[[\"value\"],[\"target.value\"]]],null],[13],[0,\"\\n          \"],[11,\"option\",[]],[15,\"value\",\"\"],[13],[0,\"Select Status\"],[14],[0,\"\\n\"],[6,[\"each\"],[[28,[\"statuses\"]]],null,{\"statements\":[[0,\"            \"],[11,\"option\",[]],[16,\"value\",[28,[\"status\"]],null],[16,\"selected\",[33,[\"if\"],[[33,[\"eq\"],[[28,[\"status\"]],[28,[\"user_status\"]]],null],\"selected\"],null],null],[13],[1,[28,[\"status\"]],false],[14],[0,\"\\n\"]],\"locals\":[\"status\"]},null],[0,\"        \"],[14],[0,\"\\n      \"],[14],[0,\"\\n\\n      \"],[11,\"button\",[]],[15,\"type\",\"submit\"],[15,\"class\",\"btn-primary\"],[13],[0,\"Update User\"],[14],[0,\"\\n      \\n\"],[6,[\"link-to\"],[\"users\"],null,{\"statements\":[[0,\"        \"],[11,\"button\",[]],[15,\"class\",\"btn-secondary\"],[13],[0,\"Cancel\"],[14],[0,\"\\n\"]],\"locals\":[]},null],[0,\"\\n\"],[6,[\"if\"],[[28,[\"errorMessage\"]]],null,{\"statements\":[[0,\"        \"],[11,\"div\",[]],[15,\"class\",\"error-message\"],[13],[0,\"* \"],[1,[26,[\"errorMessage\"]],false],[14],[0,\"\\n\"]],\"locals\":[]},null],[0,\"    \"],[14],[0,\"\\n  \"],[14],[0,\"\\n  \"],[1,[33,[\"notify-box\"],null,[[\"message\",\"type\"],[[28,[\"notification\",\"message\"]],[28,[\"notification\",\"type\"]]]]],false],[0,\"\\n\"],[14],[0,\"\\n\"]],\"locals\":[],\"named\":[],\"yields\":[],\"hasPartials\":false}", "meta": { "moduleName": "banker/templates/users/user/edit.hbs" } });
 });
 define("banker/templates/users/user/index", ["exports"], function (exports) {
   "use strict";
@@ -6808,7 +6633,7 @@ define("banker/templates/users/user/index", ["exports"], function (exports) {
   Object.defineProperty(exports, "__esModule", {
     value: true
   });
-  exports.default = Ember.HTMLBars.template({ "id": "hnkrWYhw", "block": "{\"statements\":[[11,\"div\",[]],[15,\"class\",\"user-card-wrapper\"],[13],[0,\"\\n  \"],[11,\"div\",[]],[15,\"class\",\"user-card\"],[13],[0,\"\\n    \"],[11,\"h2\",[]],[13],[0,\"User Details\"],[14],[0,\"\\n\"],[0,\"    \"],[11,\"div\",[]],[15,\"class\",\"user-field\"],[13],[0,\"\\n      \"],[11,\"span\",[]],[15,\"class\",\"field-label\"],[13],[0,\"Full Name:\"],[14],[0,\"\\n      \"],[11,\"span\",[]],[15,\"class\",\"field-value\"],[13],[1,[28,[\"user\",\"fullname\"]],false],[14],[0,\"\\n    \"],[14],[0,\"\\n    \"],[11,\"div\",[]],[15,\"class\",\"user-field\"],[13],[0,\"\\n      \"],[11,\"span\",[]],[15,\"class\",\"field-label\"],[13],[0,\"Username:\"],[14],[0,\"\\n      \"],[11,\"span\",[]],[15,\"class\",\"field-value\"],[13],[1,[28,[\"user\",\"username\"]],false],[14],[0,\"\\n    \"],[14],[0,\"\\n    \"],[11,\"div\",[]],[15,\"class\",\"user-field\"],[13],[0,\"\\n      \"],[11,\"span\",[]],[15,\"class\",\"field-label\"],[13],[0,\"Phone Number:\"],[14],[0,\"\\n      \"],[11,\"span\",[]],[15,\"class\",\"field-value\"],[13],[1,[28,[\"user\",\"user_phonenumber\"]],false],[14],[0,\"\\n    \"],[14],[0,\"\\n    \"],[11,\"div\",[]],[15,\"class\",\"user-field\"],[13],[0,\"\\n      \"],[11,\"span\",[]],[15,\"class\",\"field-label\"],[13],[0,\"Address:\"],[14],[0,\"\\n      \"],[11,\"span\",[]],[15,\"class\",\"field-value\"],[13],[1,[28,[\"user\",\"user_address\"]],false],[14],[0,\"\\n    \"],[14],[0,\"\\n    \"],[11,\"div\",[]],[15,\"class\",\"user-field\"],[13],[0,\"\\n      \"],[11,\"span\",[]],[15,\"class\",\"field-label\"],[13],[0,\"Role:\"],[14],[0,\"\\n      \"],[11,\"span\",[]],[15,\"class\",\"field-value\"],[13],[1,[28,[\"user\",\"user_role\"]],false],[14],[0,\"\\n    \"],[14],[0,\"\\n    \"],[11,\"div\",[]],[15,\"class\",\"user-field\"],[13],[0,\"\\n      \"],[11,\"span\",[]],[15,\"class\",\"field-label\"],[13],[0,\"Status:\"],[14],[0,\"\\n      \"],[11,\"span\",[]],[15,\"class\",\"field-value\"],[13],[1,[28,[\"user\",\"user_status\"]],false],[14],[0,\"\\n    \"],[14],[0,\"\\n   \\n  \"],[14],[0,\"\\n\"],[14],[0,\"\\n\"]],\"locals\":[],\"named\":[],\"yields\":[],\"hasPartials\":false}", "meta": { "moduleName": "banker/templates/users/user/index.hbs" } });
+  exports.default = Ember.HTMLBars.template({ "id": "tiSWuU4q", "block": "{\"statements\":[[11,\"div\",[]],[15,\"class\",\"user-card-wrapper\"],[13],[0,\"\\n  \"],[11,\"div\",[]],[15,\"class\",\"user-card\"],[13],[0,\"\\n    \"],[11,\"h2\",[]],[13],[0,\"User Details\"],[14],[0,\"\\n    \"],[11,\"div\",[]],[15,\"class\",\"user-field\"],[15,\"style\",\"margin-bottom:20px\"],[13],[0,\"\\n      \"],[11,\"span\",[]],[15,\"class\",\"field-label\"],[15,\"style\",\"padding-left:80px\"],[13],[0,\"Full Name:\"],[14],[0,\"\\n      \"],[11,\"span\",[]],[15,\"class\",\"field-value\"],[13],[1,[28,[\"user\",\"fullname\"]],false],[14],[0,\"\\n    \"],[14],[0,\"\\n    \"],[11,\"div\",[]],[15,\"class\",\"user-field\"],[15,\"style\",\"margin-bottom:20px\"],[13],[0,\"\\n      \"],[11,\"span\",[]],[15,\"class\",\"field-label\"],[15,\"style\",\"padding-left:80px\"],[13],[0,\"Username:\"],[14],[0,\"\\n      \"],[11,\"span\",[]],[15,\"class\",\"field-value\"],[13],[1,[28,[\"user\",\"username\"]],false],[14],[0,\"\\n    \"],[14],[0,\"\\n    \"],[11,\"div\",[]],[15,\"class\",\"user-field\"],[15,\"style\",\"margin-bottom:20px\"],[13],[0,\"\\n      \"],[11,\"span\",[]],[15,\"class\",\"field-label\"],[15,\"style\",\"padding-left:80px\"],[13],[0,\"Phone Number:\"],[14],[0,\"\\n      \"],[11,\"span\",[]],[15,\"class\",\"field-value\"],[13],[1,[28,[\"user\",\"user_phonenumber\"]],false],[14],[0,\"\\n    \"],[14],[0,\"\\n    \"],[11,\"div\",[]],[15,\"class\",\"user-field\"],[15,\"style\",\"margin-bottom:20px\"],[13],[0,\"\\n      \"],[11,\"span\",[]],[15,\"class\",\"field-label\"],[15,\"style\",\"padding-left:80px\"],[13],[0,\"Address:\"],[14],[0,\"\\n      \"],[11,\"span\",[]],[15,\"class\",\"field-value\"],[13],[1,[28,[\"user\",\"user_address\"]],false],[14],[0,\"\\n    \"],[14],[0,\"\\n    \"],[11,\"div\",[]],[15,\"class\",\"user-field\"],[15,\"style\",\"margin-bottom:20px\"],[13],[0,\"\\n      \"],[11,\"span\",[]],[15,\"class\",\"field-label\"],[15,\"style\",\"padding-left:80px\"],[13],[0,\"Role:\"],[14],[0,\"\\n      \"],[11,\"span\",[]],[15,\"class\",\"field-value\"],[13],[1,[28,[\"user\",\"user_role\"]],false],[14],[0,\"\\n    \"],[14],[0,\"\\n    \"],[11,\"div\",[]],[15,\"class\",\"user-field\"],[15,\"style\",\"margin-bottom:20px\"],[13],[0,\"\\n      \"],[11,\"span\",[]],[15,\"class\",\"field-label\"],[15,\"style\",\"padding-left:80px\"],[13],[0,\"Status:\"],[14],[0,\"\\n      \"],[11,\"span\",[]],[15,\"class\",\"field-value\"],[13],[1,[28,[\"user\",\"user_status\"]],false],[14],[0,\"\\n    \"],[14],[0,\"\\n   \\n  \"],[14],[0,\"\\n\"],[14],[0,\"\\n\"]],\"locals\":[],\"named\":[],\"yields\":[],\"hasPartials\":false}", "meta": { "moduleName": "banker/templates/users/user/index.hbs" } });
 });
 define('banker/utils/util', ['exports'], function (exports) {
     'use strict';
@@ -6905,6 +6730,6 @@ catch(err) {
 });
 
 if (!runningTests) {
-  require("banker/app")["default"].create({"name":"banker","version":"0.0.0+c9f2904a"});
+  require("banker/app")["default"].create({"name":"banker","version":"0.0.0+d78a6c2e"});
 }
 //# sourceMappingURL=banker.map

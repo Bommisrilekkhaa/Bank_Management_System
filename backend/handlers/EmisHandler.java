@@ -19,6 +19,7 @@ import com.google.gson.JsonParser;
 import DAO.EmiDAO;
 import DAO.LoanDAO;
 import enums.LoanStatus;
+import enums.Resources;
 import model.Emi;
 import redis.clients.jedis.Jedis;
 import servlets.ControllerServlet;
@@ -26,48 +27,45 @@ import utility.DbUtil;
 import utility.JsonUtil;
 import utility.LoggerConfig;
 
-public class EmisHandler  {
+public class EmisHandler {
 
     private Logger logger = LoggerConfig.initializeLogger();
     private EmiDAO emiDAO = new EmiDAO();
     private LoanDAO loanDao = new LoanDAO();
-    private Jedis jedis=null;
+    private Jedis jedis = null;
     private Connection conn = null;
     private DbUtil dbUtil = new DbUtil();
 
-   
-    public void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException, SQLException {
-        
+    public void doGet(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException, SQLException {
 
         String path = request.getRequestURI();
         String cacheKey = path.substring(path.indexOf("/banks"));
-        
+
         logger.info("EmisServlet doGet called with path: " + path);
-        
+
         jedis = ControllerServlet.pool.getResource();
         String cachedData = jedis.get(cacheKey);
-        
+
         if (cachedData != null) {
             logger.info("Cache hit for key: " + cacheKey);
             JsonArray jsonArray = JsonParser.parseString(cachedData).getAsJsonArray();
-            
-            response.setContentType("application/json");
             JsonUtil.sendJsonResponse(response, jsonArray);
             logger.info("Data fetched from Redis cache and sent as response.");
         } else {
             logger.info("Cache miss for key: " + cacheKey + ". Fetching data from database.");
-            ResultSet rs=null;
+            ResultSet rs = null;
             try {
-            	conn = dbUtil.connect();
+                conn = dbUtil.connect();
                 Emi newEmi = new Emi();
-                newEmi.setLoan_id(ControllerServlet.pathMap.get("loans"));
+                newEmi.setLoan_id(ControllerServlet.pathMap.get(Resources.LOANS.toString().toLowerCase()));
 
                 if (checkLoanStatus(conn, newEmi)) {
                     logger.info("Loan status is approved. Fetching EMI details.");
-                    
-                   rs = emiDAO.selectAllEmis(conn, ControllerServlet.pathMap);
-                   List<Emi> emis= JsonUtil.convertResultSetToList(rs, Emi.class);
-                    
+
+                    rs = emiDAO.selectAllEmis(conn, ControllerServlet.pathMap);
+                    List<Emi> emis = JsonUtil.convertResultSetToList(rs, Emi.class);
+
                     JsonArray jsonArray = new JsonArray();
                     if (!emis.isEmpty()) {
                         for (Emi emi : emis) {
@@ -84,8 +82,6 @@ public class EmisHandler  {
 
                         jedis.set(cacheKey, jsonArray.toString());
                         logger.info("EMI data cached with key: " + cacheKey);
-                        
-                        response.setContentType("application/json");
                         JsonUtil.sendJsonResponse(response, jsonArray);
                         logger.info("EMI data sent as response.");
                     } else {
@@ -106,21 +102,20 @@ public class EmisHandler  {
         }
     }
 
-    private boolean checkLoanStatus(Connection conn, Emi emi) throws SQLException{
+    private boolean checkLoanStatus(Connection conn, Emi emi) throws SQLException {
         HashMap<String, Integer> loanMap = new HashMap<>();
-        loanMap.put("loans", emi.getLoan_id());
+        loanMap.put(Resources.LOANS.toString().toLowerCase(), emi.getLoan_id());
         loanMap.put("l.loan_status", LoanStatus.APPROVED.getValue());
         boolean isApproved = false;
         logger.info("Checking loan status for loan ID: " + emi.getLoan_id());
-        ResultSet rs=null;
-		try {
-			rs = loanDao.selectAllLoans(conn, loanMap);
-			isApproved= rs.next();
-        
-		}
-		finally {
-			dbUtil.close(null, null, rs);
-		}
+        ResultSet rs = null;
+        try {
+            rs = loanDao.selectAllLoans(conn, loanMap);
+            isApproved = rs.next();
+
+        } finally {
+            dbUtil.close(null, null, rs);
+        }
         logger.info("Loan ID: " + emi.getLoan_id() + " is approved: " + isApproved);
         return isApproved;
     }

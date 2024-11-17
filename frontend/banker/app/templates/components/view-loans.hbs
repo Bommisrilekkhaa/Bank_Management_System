@@ -1,5 +1,5 @@
 <div class="loans-list">
-  <button {{action "addNewLoan"}} class="new-loan-btn">New Loan</button>
+  <button {{action "addNewLoan"}} style="margin-top:65px" class="new-loan-btn">New Loan</button>
 
   <div class="filters">
     <label for="loanType">Type:</label>
@@ -30,7 +30,7 @@
         value={{searchQuery}} 
         oninput={{action "updateSearchQuery" value="target.value"}}
       />
-      <button {{action "performSearch"}} class="new-branch-btn" style="margin-right: 42%;padding:10px;margin-top:-3px">Search</button>
+      <button {{action "performSearch"}} class="new-branch-btn" style="margin-right: 52%;padding:10px;margin-top:-3px">Search</button>
 
       {{#if searchSuggestions.length}}
         <ul class="suggestions-list">
@@ -66,7 +66,11 @@
             <td>Rs. {{loan.loan_amount}}</td>
             {{#unless (eq role userRole.CUSTOMER)}}
               <td>
-                <button class="view-btn" {{action "editLoan" loan}}><i class="bi bi-pencil"></i> Edit</button>
+                {{#unless (eq status.CLOSED loan.loan_status)}}
+                {{#unless (eq status.REJECTED loan.loan_status)}}
+                    <button class="view-btn" {{action "editLoan" loan}}><i class="bi bi-pencil"></i> Edit</button>
+                {{/unless}}
+                {{/unless}}
               </td>
             {{/unless}}
           </tr>

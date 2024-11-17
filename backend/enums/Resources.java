@@ -8,5 +8,8 @@ public enum Resources {
 	TRANSACTIONS,
 	LOANS,
 	EMIS,
-	DASHBOARD
+	DASHBOARD,
+	LOGIN,
+	REGISTER,
+	LOGOUT
 }

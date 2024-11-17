@@ -50,30 +50,12 @@ export default Ember.Controller.extend({
 
   actions: {
     viewTransaction(transaction) {
-      this.transitionToRoute('banks.bank.accounts.account.transactions.transaction', transaction.acc_number, transaction.transaction_id)
-        .then((newRoute) => {
-          newRoute.controller.setProperties({
-            bankId: this.get('bankId'),
-            transactionId: transaction.transaction_id
-          });
-        })
-        .catch((error) => {
-          console.error("Transition failed", error);
-        });
+      this.transitionToRoute('banks.bank.accounts.account.transactions.transaction', transaction.acc_number, transaction.transaction_id);
     },
 
     addNewTransaction() { 
       // console.log(branchId);
-      this.transitionToRoute('banks.bank.accounts.account.transactions.new')
-        .then((newRoute) => {
-          newRoute.controller.setProperties({
-            accNo: this.get('accNo'),
-            bankId: this.get('bankId')
-          });
-        })
-        .catch((error) => {
-          console.error("Transition to new transaction page failed", error);
-        });
+      this.transitionToRoute('banks.bank.accounts.account.transactions.new');
     },
     changeTransactions(page,selectedType,selectedStatus,searchQuery)
     {

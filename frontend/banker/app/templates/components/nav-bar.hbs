@@ -23,9 +23,9 @@
     {{!-- {{#if isRoute}} --}}
       <div class="branch-dropdown">
         <select id="branch" value={{branch_name}} onchange={{action "setbranch" value="target.value"}} >
-          <option value="all">All Branches</option>
+          <option value="">All Branches</option>
           {{#each branches as |branch|}}
-            <option value={{branch.branch_name}}>{{branch.branch_name}}</option>
+            <option value={{branch.branch_name}} >{{branch.branch_name}}</option>
           {{/each}}
         </select>
       </div>

@@ -1,46 +1,38 @@
 import Ember from 'ember';
-import {methods} from '../../../../../../utils/util';
+import { methods } from '../../../../../../utils/util';
 export default Ember.Controller.extend({
   fetchService: Ember.inject.service('fetch'),
-  sharedData:Ember.inject.service('shared-data'),
+  sharedData: Ember.inject.service('shared-data'),
   loans: [],
-  loadLoans(page,selectedType,selectedStatus,searchQuery) {
+  loadLoans(page, selectedType, selectedStatus, searchQuery) {
     let url = `http://localhost:8080/banker/api/v1/`;
     let bankId = this.get('sharedData').get('bankId');
     let branchId = this.get('sharedData').get("branchId");
     let accno = this.get('sharedData').get('accNo');
-    if(bankId!="*")
-    {
-      url=url +`banks/${bankId}`;
+    if (bankId != "*") {
+      url = url + `banks/${bankId}`;
     }
-    if(branchId!='*')
-    {
-      url=url+`/branches/${branchId}`;
+    if (branchId != '*') {
+      url = url + `/branches/${branchId}`;
     }
-    if(accno!="*")
-    {
-      url = url+`/accounts/${accno}`;
+    if (accno != "*") {
+      url = url + `/accounts/${accno}`;
     }
-    url=url+`/loans?page=${page}`;
+    url = url + `/loans?page=${page}`;
 
-    if(selectedType && selectedType!='')
-      {
-        url=url+`&filter_type=${selectedType}`;
-      }
-      if(selectedStatus && selectedStatus!='')
-      {
-        url=url+`&filter_status=${selectedStatus}`;
-      }
-      if(searchQuery && searchQuery!='')
-      {
-        url=url+`&search_item=${searchQuery}`;
-      }
-  
-    // console.log(this.get('accNo'));
-    this.get('fetchService').fetch(url,methods.GET).then((response) => {
-      // console.log(response);
+    if (selectedType && selectedType != '') {
+      url = url + `&filter_type=${selectedType}`;
+    }
+    if (selectedStatus && selectedStatus != '') {
+      url = url + `&filter_status=${selectedStatus}`;
+    }
+    if (searchQuery && searchQuery != '') {
+      url = url + `&search_item=${searchQuery}`;
+    }
+
+    this.get('fetchService').fetch(url, methods.GET).then((response) => {
       this.set('loans', response.data);
-      this.set('totalLoans',response.totalLoans);
+      this.set('totalLoans', response.totalLoans);
     }).catch((error) => {
       this.set('loans', []);
       console.error("Failed to load loans:", error);
@@ -48,33 +40,16 @@ export default Ember.Controller.extend({
   },
   actions: {
 
-    viewloan(loan)
-    {
-        this.transitionToRoute('banks.bank.accounts.account.loans.loan',loan.acc_number,loan.loan_id).then((newRoute)=>{
-          
-          newRoute.controller.setProperties({
-            bankId:this.get('bankId'),
-            branchId:this.get('branchId')
-          });
-        }).catch((error) => {
-          console.error("Transition failed", error);
-        });
+    viewloan(loan) {
+      this.transitionToRoute('banks.bank.accounts.account.loans.loan', loan.acc_number, loan.loan_id);
     },
 
     addNewLoan() {
-      // console.log(branchId);
-      this.transitionToRoute('banks.bank.accounts.account.loans.new').then((newRoute) => {
-        newRoute.controller.setProperties({
-          accNo:this.get('accNo'),
-          bankId:this.get('bankId')
-        });
-      }).catch((error) => {
-        console.error("Transition to edit loan page failed", error);
-      });
+      this.transitionToRoute('banks.bank.accounts.account.loans.new');
     },
 
-    editLoan(isEdit,loan) {
-      this.transitionToRoute('banks.bank.accounts.account.loans.loan.edit',  loan.loan_id).then((newRoute) => {
+    editLoan(isEdit, loan) {
+      this.transitionToRoute('banks.bank.accounts.account.loans.loan.edit', loan.loan_id).then((newRoute) => {
         newRoute.controller.setProperties({
           isEdit: isEdit,
           loan_id: loan.loan_id,
@@ -83,20 +58,17 @@ export default Ember.Controller.extend({
           loan_interest: loan.loan_interest,
           loan_duration: loan.loan_duration,
           loan_status: loan.loan_status,
-          loan_availed_date: loan.loan_availed_date,
-          accNo: this.get('accNo'),
-          bankId:this.get('bankId')
+          loan_availed_date: loan.loan_availed_date
         });
       }).catch((error) => {
         console.error("Transition to edit loan page failed", error);
       });
     },
-     changeLoans(page,selectedType,selectedStatus,searchQuery)
-    {
-      this.loadLoans(page,selectedType,selectedStatus,searchQuery);
+    changeLoans(page, selectedType, selectedStatus, searchQuery) {
+      this.loadLoans(page, selectedType, selectedStatus, searchQuery);
     }
   }
 
 
-  
+
 });

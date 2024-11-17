@@ -1,5 +1,5 @@
 import Ember from 'ember';
-import { transactionStatus,transactionType,methods } from '../utils/util';
+import { transactionStatus,transactionType,methods, getSessionData } from '../utils/util';
 export default Ember.Component.extend({
   notification: Ember.inject.service('notify'),
   fetchService: Ember.inject.service('fetch'),
@@ -21,14 +21,10 @@ export default Ember.Component.extend({
 
     }
   }, 
-  role:Ember.computed(()=>{
-    let value = `; ${document.cookie}`;
-    let parts = value.split(`; ${'sessionData'}=`);
-    if (parts.length === 2) {
-        let cookieData = decodeURIComponent(parts.pop().split(';').shift());
-        let sessionData = JSON.parse(cookieData);  
-        return sessionData.user_role;  
-    }
+  role:Ember.computed('accounts',()=>{
+   
+        return getSessionData().user_role;  
+    
   }),
   
   loadAccounts() {
@@ -43,7 +39,7 @@ export default Ember.Component.extend({
     {
       url=url+`/branches/${branchId}`;
     }
-    url=url+`/accounts?acc_status=1`;
+    url=url+`/accounts?filter_status=active`;
   
     this.get('fetchService').fetch(url,methods.GET).then((response) => {
       // console.log(response);
@@ -52,17 +48,6 @@ export default Ember.Component.extend({
       console.error("Failed to load accounts:", error);
     });
   },
-
-  userId: Ember.computed(() => {
-    let value = `; ${document.cookie}`;
-    let parts = value.split(`; ${'sessionData'}=`);
-    if (parts.length === 2) {
-      let cookieData = decodeURIComponent(parts.pop().split(';').shift());
-      let sessionData = JSON.parse(cookieData);
-      return sessionData.user_id; 
-    }
-  }),
-  
   transaction_datetime: '',
   transaction_type: '',
   transaction_status: '',
@@ -79,7 +64,7 @@ export default Ember.Component.extend({
       let date = new Date();
 
       let year = date.getFullYear();
-      let month = String(date.getMonth() + 1).padStart(2, '0'); // Months are zero-indexed, so add 1
+      let month = String(date.getMonth() + 1).padStart(2, '0'); 
       let day = String(date.getDate()).padStart(2, '0');
       
       let hours = String(date.getHours()).padStart(2, '0');

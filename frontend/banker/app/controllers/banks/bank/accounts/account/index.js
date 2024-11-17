@@ -32,27 +32,11 @@ export default Ember.Controller.extend({
   actions:{
     toLoans()
     {
-      this.transitionToRoute('banks.bank.accounts.account.loans',this.get('sharedData').get('accNo')).then((newRoute)=>{
-             
-        newRoute.controller.setProperties({
-          bankId:this.get('sharedData').get('bankId'),
-          branchId:this.get('sharedData').get('branchId')
-        });
-      }).catch((error) => {
-        console.error("Transition failed", error);
-      });
+      this.transitionToRoute('banks.bank.accounts.account.loans',this.get('sharedData').get('accNo'));
     },
     toTransactions()
     {
-      this.transitionToRoute('banks.bank.accounts.account.transactions',this.get('sharedData').get('accNo')).then((newRoute)=>{
-             
-        newRoute.controller.setProperties({
-          bankId:this.get('sharedData').get('bankId'),
-          branchId:this.get('sharedData').get('branchId')
-        });
-      }).catch((error) => {
-        console.error("Transition failed", error);
-      });
+      this.transitionToRoute('banks.bank.accounts.account.transactions',this.get('sharedData').get('accNo'));
     }
   }
 });

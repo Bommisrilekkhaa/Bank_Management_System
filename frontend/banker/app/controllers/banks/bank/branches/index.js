@@ -115,27 +115,14 @@ export default Ember.Controller.extend({
   actions: {
     viewBranch(branch) {
       let bankId = this.get('sharedData').get('bankId');
-      this.transitionToRoute('banks.bank.branches.branch', bankId, branch.branch_id).then((newRoute) => {
-        newRoute.controller.setProperties({
-          bankId: this.get('bankId'),
-          Branch: branch
-        });
-      }).catch((error) => {
-        console.error("Transition failed", error);
-      });
+      this.transitionToRoute('banks.bank.branches.branch', bankId, branch.branch_id);
     },
 
     addNewBranch() {
 
       let bankId = this.get('sharedData').get('bankId');
       // console.log(this.get('bankId'));
-      this.transitionToRoute('banks.bank.branches.new',bankId).then((newRoute) => {
-        newRoute.controller.setProperties({
-          bankId: bankId
-        });
-      }).catch((error) => {
-        console.error("Transition failed", error);
-      });
+      this.transitionToRoute('banks.bank.branches.new',bankId);
     },
 
     editBranch(branch) {
@@ -150,7 +137,6 @@ export default Ember.Controller.extend({
           branch_number: branch.branch_number,
           manager_id:branch.manager_id,
           manager_name:branch.manager_name,
-          bankId: this.get('bankId')
         });
       }).catch((error) => {
         
@@ -209,23 +195,23 @@ export default Ember.Controller.extend({
     updateSearchQuery(value) {
       this.set('searchQuery', value);
       this.searchSuggestion();
-      // this.notifyPropertyChange('searchSuggestions');
+      
     },
       
-          // Perform search on button click
+          
     performSearch() {
       this.loadBranches(this.get('currentPage'),this.get('searchQuery'));
    
-      this.set('currentPage', 1); // Reset pagination
+      this.set('currentPage', 1); 
       this.set('searchSuggestions', []);
     },
       
-          // Select suggestion from dropdown
+          
     selectSuggestion(suggestion) {
       this.set('searchQuery', suggestion);
       this.searchSuggestion();
-      // this.notifyPropertyChange('searchSuggestions');
-      this.set('currentPage', 1); // Reset pagination
+      
+      this.set('currentPage', 1); 
     },
   }
 });

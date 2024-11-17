@@ -30,9 +30,7 @@ export default Ember.Route.extend({
     this.get('sharedData').set('loanId','*');  
     this.get('sharedData').set('transactionId','*');
     this.get('sharedData').set('branchId','*');
-    let targetController = this.controllerFor('application');
-    console.log(targetController);
-    targetController.set('branch_name', 'all');
+    // this.get('sharedData').changedBranchId();
   },
       setupController(controller) {
         

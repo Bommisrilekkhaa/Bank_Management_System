@@ -19,6 +19,7 @@ import com.google.gson.JsonParser;
 
 import DAO.BankDAO;
 import DAO.UserDAO;
+import enums.Resources;
 import model.Bank;
 import redis.clients.jedis.Jedis;
 import servlets.ControllerServlet;
@@ -26,76 +27,69 @@ import utility.DbUtil;
 import utility.JsonUtil;
 import utility.LoggerConfig;
 
-public class BanksHandler
-{
-	private Logger logger=LoggerConfig.initializeLogger(); 
-	private BankDAO bankDAO = new BankDAO();
-	private UserDAO userDao = new UserDAO();
-	private Jedis jedis = null;
+public class BanksHandler {
+    private Logger logger = LoggerConfig.initializeLogger();
+    private BankDAO bankDAO = new BankDAO();
+    private UserDAO userDao = new UserDAO();
+    private Jedis jedis = null;
     private Connection conn = null;
     private DbUtil dbUtil = new DbUtil();
-    public static int offset=-1;
-   
-    public void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException, SQLException 
-    {
+    public static int offset = -1;
+
+    public void doGet(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException, SQLException {
         String path = request.getRequestURI();
-        String cacheKey = path.substring(path.indexOf("/banks")); 
+        String cacheKey = path.substring(path.indexOf("/banks"));
         jedis = ControllerServlet.pool.getResource();
-        Map<String,String[]> queryParamMap = request.getParameterMap();
-       
+        Map<String, String[]> queryParamMap = request.getParameterMap();
+
         cacheKey = JsonUtil.keyGenerate(cacheKey, queryParamMap);
-       
-        if(queryParamMap.containsKey("page"))
-        {
-        	offset = (Integer.valueOf(queryParamMap.get("page")[0])-1)* BankDAO.itemsPerPage;
-        
+
+        if (queryParamMap.containsKey("page")) {
+            offset = (Integer.valueOf(queryParamMap.get("page")[0]) - 1) * BankDAO.itemsPerPage;
+
         }
         String cachedData = jedis.get(cacheKey);
         if (cachedData != null) {
             JsonObject jsonObject = JsonParser.parseString(cachedData).getAsJsonObject();
             JsonUtil.sendJsonResponse(response, jsonObject);
             logger.info("Data fetched from Redis cache for key: " + cacheKey);
-        }
-        else {
+        } else {
             logger.info("Cache miss for key: " + cacheKey);
-            ResultSet rs=null;
-            try{
-            	conn = dbUtil.connect();
-            	JsonArray jsonArray = new JsonArray();
-            	 int totalBanks = bankDAO.totalBanks(conn);
-                 if(ControllerServlet.pathMap.containsKey("banks"))
-                 {
-                 	rs = bankDAO.getBanks(conn, ControllerServlet.pathMap);
-                 }
-                 else
-                 {
-                 	rs = bankDAO.selectPageWise(conn);
-                 }
+            ResultSet rs = null;
+            try {
+                conn = dbUtil.connect();
+                JsonArray jsonArray = new JsonArray();
+                int totalBanks = bankDAO.totalBanks(conn);
+                if (ControllerServlet.pathMap.containsKey(Resources.BANKS.toString().toLowerCase())) {
+                    rs = bankDAO.getBanks(conn, ControllerServlet.pathMap);
+                } else {
+                    rs = bankDAO.selectPageWise(conn);
+                }
                 List<Bank> banks = JsonUtil.convertResultSetToList(rs, Bank.class);
                 JsonObject objectJson = new JsonObject();
                 objectJson.addProperty("totalBanks", totalBanks);
-               
+
                 if (!banks.isEmpty()) {
                     for (Bank bank : banks) {
-                    JsonObject jsonResponse = new JsonObject();
-                    jsonResponse.addProperty("bank_id", bank.getBank_id());
-                    jsonResponse.addProperty("bank_name", bank.getBank_name());
-                    jsonResponse.addProperty("bank_code", bank.getBank_code());
-                    jsonResponse.addProperty("admin_id", bank.getAdmin_id());
-                    jsonResponse.addProperty("main_branch_id", bank.getMain_branch_id());
-                    jsonResponse.addProperty("admin_name", userDao.getUsername(conn, bank.getAdmin_id()).getFullname());
-                    jsonArray.add(jsonResponse);
+                        JsonObject jsonResponse = new JsonObject();
+                        jsonResponse.addProperty("bank_id", bank.getBank_id());
+                        jsonResponse.addProperty("bank_name", bank.getBank_name());
+                        jsonResponse.addProperty("bank_code", bank.getBank_code());
+                        jsonResponse.addProperty("admin_id", bank.getAdmin_id());
+                        jsonResponse.addProperty("main_branch_id", bank.getMain_branch_id());
+                        jsonResponse.addProperty("admin_name",
+                                userDao.getUsername(conn, bank.getAdmin_id()).getFullname());
+                        jsonArray.add(jsonResponse);
                     }
                 }
                 objectJson.add("data", jsonArray);
-               
+
                 jedis.set(cacheKey, objectJson.toString());
-                response.setContentType("application/json");
                 JsonUtil.sendJsonResponse(response, objectJson);
                 logger.info("Data fetched from DB and cached in Redis for key: " + cacheKey);
-            } 
-            finally {
-            	dbUtil.close(conn, null, rs);
+            } finally {
+                dbUtil.close(conn, null, rs);
             }
         }
         if (jedis != null) {
@@ -103,31 +97,30 @@ public class BanksHandler
         }
     }
 
-    
-    public void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException, SQLException 
-    {
+    public void doPost(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException, SQLException {
         String path = request.getRequestURI();
-        String[] cacheKeys =new String[]{ path.substring(path.indexOf("/banks")),
-        		"*admin",
-        		path.substring(path.indexOf("/banks"))+"_*"};
+        String[] cacheKeys = new String[] { path.substring(path.indexOf("/banks")),
+                "*admin",
+                path.substring(path.indexOf("/banks")) + "_*" };
 
         try {
-        	 conn = dbUtil.connect();
-        	 String body = request.getReader().lines().collect(Collectors.joining(System.lineSeparator()));
-             
-        	 Bank newBank = (Bank) JsonUtil.parseRequest(body,Bank.class);
-            
+            conn = dbUtil.connect();
+            String body = request.getReader().lines().collect(Collectors.joining(System.lineSeparator()));
+
+            Bank newBank = (Bank) JsonUtil.parseRequest(body, Bank.class);
+
             if (bankDAO.insertBank(conn, newBank)) {
                 jedis = ControllerServlet.pool.getResource();
 
-                JsonUtil.deleteCache(jedis,cacheKeys);
+                JsonUtil.deleteCache(jedis, cacheKeys);
                 JsonUtil.sendSuccessResponse(response, "Bank inserted successfully");
-                logger.info("New bank inserted and cache invalidated for key: " + cacheKeys[0]);
+                logger.info("New bank inserted!");
             } else {
                 JsonUtil.sendErrorResponse(response, "Error inserting bank");
                 logger.warning("Error inserting bank");
             }
-        }  finally {
+        } finally {
             if (jedis != null) {
                 jedis.close();
             }
@@ -135,27 +128,26 @@ public class BanksHandler
         }
     }
 
-   
-    public void doPut(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException, SQLException 
-    {
+    public void doPut(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException, SQLException {
         String path = request.getRequestURI();
-        String[] cacheKeys =new String[]{ path.substring(path.indexOf("/banks")),
-        		"/banks",
-        		"/banks_*"};
+        String[] cacheKeys = new String[] { path.substring(path.indexOf("/banks")),
+                "/banks",
+                "/banks_*" };
 
         String body = request.getReader().lines().collect(Collectors.joining(System.lineSeparator()));
-        
-   	 	Bank bank = (Bank) JsonUtil.parseRequest(body,Bank.class);
-       
-   	 	bank.setBank_id(ControllerServlet.pathMap.get("banks"));
+
+        Bank bank = (Bank) JsonUtil.parseRequest(body, Bank.class);
+
+        bank.setBank_id(ControllerServlet.pathMap.get(Resources.BANKS.toString().toLowerCase()));
         try {
-        	conn = dbUtil.connect();
+            conn = dbUtil.connect();
             if (bankDAO.updateBank(conn, bank)) {
                 jedis = ControllerServlet.pool.getResource();
 
-                JsonUtil.deleteCache(jedis,cacheKeys);
+                JsonUtil.deleteCache(jedis, cacheKeys);
                 JsonUtil.sendSuccessResponse(response, "Bank updated successfully");
-                logger.info("Bank updated and cache invalidated for key: " + cacheKeys[0]);
+                logger.info("Bank updated!");
             } else {
                 JsonUtil.sendErrorResponse(response, "Error updating bank");
                 logger.warning("Error updating bank");

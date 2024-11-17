@@ -120,6 +120,7 @@ export default Ember.Component.extend({
       name: '',
       address: '',
       manager_id: '',
+      branch_number:'',
       isEdit: false
     });
   }

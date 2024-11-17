@@ -23,6 +23,7 @@
 }
 
 .branches-table {
+  margin-top:30px;
   width: 100%;
   border-collapse: collapse;
   background-color: transparent;
@@ -83,7 +84,7 @@
   background-color: white;
   border-radius: 8px;
   padding: 30px;
-  width: 400px;
+  width: 500px;
   margin: 15px;
   box-shadow: 0 4px 12px rgb(255, 255, 255);
   font-family: "Arial", sans-serif;
@@ -97,7 +98,7 @@
   h2 {
     text-align: center;
     font-size: 24px;
-    margin-bottom: 20px;
+    margin-bottom: 40px;
     color: #0d1b2a;
   }
 }

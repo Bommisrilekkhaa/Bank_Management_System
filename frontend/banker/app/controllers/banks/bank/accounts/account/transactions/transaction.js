@@ -38,7 +38,6 @@ export default Ember.Controller.extend({
         })
         .catch((error) => {
           console.error("Failed to load transaction:", error);
-          alert("Could not load transaction. Please try again later.");
         });
     },
 });

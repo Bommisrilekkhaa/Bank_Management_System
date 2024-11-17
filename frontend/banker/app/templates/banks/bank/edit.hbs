@@ -15,7 +15,7 @@
 
       <div class="form-group">
         <label for="branchId">Branch ID<span style="color:rgb(237, 69, 69);">*</span></label>
-        <select id="branchId" class="form-control" onchange={{action (mut branchId) value="target.value"}}>
+        <select id="branchId" value={{branchId}} class="form-control" onchange={{action (mut branchId) value="target.value"}}>
           <option value="">Select Branch</option>
           {{#each branches as |branch|}}
             <option value={{branch.branch_id}} selected={{if (eq branch.branch_id bank.main_branch_id) "selected"}}>{{branch.branch_name}}</option>

@@ -137,13 +137,7 @@ export default Ember.Controller.extend({
     },
     viewUser(user) {
 
-      this.transitionToRoute('users.user', user.user_id).then((newRoute) => {
-        newRoute.controller.setProperties({
-          bankId: this.get('bankId')
-        });
-      }).catch((error) => {
-        console.error("Transition failed", error);
-      });
+      this.transitionToRoute('users.user', user.user_id);
     },
 
     editUser(user) {
@@ -157,8 +151,7 @@ export default Ember.Controller.extend({
           date_of_birth: user.date_of_birth,
           user_phonenumber: user.user_phonenumber,
           user_address: user.user_address,
-          user_status: user.user_status,
-          bankId: this.get('bankId')
+          user_status: user.user_status
         });
         
       }).catch((error) => {

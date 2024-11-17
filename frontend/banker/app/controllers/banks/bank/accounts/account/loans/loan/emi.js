@@ -108,8 +108,7 @@ export default Ember.Controller.extend({
             .then((newRoute) => {
                 newRoute.controller.setProperties({
                     transaction_type:'emi',
-                    transaction_amount:this.get('loanAmount'),
-                    accNo:this.get('loan').acc_number
+                    transaction_amount:this.get('emiAmount')
                 });
               })
               .catch((error) => {

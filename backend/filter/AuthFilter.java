@@ -1,11 +1,13 @@
 package filter;
 
-
 import java.io.IOException;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import javax.servlet.Filter;
 import javax.servlet.FilterChain;
-import javax.servlet.FilterConfig;
 import javax.servlet.ServletException;
 import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
@@ -14,89 +16,75 @@ import javax.servlet.http.HttpFilter;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import com.google.gson.Gson;
+import com.google.gson.JsonObject;
+
+import enums.Resources;
 import utility.JsonUtil;
+import utility.LoggerConfig;
 
 @SuppressWarnings("serial")
 public class AuthFilter extends HttpFilter implements Filter {
-       
+	Gson gson = new Gson();
+	private Logger logger = LoggerConfig.initializeLogger();
 
-    public AuthFilter() {
-        super();
-       
-    }
+	public AuthFilter() {
+		super();
 
-	public void destroy() {
-		
-		
 	}
-	
-	public static void doOptions(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-	    response.setHeader("Access-Control-Allow-Origin", "http://localhost:4200");
-	    response.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
-	    response.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With,XSet-Cookie"); 
-	    response.setHeader("Access-Control-Allow-Credentials", "true");
 
-	    response.setStatus(HttpServletResponse.SC_OK);
-//	    System.out.println("CORS preflight response sent.");
-	}
-	public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException 
-	{
-		 
+	public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
+			throws IOException, ServletException {
+		// System.out.println("start");
 
-//		System.out.println("start");
-		
 		HttpServletRequest req = (HttpServletRequest) request;
 		HttpServletResponse res = (HttpServletResponse) response;
 		Cookie[] cookies = req.getCookies();
-		
-//		System.out.println("cookie"+req.getCookies());
-		doOptions(req,res);
+
+		// System.out.println("cookie"+req.getCookies());
 		String[] path = req.getRequestURI().split("/");
-		
-		if (cookies == null) 
-		{
-			if (path[path.length-1].equals("auth") || path[path.length-1].equals("banks")) 
-			{
-//				System.out.println("Login request, skipping auth filter.");
+
+		String sessionData = null;
+		for (Cookie cookie : cookies) {
+//			System.out.println(cookie.getName());
+			if ("sessionData".equals(cookie.getName())) {
+				sessionData = cookie.getValue();
+				String decodedValue = URLDecoder.decode(cookie.getValue(), StandardCharsets.UTF_8.toString());
 				
+				String jsonValue = decodedValue.replaceFirst("^cookie", "");
+				
+				JsonObject jsonObject = gson.fromJson(jsonValue, JsonObject.class);
+				
+				String authToken = jsonObject.get("authToken").getAsString();
+				
+				if (authToken != null && authToken.equals(req.getSession(false).getId())) {
+					logger.info("Valid Session Found, Redirecting the request servlet!");
+					chain.doFilter(request, response);
+					return;
+				} else {
+					logger.info("Invalid session!!");
+					JsonUtil.sendErrorResponse((HttpServletResponse) response, "Invalid session");
+					return;
+				}
+			}
+		}
+		
+		if (sessionData == null) {
+			if (path[path.length - 1].equals("auth") || path[path.length - 1].equals(Resources.BANKS.toString().toLowerCase())) {
+				// System.out.println("Login request, skipping auth filter.");
+				logger.info("Login request, skipping auth filter!");
 				chain.doFilter(request, response);
 				return;
 			}
-			res.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+			logger.log(Level.SEVERE, "No cookies present, user is not logged in.");
 			JsonUtil.sendErrorResponse(res, "No cookies present, user is not logged in.");
 			return;
 		}
-	    
-		
-		for (Cookie cookie : cookies) 
-        {
-                if ("authToken".equals(cookie.getName())) 
-                {
-                    if(cookie.getValue()!=null && cookie.getValue().equals(req.getSession(false).getId()))
-                    {
-//                    	System.out.println("cookie"+cookie.getValue());
 
-                	    ((HttpServletResponse) response).setStatus(HttpServletResponse.SC_OK);
-//                	    JsonHandler.sendSuccessResponse((HttpServletResponse)response, "User is already Logged In");
-                    	
-                    }
-                    else
-        	        {
-                    	 JsonUtil.sendErrorResponse((HttpServletResponse)response, "Invalid session");
-                    	 return;
-        	        }
-                }
-          }
-	         
-		
-		chain.doFilter(request, response);
-		
-//		System.out.println("bye");
+			
 
-	}
+		// System.out.println("bye");
 
-	public void init(FilterConfig fConfig) throws ServletException {
-		
 	}
 
 }

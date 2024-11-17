@@ -6,13 +6,12 @@ import java.util.logging.LogManager;
 import java.util.logging.Logger;
 
 public class LoggerConfig {
-	
 
     static {
         try (InputStream configFile = LoggerConfig.class.getClassLoader().getResourceAsStream("logging.properties")) {
             if (configFile != null) {
                 LogManager.getLogManager().readConfiguration(configFile);
-//                System.out.println("Logger configuration loaded from logging.properties");
+                // System.out.println("Logger configuration loaded from logging.properties");
             } else {
                 System.err.println("Could not find logging.properties file.");
             }

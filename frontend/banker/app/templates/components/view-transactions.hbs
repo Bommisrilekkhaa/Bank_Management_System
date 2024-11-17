@@ -1,5 +1,5 @@
 <div class="transactions-list">
-  <button {{action "addNewTransaction"}} class="new-transaction-btn">New Transaction</button>
+  <button {{action "addNewTransaction"}} style="margin-top:65px" class="new-transaction-btn">New Transaction</button>
 
   <div class="filters">
     <label for="transactionType">Type</label>
@@ -28,7 +28,7 @@
       value={{searchQuery}} 
       oninput={{action "updateSearchQuery" value="target.value"}}
     />
-    <button {{action "performSearch"}} class="new-branch-btn" style="margin-right: 42%;padding:10px;margin-top:-3px">Search</button>
+    <button {{action "performSearch"}} class="new-branch-btn" style="margin-right: 49%;padding:10px;margin-top:-3px">Search</button>
 
     {{#if searchSuggestions.length}}
       <ul class="suggestions-list">

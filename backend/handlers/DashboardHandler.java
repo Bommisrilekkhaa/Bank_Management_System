@@ -16,6 +16,7 @@ import com.google.gson.JsonObject;
 import DAO.AccountDAO;
 import DAO.BranchDAO;
 import enums.LoanType;
+import enums.Resources;
 import enums.TransactionType;
 import enums.UserRole;
 import servlets.ControllerServlet;
@@ -23,54 +24,67 @@ import utility.DbUtil;
 import utility.JsonUtil;
 import utility.LoggerConfig;
 
-public class DashboardHandler  {
-	private Logger logger=LoggerConfig.initializeLogger(); 
+public class DashboardHandler {
+    private Logger logger = LoggerConfig.initializeLogger();
     private AccountDAO accountDAO = new AccountDAO();
     private BranchDAO branchDAO = new BranchDAO();
     private Connection conn = null;
     private DbUtil dbUtil = new DbUtil();
 
-    
-    public void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException, SQLException {
+    public void doGet(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException, SQLException {
         String role = (String) request.getSession(false).getAttribute("user_role");
-        
+
         logger.info("Dashboard request initiated for role: " + role);
-        ResultSet resultSet=null;
-        try{
-        	conn = dbUtil.connect();
+        ResultSet resultSet = null;
+        try {
+            conn = dbUtil.connect();
             JsonArray jsonArray = new JsonArray();
-            
+
             if (role.equals(UserRole.CUSTOMER.toString())) {
                 logger.info("Fetching account and loan details for customer.");
-//                System.out.println( ControllerServlet.pathMap.toString());
+                // System.out.println( ControllerServlet.pathMap.toString());
                 resultSet = accountDAO.accountsAndLoans(conn, ControllerServlet.pathMap);
-                
+
                 while (resultSet.next()) {
                     JsonObject accountJson = new JsonObject();
                     accountJson.addProperty("acc_no", resultSet.getInt("accountNumber"));
                     accountJson.addProperty("acc_balance", resultSet.getDouble("accountBalance"));
-                    
-                    if (resultSet.getString("loanId") != null) {
-                        JsonObject loanJson = new JsonObject();
-                        loanJson.addProperty("loan_id", resultSet.getInt("loanId"));
-                        loanJson.addProperty("loan_type", "" + LoanType.valueOf(resultSet.getInt("loanType")));
-                        loanJson.addProperty("loan_amount", resultSet.getDouble("loanAmount"));
-                        loanJson.addProperty("loan_duration", resultSet.getInt("loanDuration"));
-                        loanJson.addProperty("loan_interest", resultSet.getInt("loanInterest"));
-                        loanJson.addProperty("loan_availed_date", resultSet.getDate("loanAvailedDate").toString());
-                        accountJson.add("loan_details", loanJson);
-                    }
-
+                    JsonArray loansArray = new JsonArray();
                     JsonArray transactionsArray = new JsonArray();
-                    while (resultSet.next() && resultSet.getInt("accountNumber") == accountJson.get("acc_no").getAsInt()) {
-                        JsonObject transactionJson = new JsonObject();
-                        transactionJson.addProperty("transaction_id", resultSet.getInt("transactionId"));
-                        transactionJson.addProperty("transaction_datetime", resultSet.getTimestamp("transactionDateTime").toString());
-                        transactionJson.addProperty("transaction_type", "" + TransactionType.valueOf(resultSet.getInt("transactionType")));
-                        transactionsArray.add(transactionJson);
+                    
+                    while (resultSet.next()
+                            && resultSet.getInt("accountNumber") == accountJson.get("acc_no").getAsInt()) 
+                    {
+                    	if(resultSet.getString("loanId")!=null)
+                    	{
+                    		JsonObject loanJson = new JsonObject();
+                    		loanJson.addProperty("loan_id", resultSet.getInt("loanId"));
+                    		loanJson.addProperty("loan_type", "" + LoanType.valueOf(resultSet.getInt("loanType")));
+                    		loanJson.addProperty("loan_amount", resultSet.getDouble("loanAmount"));
+                    		loanJson.addProperty("loan_duration", resultSet.getInt("loanDuration"));
+                    		loanJson.addProperty("loan_interest", resultSet.getInt("loanInterest"));
+                    		loanJson.addProperty("loan_availed_date", resultSet.getDate("loanAvailedDate").toString());
+                    		if(!loansArray.contains(loanJson))
+                    		{
+                    			loansArray.add(loanJson);
+                    		}
+                    	}
+                    
+                    	if(resultSet.getString("transactionId")!=null)
+                    	{
+	                        JsonObject transactionJson = new JsonObject();
+	                        transactionJson.addProperty("transaction_id", resultSet.getInt("transactionId"));
+	                        transactionJson.addProperty("transaction_datetime",
+	                                resultSet.getTimestamp("transactionDateTime").toString());
+	                        transactionJson.addProperty("transaction_type",
+	                                "" + TransactionType.valueOf(resultSet.getInt("transactionType")));
+	                        transactionsArray.add(transactionJson);
+                    	}
                     }
 
-                    accountJson.add("transactions", transactionsArray);
+                    accountJson.add("loan_details", loansArray);
+                    accountJson.add(Resources.TRANSACTIONS.toString().toLowerCase(), transactionsArray);
                     jsonArray.add(accountJson);
                 }
 
@@ -79,9 +93,9 @@ public class DashboardHandler  {
 
                 ControllerServlet.pathMap.put("b.manager_id", ControllerServlet.pathMap.get("users"));
                 ControllerServlet.pathMap.remove("users");
-//                System.out.println( ControllerServlet.pathMap.toString());
+                // System.out.println( ControllerServlet.pathMap.toString());
                 resultSet = branchDAO.selectBranchAndAccounts(conn, ControllerServlet.pathMap);
-                
+
                 if (resultSet.next()) {
                     JsonObject jsonResponse = new JsonObject();
                     jsonResponse.addProperty("branchName", resultSet.getString("branchName"));
@@ -99,11 +113,11 @@ public class DashboardHandler  {
 
             } else if (role.equals(UserRole.ADMIN.toString())) {
                 logger.info("Fetching branches and account details for admin.");
-                
+
                 ControllerServlet.pathMap.remove("users");
-//                System.out.println( ControllerServlet.pathMap.toString());
+                // System.out.println( ControllerServlet.pathMap.toString());
                 resultSet = branchDAO.selectBranchesAndAccounts(conn, ControllerServlet.pathMap);
-                
+
                 while (resultSet.next()) {
                     JsonObject jsonResponse = new JsonObject();
                     jsonResponse.addProperty("branchName", resultSet.getString("branchName"));
@@ -118,9 +132,8 @@ public class DashboardHandler  {
             JsonUtil.sendJsonResponse(response, jsonArray);
             logger.info("Dashboard data sent successfully.");
 
-        }
-        finally {
-        	dbUtil.close(conn, null, resultSet);
+        } finally {
+            dbUtil.close(conn, null, resultSet);
         }
     }
 }

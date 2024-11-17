@@ -29,118 +29,110 @@ import utility.DbUtil;
 import utility.JsonUtil;
 import utility.LoggerConfig;
 
-public class UsersHandler  {
+public class UsersHandler {
     private Logger logger = LoggerConfig.initializeLogger();
     private UserDAO userDAO = new UserDAO();
     private User user = new User();
     private Jedis jedis = null;
     private Connection conn = null;
     private DbUtil dbUtil = new DbUtil();
-    public static int offset=-1;
-  
-    public void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException, SQLException {
+    public static int offset = -1;
+
+    public void doGet(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException, SQLException {
 
         String path = request.getRequestURI();
         String cacheKey = path.substring(path.indexOf("/users"));
-        Map<String,String[]> queryParamMap = request.getParameterMap();
-        String searchParam=null;
+        Map<String, String[]> queryParamMap = request.getParameterMap();
+        String searchParam = null;
         cacheKey = JsonUtil.keyGenerate(cacheKey, queryParamMap);
-       
-        if(queryParamMap.containsKey("filter_role"))
-        {
-        	ControllerServlet.pathMap.put("user_role", Integer.valueOf(UserRole.valueOf(queryParamMap.get("filter_role")[0].toUpperCase()).getValue()));
-        	
+
+        if (queryParamMap.containsKey("filter_role")) {
+            ControllerServlet.pathMap.put("user_role",
+                    Integer.valueOf(UserRole.valueOf(queryParamMap.get("filter_role")[0].toUpperCase()).getValue()));
+
         }
-        if(queryParamMap.containsKey("filter_status"))
-        {
-        	ControllerServlet.pathMap.put("user_status", Integer.valueOf(Status.valueOf(queryParamMap.get("filter_status")[0].toUpperCase()).getValue()));
-        	
+        if (queryParamMap.containsKey("filter_status")) {
+            ControllerServlet.pathMap.put("user_status",
+                    Integer.valueOf(Status.valueOf(queryParamMap.get("filter_status")[0].toUpperCase()).getValue()));
+
         }
-        if(queryParamMap.containsKey("search_item"))
-        {
-        	searchParam = queryParamMap.get("search_item")[0];
-        	
+        if (queryParamMap.containsKey("search_item")) {
+            searchParam = queryParamMap.get("search_item")[0];
+
         }
-        if(queryParamMap.containsKey("page"))
-        {
-        	offset = (Integer.valueOf(queryParamMap.get("page")[0])-1)* UserDAO.itemsPerPage;
-        
+        if (queryParamMap.containsKey("page")) {
+            offset = (Integer.valueOf(queryParamMap.get("page")[0]) - 1) * UserDAO.itemsPerPage;
+
         }
-        
+
         jedis = ControllerServlet.pool.getResource();
         String cachedData = jedis.get(cacheKey);
 
         if (cachedData != null) {
             logger.info("Cache hit for key: " + cacheKey);
-            response.setContentType("application/json");
-            if(queryParamMap.containsKey("filter_manager") || queryParamMap.containsKey("filter_admin"))
-            {
-            	JsonArray jsonArray = JsonParser.parseString(cachedData).getAsJsonArray();
-            	JsonUtil.sendJsonResponse(response, jsonArray);
-            }
-            else
-            {
-            	 JsonObject jsonObject = JsonParser.parseString(cachedData).getAsJsonObject();
-                 JsonUtil.sendJsonResponse(response, jsonObject);
+            if (queryParamMap.containsKey("filter_manager") || queryParamMap.containsKey("filter_admin")) {
+                JsonArray jsonArray = JsonParser.parseString(cachedData).getAsJsonArray();
+                JsonUtil.sendJsonResponse(response, jsonArray);
+            } else {
+                JsonObject jsonObject = JsonParser.parseString(cachedData).getAsJsonObject();
+                JsonUtil.sendJsonResponse(response, jsonObject);
             }
         } else {
             logger.info("Cache miss for key: " + cacheKey);
-            ResultSet rs=null;
+            ResultSet rs = null;
             try {
-            	conn = dbUtil.connect();
+                conn = dbUtil.connect();
 
                 JsonArray jsonArray = new JsonArray();
-                
+
                 if (queryParamMap.containsKey("filter_manager")) {
-                   logger.info("Fetching unassigned managers from the database.");
-                   rs = userDAO.getUnassignedManagers(conn);
-                   List<User> users = JsonUtil.convertResultSetToList(rs, User.class);
-
-                   if (!users.isEmpty()) {
-                       for (User user : users) {
-	                        JsonObject jsonResponse = new JsonObject();
-	                        jsonResponse.addProperty("manager_id",user.getUser_id());
-	                        jsonResponse.addProperty("manager_name", user.getFullname());
-	                        jsonArray.add(jsonResponse);
-                       }
-                    }
-
-                   JsonUtil.sendJsonResponse(response, jsonArray);
-                   jedis.set(cacheKey,  jsonArray.toString());
-                   
-                } 
-                else if (queryParamMap.containsKey("filter_admin")) {
-                    logger.info("Fetching unassigned admins from the database.");
-                    rs = userDAO.getUnassignedAdmins(conn);
+                    logger.info("Fetching unassigned managers from the database.");
+                    rs = userDAO.getUnassignedManagers(conn);
                     List<User> users = JsonUtil.convertResultSetToList(rs, User.class);
-                    
+
                     if (!users.isEmpty()) {
                         for (User user : users) {
-	                        JsonObject jsonResponse = new JsonObject();
-	                        jsonResponse.addProperty("admin_id", user.getUser_id());
-	                        jsonResponse.addProperty("admin_name", user.getFullname());
-	                        jsonArray.add(jsonResponse);
+                            JsonObject jsonResponse = new JsonObject();
+                            jsonResponse.addProperty("manager_id", user.getUser_id());
+                            jsonResponse.addProperty("manager_name", user.getFullname());
+                            jsonArray.add(jsonResponse);
                         }
                     }
 
                     JsonUtil.sendJsonResponse(response, jsonArray);
-                    jedis.set(cacheKey,  jsonArray.toString());
+                    jedis.set(cacheKey, jsonArray.toString());
+
+                } else if (queryParamMap.containsKey("filter_admin")) {
+                    logger.info("Fetching unassigned admins from the database.");
+                    rs = userDAO.getUnassignedAdmins(conn);
+                    List<User> users = JsonUtil.convertResultSetToList(rs, User.class);
+
+                    if (!users.isEmpty()) {
+                        for (User user : users) {
+                            JsonObject jsonResponse = new JsonObject();
+                            jsonResponse.addProperty("admin_id", user.getUser_id());
+                            jsonResponse.addProperty("admin_name", user.getFullname());
+                            jsonArray.add(jsonResponse);
+                        }
+                    }
+
+                    JsonUtil.sendJsonResponse(response, jsonArray);
+                    jedis.set(cacheKey, jsonArray.toString());
                 } else {
-                	int totalUsers = userDAO.totalUsers(conn, ControllerServlet.pathMap,searchParam);
-                	logger.info("Fetching all users from the database.");
-                     
-                	if(!ControllerServlet.pathMap.containsKey("users"))
-                	{
-                		rs = userDAO.selectPageWise(conn, ControllerServlet.pathMap,searchParam);
-                	}
-                	else {
-                		
-                		rs = userDAO.selectAllUsers(conn);
-                	}
+                    int totalUsers = userDAO.totalUsers(conn, ControllerServlet.pathMap, searchParam);
+                    logger.info("Fetching all users from the database.");
+
+                    if (!ControllerServlet.pathMap.containsKey("users")) {
+                        rs = userDAO.selectPageWise(conn, ControllerServlet.pathMap, searchParam);
+                    } else {
+
+                        rs = userDAO.selectAllUsers(conn, ControllerServlet.pathMap);
+                    }
                     List<User> users = JsonUtil.convertResultSetToList(rs, User.class);
                     JsonObject objectJson = new JsonObject();
                     objectJson.addProperty("totalUsers", totalUsers);
-                   
+
                     if (!users.isEmpty()) {
                         for (User user : users) {
                             if (user.getUser_role() != UserRole.SUPERADMIN.getValue()) {
@@ -150,27 +142,25 @@ public class UsersHandler  {
                                 userJson.addProperty("date_of_birth", user.getDate_of_birth().toString());
                                 userJson.addProperty("user_phonenumber", user.getUser_phonenumber());
                                 userJson.addProperty("user_address", user.getUser_address());
-                                userJson.addProperty("user_role", ("" + UserRole.valueOf(user.getUser_role())).toLowerCase());
+                                userJson.addProperty("user_role",("" + UserRole.valueOf(user.getUser_role())).toLowerCase());
                                 userJson.addProperty("username", user.getUsername());
-                                userJson.addProperty("user_status", ("" + Status.valueOf(user.getUser_status())).toLowerCase());
+                                userJson.addProperty("user_status",("" + Status.valueOf(user.getUser_status())).toLowerCase());
                                 jsonArray.add(userJson);
                             }
                         }
                     } else {
-                        logger.info("No matching users found.");
-                        JsonUtil.sendSuccessResponse(response, "No matching users found.");
+                        logger.warning("No matching users found.");
+                        JsonUtil.sendErrorResponse(response, "No matching users found.");
                         return;
                     }
                     objectJson.add("data", jsonArray);
                     JsonUtil.sendJsonResponse(response, objectJson);
                     jedis.set(cacheKey, objectJson.toString());
                 }
-                
-                response.setContentType("application/json");
                 logger.info("Data fetched from the database and cached with key: " + cacheKey);
-            } 
-            finally {
-            	dbUtil.close(conn, null, rs);
+
+            } finally {
+                dbUtil.close(conn, null, rs);
             }
         }
         if (jedis != null) {
@@ -178,23 +168,18 @@ public class UsersHandler  {
         }
     }
 
-   
-    
+    public void doPut(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException, ParseException, SQLException {
 
-   
-    public void doPut(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException, ParseException, SQLException 
-    {
-       
-        try  {
-        	conn = dbUtil.connect();
-        	String body = request.getReader().lines().collect(Collectors.joining(System.lineSeparator()));
-            
-        	User user = (User) JsonUtil.parseRequest(body,User.class);
-           
+        try {
+            conn = dbUtil.connect();
+            String body = request.getReader().lines().collect(Collectors.joining(System.lineSeparator()));
+
+            User user = (User) JsonUtil.parseRequest(body, User.class);
+
             user.setUser_id(ControllerServlet.pathMap.get("users"));
 
-            if (userDAO.updateUser(conn, user)) 
-            {
+            if (userDAO.updateUser(conn, user)) {
                 jedis = ControllerServlet.pool.getResource();
                 Set<String> keys = jedis.keys("*users*");
                 if (!keys.isEmpty()) {
@@ -208,17 +193,17 @@ public class UsersHandler  {
                 logger.warning("Failed to update user: " + user.getUser_id());
             }
         } finally {
-            if (jedis != null) jedis.close();
+            if (jedis != null)
+                jedis.close();
             dbUtil.close(conn, null, null);
         }
     }
 
-   
-    public void doDelete(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException, SQLException {
-      
+    public void doDelete(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException, SQLException {
 
         try {
-        	conn = dbUtil.connect();
+            conn = dbUtil.connect();
             user.setUser_id(ControllerServlet.pathMap.get("users"));
 
             if (userDAO.deleteUser(conn, user.getUser_id())) {
@@ -235,7 +220,8 @@ public class UsersHandler  {
                 logger.warning("Failed to delete user: " + user.getUser_id());
             }
         } finally {
-            if (jedis != null) jedis.close();
+            if (jedis != null)
+                jedis.close();
             dbUtil.close(conn, null, null);
         }
     }

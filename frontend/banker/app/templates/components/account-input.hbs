@@ -1,5 +1,5 @@
 <body>
-  <div class="account-form">
+  <div class="account-form" style="margin-top:20px">
     <h2>{{if isEdit "Edit Account" "Create New Account"}}</h2>
 
     <form {{action "submitForm" on="submit"}}>
@@ -32,6 +32,21 @@
       </div>
 
       {{#unless (eq role userRole.CUSTOMER)}}
+      {{#if isEdit}}
+       <div class="form-group">
+          <label for="acc_status">Account Status<span style="color:rgb(237, 69, 69);">*</span></label>
+          <select 
+            id="acc_status" 
+            class="form-control" 
+            onchange={{action (mut acc_status) value="target.value"}}
+          >
+            <option value="">Select Status</option>
+            {{#each filteredStatuses as |status|}}
+              <option value={{status}} selected={{if (eq status acc_status) "selected"}}>{{status}}</option>
+            {{/each}}
+          </select>
+        </div>
+      {{else}}
         <div class="form-group">
           <label for="acc_status">Account Status<span style="color:rgb(237, 69, 69);">*</span></label>
           <select 
@@ -46,6 +61,7 @@
           </select>
         </div>
 
+      {{/if}}
         <div class="form-group">
           <label for="username">Username<span style="color:rgb(237, 69, 69);">*</span></label>
           <input 
@@ -63,21 +79,21 @@
         <label for="branch_name">Branch Name<span style="color:rgb(237, 69, 69);">*</span></label>
         <select 
           id="branch_name" 
+          value={{branch_name}}
           class="form-control" 
-          onchange={{action (mut branch_name) value="target.value"}}
+          onchange={{action (mut branchId) value="target.value"}}
         >
           <option value="">Select branch</option>
           {{#each branchNames as |branch|}}
-            <option value={{branch.branch_name}} selected={{if (eq branch.branch_name branch_name) "selected"}}>{{branch.branch_name}}</option>
+            <option value={{branch.branch_id}} selected={{if (eq branch.branch_name branch_name) "selected"}}>{{branch.branch_name}}</option>
           {{/each}}
         </select>
       </div>
 
       <button type="submit" class="btn-primary">{{if isEdit "Update Account" "Create Account"}}</button>
 
-      {{#link-to "banks.bank.accounts" bankId}}
-        <button {{action "cancel"}} class="btn-secondary">Cancel</button>
-      {{/link-to}}
+      <button {{action "cancel"}} class="btn-secondary">Cancel</button>
+      
 
       {{#if errorMessage}}
         <div class="error-message">* {{errorMessage}}</div>

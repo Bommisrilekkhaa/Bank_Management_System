@@ -1,5 +1,5 @@
 import Ember from 'ember';
-import {status,accountType,role,methods} from '../utils/util';
+import {status,accountType,role,methods,getSessionData} from '../utils/util';
 export default Ember.Component.extend({
   notification: Ember.inject.service('notify'),
   fetchService: Ember.inject.service('fetch'),
@@ -7,16 +7,10 @@ export default Ember.Component.extend({
   errorMessage: '',
   branchNames: [],
   userRole:role,
-  statuses: [status.ACTIVE,status.INACTIVE,status.PENDING],
+  statuses: [status.ACTIVE,status.PENDING],
   types: [accountType.BUSINESS,accountType.SAVINGS],
-  role:Ember.computed(()=>{
-    let value = `; ${document.cookie}`;
-    let parts = value.split(`; ${'sessionData'}=`);
-    if (parts.length === 2) {
-        let cookieData = decodeURIComponent(parts.pop().split(';').shift());
-        let sessionData = JSON.parse(cookieData);  
-        return sessionData.user_role;  
-    }
+  role:Ember.computed('branchNames',()=>{
+    return getSessionData().user_role;
   }),
   
   init() {
@@ -24,17 +18,15 @@ export default Ember.Component.extend({
     // console.log("init...");
     this.loadBranches();
   }, 
-  userId: Ember.computed(()=>{
-    let value = `; ${document.cookie}`;
-    let parts = value.split(`; ${'sessionData'}=`);
-    if (parts.length === 2) {
-        let cookieData = decodeURIComponent(parts.pop().split(';').shift());
-        let sessionData = JSON.parse(cookieData);
-          return sessionData.user_id;  
+
+  filteredStatuses: Ember.computed('branchNames', function () {
+    if (this.get('acc_status')==status.ACTIVE) {
+      return [status.INACTIVE,status.ACTIVE];
+    } else {
+      return [status.ACTIVE,status.PENDING];
     }
   }),
 
-  
   accNo: '',
   acc_type: '',
   acc_balance: '',
@@ -68,19 +60,28 @@ export default Ember.Component.extend({
       this.set("errorMessage",'Please select a valid account type.');
       return;
     }
+    if (this.get('role') != this.userRole.CUSTOMER) {
+      if(this.get('isEdit'))
+      {
+        if (!this.get('filteredStatuses').includes(this.get('acc_status'))) {
+          this.set("errorMessage", "Please select a valid account status.");
+          return;
+        }
+      }
+      else{
+        if (!this.get('statuses').includes(this.get('acc_status'))) {
+          this.set("errorMessage", "Please select a valid account status.");
+          return;
+        }
+
+      }
+
+    }
 
 
-    if (!this.get('branch_name') || this.get('branch_name').trim() === '') {
+    if (!this.get('branchId') || String(this.get('branchId')).trim() === '') {
       this.set("errorMessage",'Please select a branch.');
       return;
-    }
-    let array=this.get('branchNames');
-    for (let i = 0; i < array.length; i++) {
-      let item = array[i];
-      if(item['branch_name']==this.get('branch_name'))
-      {
-        this.set('branchId',item['branch_id']);
-      }
     }
       
       if(this.get('role')!='MANAGER')
@@ -100,7 +101,7 @@ export default Ember.Component.extend({
 
   let url = `http://localhost:8080/banker/api/v1/`;
   let bankId = this.get('sharedData').get('bankId');
-  let branchId = this.get('sharedData').get("branchId");
+  let branchId = this.get("branchId");
     if (this.get('isEdit')) {
       let accNo = this.get('sharedData').get('accNo');
       if(bankId!="*")
@@ -145,7 +146,6 @@ export default Ember.Component.extend({
     
         this.get('fetchService').fetch(url,methods.POST,accountData).then(() => {
 
-          // alert('Account created successfully!');
           this.resetForm();
         
           this.get('notification').showNotification('Account Created successfully!', 'success');
@@ -154,7 +154,6 @@ export default Ember.Component.extend({
             this.sendAction("toAccount");
             }, 2000);
         }).catch((error) => {
-          // alert('Error creating account');
           console.error(error);
           this.sendAction("toAccount");
         });
@@ -163,7 +162,7 @@ export default Ember.Component.extend({
 
     cancel() {
       this.resetForm();
-      // this.transitionToRoute('accounts'); 
+      this.sendAction('toAccount');
     }
   },
 
@@ -171,7 +170,6 @@ export default Ember.Component.extend({
     this.setProperties({
       accNo: '',
       acc_type: '',
-      // acc_balance: '',
       fullname:'',
       acc_status: '',
       username: '',

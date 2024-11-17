@@ -1,5 +1,5 @@
 import Ember from 'ember';
-import { methods, role } from '../../../../../utils/util';
+import { getSessionData, methods, role } from '../../../../../utils/util';
 export default Ember.Controller.extend({
   fetchService: Ember.inject.service('fetch'),
   sessionService: Ember.inject.service('session'),
@@ -7,14 +7,9 @@ export default Ember.Controller.extend({
   sharedData:Ember.inject.service('shared-data'),
   branch:[],
   userRole:role,
-  role:Ember.computed(()=>{
-    let value = `; ${document.cookie}`;
-    let parts = value.split(`; ${'sessionData'}=`);
-    if (parts.length === 2) {
-        let cookieData = decodeURIComponent(parts.pop().split(';').shift());
-        let sessionData = JSON.parse(cookieData);  
-        return sessionData.user_role;  
-    }
+  role:Ember.computed('branch',()=>{
+        return getSessionData().user_role;  
+    
   }),
   loadBranch(){
     let bankId=this.get('sharedData').get('bankId');
@@ -40,14 +35,7 @@ export default Ember.Controller.extend({
   actions: {
     viewAccounts() {
       let bankId=this.get('sharedData').get('bankId');
-      this.transitionToRoute('banks.bank.accounts', bankId).then((newRoute) => {
-        newRoute.controller.setProperties({
-          bankId: this.get('sharedData').get('bankId'),
-          branchId: this.get('branchId')
-        });
-      }).catch((error) => {
-        console.error("Transition failed", error);
-      });
+      this.transitionToRoute('banks.bank.accounts', bankId);
     },
 
     delete(branch) {
@@ -72,10 +60,8 @@ export default Ember.Controller.extend({
     
             });
            }, 2000);
-          // console.log('Branch deleted successfully');
         }).catch((error) => {
           console.error("Failed to delete branch:", error);
-          // alert('Error occurred while deleting the branch.');
         });
       }
     }

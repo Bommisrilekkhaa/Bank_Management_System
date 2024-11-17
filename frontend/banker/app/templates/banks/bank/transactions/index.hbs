@@ -1,13 +1,9 @@
 {{ view-transactions
     accNo=this.accNo
-    bankId=this.bankId
     transactions=this.transactions
-    branchId=this.branchId
-    transactionId=this.transactionId
     isDirect=true
     totalTransactions= this.totalTransactions
     changeTransactions=(action "changeTransactions")
-    
     viewTransaction=(action "viewTransaction")
     toaddNewTransaction=(action "addNewTransaction")
 }}

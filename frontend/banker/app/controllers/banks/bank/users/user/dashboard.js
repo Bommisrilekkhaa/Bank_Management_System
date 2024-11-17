@@ -70,12 +70,16 @@ export default Ember.Controller.extend({
                   acc_status: account.acc_status
               };
 
-              let loanDetails = account.loan_details || null; 
+              let loanDetails = account.loan_details || []; 
               let transaction = account.transactions || [];
 
              
               accounts.push(accountData);
-              loans.push(loanDetails);
+              for (let i = 0; i < loanDetails.length; i++)
+                {
+                  let loan = loanDetails[i];
+                  loans.push(loan);
+                }
               for (let i = 0; i < transaction.length; i++)
               {
                 let transac = transaction[i];

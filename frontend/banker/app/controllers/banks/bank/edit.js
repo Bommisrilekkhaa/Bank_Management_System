@@ -41,8 +41,9 @@ export default Ember.Controller.extend({
           }
             this.get('fetchService').fetch(url,methods.PUT,bankData).then(() => {
                 // console.log("bank update successfully.");
+                this.reset();
                 this.get('notification').showNotification('Bank Edited successfully!', 'success');
-
+                
                 Ember.run.later(() => {
                  this.transitionToRoute('banks.bank',this.get('sharedData').get('bankId'));
                  }, 2000);
@@ -52,8 +53,16 @@ export default Ember.Controller.extend({
         },
         cancel()
         {
+          
           this.transitionToRoute('banks.bank');
+
         }
+      },
+      reset()
+      {
+        this.set('bank.bank_name','');
+        this.set('branchId','');
       }
+
 
 });

@@ -27,7 +27,7 @@ export default Ember.Component.extend({
     let selectedAccountStatus = this.get('selectedAccountStatus');
 
     this.sendAction('changeAccounts',this.get('currentPage'),selectedAccountType,selectedAccountStatus,this.get('searchQuery'));
-      // accounts = accounts.filter(account => account.acc_type === selectedAccountType);
+     
     
   },
 
@@ -125,12 +125,11 @@ export default Ember.Component.extend({
     },
 
     editAccount(account) {
-      this.sendAction('toeditAccount', true, account, account.branch_id);
+      this.sendAction('toeditAccount', true, account);
     },
 
     goToPage(page) {
       this.set('currentPage', page);
-      // this.loadAccounts(page);
       this.sendAction('changeAccounts',page,this.get('selectedAccountType'),this.get('selectedAccountStatus'),this.get('searchQuery'));
      
     },
@@ -141,7 +140,6 @@ export default Ember.Component.extend({
       if (currentPage < totalPages) {
         this.incrementProperty('currentPage');
       }
-      // this.loadAccounts(this.get('currentPage'));
       this.sendAction('changeAccounts',this.get('currentPage'),this.get('selectedAccountType'),this.get('selectedAccountStatus'),this.get('searchQuery'));
      
     },
@@ -153,29 +151,24 @@ export default Ember.Component.extend({
       }
       this.sendAction('changeAccounts',this.get('currentPage'),this.get('selectedAccountType'),this.get('selectedAccountStatus'),this.get('searchQuery'));
      
-      // this.loadAccounts(this.get('currentPage'));
     },
     updateSearchQuery(value) {
       this.set('searchQuery', value);
       this.searchSuggestion();
-      // this.notifyPropertyChange('searchSuggestions');
     },
       
-          // Perform search on button click
     performSearch() {
       
       this.sendAction('changeAccounts',this.get('currentPage'),this.get('selectedAccountType'),this.get('selectedAccountStatus'),this.get('searchQuery'));
      
-      this.set('currentPage', 1); // Reset pagination
+      this.set('currentPage', 1);
       this.set('searchSuggestions', []);
     },
       
-          // Select suggestion from dropdown
     selectSuggestion(suggestion) {
       this.set('searchQuery', suggestion);
       this.searchSuggestion();
-      // this.notifyPropertyChange('searchSuggestions');
-      this.set('currentPage', 1); // Reset pagination
+      this.set('currentPage', 1); 
     },
   }
 });

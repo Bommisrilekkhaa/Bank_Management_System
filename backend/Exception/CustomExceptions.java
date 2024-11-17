@@ -7,7 +7,6 @@ public class CustomExceptions {
 
     private static final Logger logger = Logger.getLogger(CustomExceptions.class.getName());
 
-
     public static class CustomSQLException extends Exception {
         private static final long serialVersionUID = 1L;
 
@@ -26,7 +25,6 @@ public class CustomExceptions {
         }
     }
 
-  
     public static class CustomIllegalAccessException extends Exception {
         private static final long serialVersionUID = 1L;
 
@@ -45,6 +43,4 @@ public class CustomExceptions {
         }
     }
 
-   
-   
 }

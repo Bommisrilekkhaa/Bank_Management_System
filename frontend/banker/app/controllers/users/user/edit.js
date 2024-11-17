@@ -5,12 +5,17 @@ export default Ember.Controller.extend({
   sharedData:Ember.inject.service('shared-data'),
   notification: Ember.inject.service('notify'),
     fetchService: Ember.inject.service('fetch'),
-    statuses: [status.PENDING,status.ACTIVE,status.INACTIVE],
+    statuses:  [status.INACTIVE,status.ACTIVE],
 
     actions:{
 
         submitForm() {
-            
+         
+              if (!this.get('statuses').includes(this.get('user_status'))) {
+                this.set("errorMessage", "Please select a valid user status.");
+                return;
+              }
+           
           let userId = this.get('sharedData').get('userId');
           let url = `http://localhost:8080/banker/api/v1`;
           let bankId= this.get('sharedData').get('bankId');

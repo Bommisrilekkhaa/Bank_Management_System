@@ -166,24 +166,24 @@ export default Ember.Component.extend({
     updateSearchQuery(value) {
       this.set('searchQuery', value);
       this.searchSuggestion();
-      // this.notifyPropertyChange('searchSuggestions');
+      
     },
       
-          // Perform search on button click
+          
     performSearch() {
       
       this.sendAction('changeTransactions',this.get('currentPage'),this.get('selectedTransactionType'),this.get('selectedTransactionStatus'),this.get('searchQuery'));
    
-      this.set('currentPage', 1); // Reset pagination
+      this.set('currentPage', 1); 
       this.set('searchSuggestions', []);
     },
       
-          // Select suggestion from dropdown
+          
     selectSuggestion(suggestion) {
       this.set('searchQuery', suggestion);
       this.searchSuggestion();
-      // this.notifyPropertyChange('searchSuggestions');
-      this.set('currentPage', 1); // Reset pagination
+      
+      this.set('currentPage', 1); 
     },
   },
 });

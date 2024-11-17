@@ -11,10 +11,11 @@ export default Ember.Service.extend({
     // changedBranchId() {
     //     if(this.get('branchId')=='*')
     //     {
+    //         this.trigger('branchChanged');
     //         let targetController = this.controllerFor('application');
     //         targetController.set('branch_name', 'all');
 
-    //     }
+        // }
     // }
   
 });

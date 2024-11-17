@@ -1,5 +1,5 @@
 <body>
-<div class="auth-form">
+<div class="auth-form" style="margin-top:20px">
   <h2>{{if isEdit "Edit Loan" "Create New Loan"}}</h2>
   
   <form {{action "submitForm" on="submit"}}>
@@ -24,7 +24,7 @@
     {{#if isDirect}}
     <div class="form-group">
       <label for="accNo">Account Number<span style="color:rgb(237, 69, 69);">*</span></label>
-      <select id="accNo" class="form-control" onchange={{action (mut accNo) value="target.value"}}>
+      <select id="accNo" value={{accNo}} class="form-control" onchange={{action (mut accNo) value="target.value"}}>
         <option value="">Select Account Number</option>
         {{#each accounts as |account|}}
           <option value={{account.acc_no}} >{{account.acc_no}}</option>

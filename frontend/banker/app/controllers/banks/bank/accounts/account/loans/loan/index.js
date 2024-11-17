@@ -42,8 +42,8 @@ export default Ember.Controller.extend({
             this.transitionToRoute("banks.bank.accounts.account.loans.loan.emi",bankId,loan.acc_number,loan.loan_id).then((newRoute)=>{
 
                 newRoute.controller.setProperties({
-                  loan:loan,
-                  loanAmount:emiAmount
+                  loan,
+                  emiAmount
                 });
               }).catch((error) => {
                 console.error("Transition failed", error);

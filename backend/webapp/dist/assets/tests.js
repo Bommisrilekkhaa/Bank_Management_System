@@ -615,6 +615,11 @@ define('banker/tests/app.lint-test', [], function () {
     assert.ok(true, 'routes/banks/new.js should pass ESLint\n\n');
   });
 
+  QUnit.test('routes/index.js', function (assert) {
+    assert.expect(1);
+    assert.ok(true, 'routes/index.js should pass ESLint\n\n');
+  });
+
   QUnit.test('routes/login.js', function (assert) {
     assert.expect(1);
     assert.ok(true, 'routes/login.js should pass ESLint\n\n');

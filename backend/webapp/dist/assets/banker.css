@@ -7,7 +7,7 @@
   background-color: #ebeaea;
   border-radius: 8px;
   box-shadow: 3px 4px 10px #ebeaea !important;
-  padding: 60px 70px !important; }
+  padding: 40px 70px; }
 
 h2 {
   text-align: center;
@@ -169,7 +169,7 @@ select.form-control {
 .account-card h2 {
   text-align: center;
   font-size: 24px;
-  margin-bottom: 20px;
+  margin-bottom: 40px;
   color: #0d1b2a; }
 
 .account-field {
@@ -216,7 +216,7 @@ select.form-control {
 .new-account-btn {
   background-color: transparent;
   color: #e0e1dd;
-  padding: 10px 20px;
+  padding: 12px 20px;
   border-width: 2px;
   border-style: solid;
   border-color: #134B70;
@@ -782,13 +782,14 @@ select.form-control {
 .bank-card h2 {
   text-align: center;
   font-size: 24px;
-  margin-bottom: 20px;
+  margin-bottom: 40px;
   color: #0d1b2a; }
 
 .bank-field {
   display: flex;
   justify-content: space-between;
-  margin-bottom: 15px; }
+  margin-bottom: 20px;
+  padding-left: 40px; }
 
 .bank-field .field-label,
 .bank-field .field-value {
@@ -874,6 +875,7 @@ select.form-control {
     background-color: #2a8aa5; }
 
 .branches-table {
+  margin-top: 30px;
   width: 100%;
   border-collapse: collapse;
   background-color: transparent;
@@ -924,7 +926,7 @@ select.form-control {
   background-color: white;
   border-radius: 8px;
   padding: 30px;
-  width: 400px;
+  width: 500px;
   margin: 15px;
   box-shadow: 0 4px 12px white;
   font-family: "Arial", sans-serif;
@@ -935,7 +937,7 @@ select.form-control {
   .branch-card h2 {
     text-align: center;
     font-size: 24px;
-    margin-bottom: 20px;
+    margin-bottom: 40px;
     color: #0d1b2a; }
 
 .branch-field {
@@ -1022,7 +1024,8 @@ select.form-control {
   display: flex;
   flex-direction: row;
   justify-content: space-around;
-  margin-top: 15px; }
+  margin-top: 35px;
+  margin-bottom: 10px; }
 
 .view-btn:hover {
   color: white;
@@ -1058,7 +1061,7 @@ select.form-control {
   color: #134B70; }
 
 .field-value {
-  margin-left: 20px;
+  margin-left: 30px;
   color: #222; }
 
 .user-card-wrapper .user-card .user-field:last-child {
@@ -1183,7 +1186,8 @@ select.form-control {
 .branch-field .field-label {
   font-weight: bold;
   color: #134B70;
-  width: 50%; }
+  width: 50%;
+  padding-left: 30px; }
 
 .card-container {
   margin: 50px 200px;
@@ -1201,7 +1205,7 @@ select.form-control {
 .card {
   background-color: #fff;
   border-radius: 8px;
-  padding: 20px;
+  padding: 40px;
   margin: 25px;
   box-shadow: 0 4px 12px white;
   font-family: 'Arial', sans-serif;

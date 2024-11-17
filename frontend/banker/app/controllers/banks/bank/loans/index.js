@@ -66,15 +66,7 @@ export default Ember.Controller.extend({
     viewloan(loan)
     {
       this.get('sharedData').set('accNo',loan.acc_number);
-        this.transitionToRoute('banks.bank.loans.loan',this.get('sharedData').get('bankId'),loan.loan_id).then((newRoute)=>{
-
-          newRoute.controller.setProperties({
-            bankId:this.get('bankId'),
-            branchId:this.get('branchId')
-          });
-        }).catch((error) => {
-          console.error("Transition failed", error);
-        });
+        this.transitionToRoute('banks.bank.loans.loan',this.get('sharedData').get('bankId'),loan.loan_id);
     },
 
     addNewLoan() {
@@ -82,7 +74,6 @@ export default Ember.Controller.extend({
       this.transitionToRoute('banks.bank.loans.new').then((newRoute) => {
         newRoute.controller.setProperties({
           accNo:this.get('accNo'),
-          bankId:this.get('bankId')
         });
       }).catch((error) => {
         console.error("Transition to edit loan page failed", error);
@@ -102,7 +93,6 @@ export default Ember.Controller.extend({
           loan_status: loan.loan_status,
           loan_availed_date: loan.loan_availed_date,
           accNo: loan.acc_number,
-          bankId:this.get('bankId'),
         });
       }).catch((error) => {
         console.error("Transition to edit loan page failed", error);
@@ -112,10 +102,6 @@ export default Ember.Controller.extend({
     {
       this.loadLoans(page,selectedType,selectedStatus,searchQuery);
     }
-  },
-  willDestroy() {
-    this._super(...arguments);
-    this.get('branchSelection').off('branchChanged', this, this.handleBranchChange);
   }
 
 });

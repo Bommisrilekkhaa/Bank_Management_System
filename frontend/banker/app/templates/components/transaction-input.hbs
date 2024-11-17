@@ -54,9 +54,8 @@
   
       <button type="submit" class="btn-primary">Proceed</button>
       
-      {{!-- {{#if isEmi}} --}}
-        <button {{action "cancel"}} class="btn-secondary">Cancel</button>
-      {{!-- {{/if}} --}}
+      <button {{action "cancel"}} class="btn-secondary">Cancel</button>
+     
   
       {{#if errorMessage}}
         <div class="error-message">* {{errorMessage}}</div>

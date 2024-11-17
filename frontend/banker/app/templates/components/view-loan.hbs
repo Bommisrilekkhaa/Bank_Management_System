@@ -2,41 +2,43 @@
   <div class="loan-card">
     <h2>Loan Details</h2>
     <div class="loan-field">
-      <span class="field-label">Loan Id:</span>
+      <span class="field-label" style="padding-left:40px">Loan Id:</span>
       <span class="field-value">{{loan.loan_id}}</span>
     </div>
     <div class="loan-field">
-      <span class="field-label">Loan Type:</span>
+      <span class="field-label" style="padding-left:40px">Loan Type:</span>
       <span class="field-value">{{loan.loan_type}}</span>
     </div>
     <div class="loan-field">
-      <span class="field-label">Loan Amount:</span>
+      <span class="field-label" style="padding-left:40px">Loan Amount:</span>
       <span class="field-value">Rs.{{loan.loan_amount}}</span>
     </div>
     <div class="loan-field">
-      <span class="field-label">Interest:</span>
+      <span class="field-label" style="padding-left:40px">Interest:</span>
       <span class="field-value">{{loan.loan_interest}}%</span>
     </div>
     <div class="loan-field">
-      <span class="field-label">Duration:</span>
+      <span class="field-label" style="padding-left:40px">Duration:</span>
       <span class="field-value">{{loan.loan_duration}} Months</span>
     </div>
      <div class="loan-field">
-      <span class="field-label">Status:</span>
+      <span class="field-label" style="padding-left:40px">Status:</span>
       <span class="field-value">{{loan.loan_status}}</span>
     </div>
      <div class="loan-field">
-      <span class="field-label">Availed Date:</span>
+      <span class="field-label" style="padding-left:40px">Availed Date:</span>
       <span class="field-value">{{loan.loan_availed_date}}</span>
     </div>
     <div class="loan-field">
-      <span class="field-label">Account Number:</span>
+      <span class="field-label" style="padding-left:40px">Account Number:</span>
       <span class="field-value">{{loan.acc_number}}</span>
     </div>
-    {{#if (eq loan.loan_status status.APPROVED)}}
+    {{#unless (eq loan.loan_status status.REJECTED)}}
+    {{#unless (eq loan.loan_status status.PENDING)}}
     <div class="view-wrap">
         <button class="view-btn"  {{action "toEmis" loan}}>View Emis</button>
     </div>
-    {{/if}}
+    {{/unless}}
+    {{/unless}}
   </div>
 </div>

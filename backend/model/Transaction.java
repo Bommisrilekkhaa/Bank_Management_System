@@ -4,7 +4,7 @@ import java.math.BigDecimal;
 import java.sql.Timestamp;
 
 public class Transaction {
-    
+
     private int transaction_id;
     private Timestamp transaction_datetime;
     private int transaction_type;

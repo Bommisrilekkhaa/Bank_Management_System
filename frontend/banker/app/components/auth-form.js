@@ -32,7 +32,7 @@ export default Ember.Component.extend({
 
   loadBanks() {
     let  url= `http://localhost:8080/banker/api/v1/banks`;
-    console.log(url);
+    // console.log(url);
     this.get('fetchService').fetch(url,methods.GET).then((response) => {
       this.set('bankNames', response.data);
     }).catch((error) => {

@@ -1,7 +1,7 @@
 <div class="accounts-list">
-  <button {{action "addNewAccount"}} class="new-account-btn">New Account</button>
+  <button {{action "addNewAccount"}} style="margin-top:50px" class="new-account-btn">New Account</button>
 
-  <div class="filters">
+  <div class="filters" style="margin-top:-10px">
     <label for="accountType">Type: </label>
     <select id="accountType" value={{selectedAccountType}} oninput={{action "AccountType" value="target.value"}}>
       <option value="">All</option>
@@ -20,7 +20,7 @@
   </div>
 
  {{#unless (eq role userRole.CUSTOMER)}}
-  <div class="search-container">
+  <div class="search-container" style="margin-top:-10px">
     <input 
       type="text" 
       class="search-input" 

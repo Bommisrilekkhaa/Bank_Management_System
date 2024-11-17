@@ -1,5 +1,5 @@
 import Ember from 'ember';
-import { role,methods} from '../../../utils/util';
+import { role,methods, getSessionData} from '../../../utils/util';
 export default Ember.Controller.extend({
 
 fetchService: Ember.inject.service('fetch'),
@@ -7,13 +7,9 @@ branch:[],
 banks:[], 
 userRole:role,      
 role:Ember.computed('banks',()=>{
-  let value = `; ${document.cookie}`;
-  let parts = value.split(`; ${'sessionData'}=`);
-  if (parts.length === 2) {
-      let cookieData = decodeURIComponent(parts.pop().split(';').shift());
-      let sessionData = JSON.parse(cookieData);  
-      return sessionData.user_role;  
-  }
+  
+      return getSessionData().user_role;  
+  
 }),
 loadBanks(bankId){
   let url = `http://localhost:8080/banker/api/v1/`;
