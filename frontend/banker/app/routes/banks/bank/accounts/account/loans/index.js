@@ -17,6 +17,7 @@ export default Ember.Route.extend({
       this.transitionTo('users');
       return;
     }
+    
     this.get('sharedData').set('transactionId', '*');
   },
   setupController(controller) {

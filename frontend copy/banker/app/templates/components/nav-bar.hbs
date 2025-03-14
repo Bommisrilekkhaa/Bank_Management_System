@@ -1,0 +1,36 @@
+<div class="navbar">
+  <ul class="nav-items">
+    {{#if (eq role userRole.SUPERADMIN)}}
+      <li class={{if (eq currentRoute "users") "active"}} {{action "navigate" "users"}}><a>Users</a></li>
+      <li class={{if (eq currentRoute "banks") "active"}} {{action "navigate" "banks"}}><a>Banks</a></li>
+    {{/if}}
+    {{#unless (eq role userRole.SUPERADMIN)}}
+      <li class={{if (eq currentRoute "dashboard") "active"}} {{action "navigate" "dashboard"}}><a>Dashboard</a></li>
+      <li class={{if (eq currentRoute "bank") "active"}} {{action "navigate" "bank"}}><a>Bank</a></li>
+      {{#if (eq role userRole.ADMIN)}}
+        <li class={{if (eq currentRoute "branches") "active"}} {{action "navigate" "branches"}}><a>Branches</a></li>
+      {{/if}}
+      {{#if (eq role userRole.MANAGER)}}
+        <li class={{if (eq currentRoute "branch") "active"}} {{action "navigate" "branch"}}><a>Branch</a></li>
+      {{/if}}
+      <li class={{if (eq currentRoute "accounts") "active"}} {{action "navigate" "accounts"}}><a>Accounts</a></li>
+      <li class={{if (eq currentRoute "transactions") "active"}} {{action "navigate" "transactions"}}><a>Transactions</a></li>
+      <li class={{if (eq currentRoute "loans") "active"}} {{action "navigate" "loans"}}><a>Loans</a></li>
+    {{/unless}}
+    </ul>
+  {{#unless (eq role userRole.SUPERADMIN)}}
+    {{#unless (eq role userRole.MANAGER)}}
+    {{!-- {{#if isRoute}} --}}
+      <div class="branch-dropdown">
+        <select id="branch" value={{branch_name}} onchange={{action "setbranch" value="target.value"}} >
+          <option value="">All Branches</option>
+          {{#each branches as |branch|}}
+            <option value={{branch.branch_name}} >{{branch.branch_name}}</option>
+          {{/each}}
+        </select>
+      </div>
+    {{!-- {{/if}} --}}
+    {{/unless}}
+  {{/unless}}
+  <button class="logout" {{action "logout"}}><i class="bi bi-box-arrow-left"></i>&nbsp;&nbsp;Logout</button>
+</div>

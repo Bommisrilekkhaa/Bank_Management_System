@@ -1,6 +1,7 @@
 import Ember from 'ember';
 import { getSessionData,role } from '../../../../utils/util';
 export default Ember.Route.extend({
+  sharedData:Ember.inject.service('shared-data'),
   beforeModel() {
 
     let sessionData = getSessionData();
@@ -16,6 +17,12 @@ export default Ember.Route.extend({
       this.transitionTo('users');
       return;
     }
+  },
+  resetController(isExiting) {
+    if (isExiting) {
+      this.get('sharedData').set('branchId','*');
+    }
   }
+
 
 });

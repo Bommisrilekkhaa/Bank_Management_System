@@ -1,18 +1,18 @@
 import Ember from 'ember';
-import { methods } from '../../../../../utils/util';
+import { methods,loanStatus } from '../../../../../utils/util';
 
 export default Ember.Controller.extend({
     fetchService: Ember.inject.service('fetch'),
     sharedData:Ember.inject.service('shared-data'),
     emis: [],
     generatedEmis: [],
-
+    loanStatus:loanStatus,
     loadEmis() {
         let bankId =  this.get('sharedData').get('bankId');
         let loanId=this.get('sharedData').get('loanId');
         let url = `http://localhost:8080/banker/api/v1/`;
    
-        if(bankId!="*")
+        if(bankId!="*" && bankId)
         {
         url=url +`banks/${bankId}`;
         }
@@ -23,6 +23,7 @@ export default Ember.Controller.extend({
         }
         url=url+`/emis`;
 
+        this.set('generatedEmis', []);
         this.get('fetchService').fetch(url,methods.GET).then((response) => {
             this.set('emis', response);
             this.set('generatedEmis', this.generateTable(this.get('emis')));
@@ -63,39 +64,41 @@ export default Ember.Controller.extend({
                 });
             }
         
+        if(this.get('loan.loan_status')!= "closed")
+        {
+            let nextEmiNumber = emis.length > 0 ? emis[emis.length - 1].emi_number + 1 : 1;
+            if (nextEmiNumber <= totalEmis) {
+                let nextToBePaidDate = new Date(loanAvailedDate);
+                if (!isNaN(nextToBePaidDate.getTime())) {
+                    nextToBePaidDate.setMonth(nextToBePaidDate.getMonth() + nextEmiNumber);
+                } else {
+                    nextToBePaidDate = 'Invalid Date';
+                }
         
-        let nextEmiNumber = emis.length > 0 ? emis[emis.length - 1].emi_number + 1 : 1;
-        if (nextEmiNumber <= totalEmis) {
-            let nextToBePaidDate = new Date(loanAvailedDate);
-            if (!isNaN(nextToBePaidDate.getTime())) {
-                nextToBePaidDate.setMonth(nextToBePaidDate.getMonth() + nextEmiNumber);
-            } else {
-                nextToBePaidDate = 'Invalid Date';
+                emiSchedule.push({
+                    emiNumber: nextEmiNumber,
+                    transactionId: '-',
+                    toBePaidDate: nextToBePaidDate instanceof Date ? nextToBePaidDate.toLocaleDateString() : nextToBePaidDate,
+                    actualPaidDate: '-'
+                });
             }
-    
-            emiSchedule.push({
-                emiNumber: nextEmiNumber,
-                transactionId: '-',
-                toBePaidDate: nextToBePaidDate instanceof Date ? nextToBePaidDate.toLocaleDateString() : nextToBePaidDate,
-                actualPaidDate: '-'
-            });
-        }
-    
-        if (emiSchedule.length === 0) {
-            let firstEmiNumber = 1;
-            let firstToBePaidDate = new Date(loanAvailedDate);
-            if (!isNaN(firstToBePaidDate.getTime())) {
-                firstToBePaidDate.setMonth(firstToBePaidDate.getMonth() + firstEmiNumber);
-            } else {
-                firstToBePaidDate = 'Invalid Date';
+        
+            if (emiSchedule.length === 0) {
+                let firstEmiNumber = 1;
+                let firstToBePaidDate = new Date(loanAvailedDate);
+                if (!isNaN(firstToBePaidDate.getTime())) {
+                    firstToBePaidDate.setMonth(firstToBePaidDate.getMonth() + firstEmiNumber);
+                } else {
+                    firstToBePaidDate = 'Invalid Date';
+                }
+        
+                emiSchedule.push({
+                    emiNumber: firstEmiNumber,
+                    transactionId: '-',
+                    toBePaidDate: firstToBePaidDate instanceof Date ? firstToBePaidDate.toLocaleDateString() : firstToBePaidDate,
+                    actualPaidDate: '-'
+                });
             }
-    
-            emiSchedule.push({
-                emiNumber: firstEmiNumber,
-                transactionId: '-',
-                toBePaidDate: firstToBePaidDate instanceof Date ? firstToBePaidDate.toLocaleDateString() : firstToBePaidDate,
-                actualPaidDate: '-'
-            });
         }
     
         return emiSchedule;

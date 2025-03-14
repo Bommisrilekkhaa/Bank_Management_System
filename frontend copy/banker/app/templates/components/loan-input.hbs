@@ -1,0 +1,95 @@
+<body>
+<div class="auth-form" style="margin-top:20px">
+  <h2>{{if isEdit "Edit Loan" "Create New Loan"}}</h2>
+  
+  <form {{action "submitForm" on="submit"}}>
+
+    {{#if isEdit}}
+    <div class="form-group">
+      <label for="loan_id">Loan ID<span style="color:rgb(237, 69, 69);">*</span></label>
+      <input type="text" id="loan_id" value={{loan_id}} class="form-control" oninput={{action (mut loan_id) value="target.value"}} disabled={{isEdit}}>
+    </div>
+    {{/if}}
+
+    <div class="form-group">
+      <label for="loan_type">Loan Type<span style="color:rgb(237, 69, 69);">*</span></label>
+      <select id="loan_type" class="form-control" onchange={{action (mut loan_type) value="target.value"}}>
+        <option value="">Select type</option>
+        {{#each types as |type|}}
+          <option value={{type}} selected={{if (eq type loan_type) "selected"}}>{{type}}</option>
+        {{/each}}
+      </select>
+    </div>
+
+    {{#if isDirect}}
+    <div class="form-group">
+      <label for="accNo">Account Number<span style="color:rgb(237, 69, 69);">*</span></label>
+      <select id="accNo" value={{accNo}} class="form-control" onchange={{action (mut accNo) value="target.value"}}>
+        <option value="">Select Account Number</option>
+        {{#each accounts as |account|}}
+          <option value={{account.acc_no}} >{{account.acc_no}}</option>
+        {{/each}}
+      </select>
+    </div>
+    {{/if}}
+
+    <div class="form-group">
+      <label for="loan_amount">Loan Amount<span style="color:rgb(237, 69, 69);">*</span></label>
+      <input type="number" id="loan_amount" value={{loan_amount}} class="form-control" oninput={{action (mut loan_amount) value="target.value"}}>
+    </div>
+
+    <div class="form-group">
+      <label for="loan_duration">Loan Duration<span style="color:rgb(237, 69, 69);">*</span></label>
+      <select id="loan_duration" class="form-control" value="{{loan_duration}}" onchange={{action (mut loan_duration) value="target.value"}}>
+        <option value="">Select duration</option>
+        {{#each durations as |duration|}}
+          <option value={{duration}} selected={{if (eq duration loan_duration) "selected"}}>{{duration}} Months</option>
+        {{/each}}
+      </select>
+    </div>
+
+    {{#unless (eq role userRole.CUSTOMER)}}
+    {{#unless isEdit}}
+      <div class="form-group">
+        <label for="loan_status">Loan Status<span style="color:rgb(237, 69, 69);">*</span></label>
+        <select id="loan_status" class="form-control" onchange={{action (mut loan_status) value="target.value"}}>
+          <option value="">Select Status</option>
+          {{#each statuses as |status|}}
+            <option value={{status}} selected={{if (eq status loan_status) "selected"}}>{{status}}</option>
+          {{/each}}
+        </select>
+      </div>
+    {{/unless}}
+    {{#if isEdit}}
+    <div class="form-group">
+      <label for="loan_status">Loan Status<span style="color:rgb(237, 69, 69);">*</span></label>
+      <select id="loan_status" class="form-control" onchange={{action (mut loan_status) value="target.value"}}>
+        <option value="">Select Status</option>
+        {{#each filteredStatuses as |status|}}
+          <option value={{status}} selected={{if (eq status loan_status) "selected"}}>{{status}}</option>
+        {{/each}}
+      </select>
+    </div>
+    {{/if}}
+    {{/unless}}
+
+    <button type="submit" class="btn-primary">{{if isEdit "Update Loan" "Create Loan"}}</button>
+   
+    {{#if isDirect}}
+      {{#link-to "banks.bank.loans" bankId}}
+          <button {{action "cancel"}} class="btn-secondary">Cancel</button>
+        {{/link-to}}
+    {{/if}}
+    {{#unless isDirect}}
+    {{#link-to "banks.bank.accounts.account.loans" bankId accNo}}
+      <button {{action "cancel"}} class="btn-secondary">Cancel</button>
+    {{/link-to}}
+    {{/unless}}
+
+    {{#if errorMessage}}
+      <div class="error-message">* {{errorMessage}}</div>
+    {{/if}}
+  </form>
+</div>
+{{notify-box message=notification.message type=notification.type}}
+</body>

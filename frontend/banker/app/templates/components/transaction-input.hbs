@@ -35,6 +35,7 @@
           id="transaction_amount" 
           value={{transaction_amount}} 
           class="form-control" 
+          max-length="10"
           oninput={{action (mut transaction_amount) value="target.value"}} 
           disabled={{isEmi}}
         >

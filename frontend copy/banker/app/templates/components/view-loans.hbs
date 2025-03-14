@@ -1,0 +1,119 @@
+<div class="loans-list">
+  <button {{action "addNewLoan"}} style="margin-top:65px" class="new-loan-btn">New Loan</button>
+
+  <div class="filters">
+    <label for="loanType">Type:</label>
+    <select id="loanType" value={{selectedLoanType}} oninput={{action "LoanType" value="target.value"}}>
+      <option value="">All</option>
+      <option value="homeloan">Home Loan</option>
+      <option value="businessloan">Business Loan</option>
+      <option value="educationloan">Education Loan</option>
+    </select>
+
+    <label for="loanStatus">Status:</label>
+    <select id="loanStatus" value={{selectedLoanStatus}} oninput={{action "LoanStatus" value="target.value"}}>
+      <option value="">All</option>
+      <option value="approved">Approved</option>
+      <option value="pending">Pending</option>
+      <option value="rejected">Rejected</option>
+      <option value="closed">Closed</option>
+    </select>
+    <button class="clear" style="margin-top:7px;padding: 8px 10px 8px 10px;" {{action "FilterReset"}}>Reset</button>
+  </div>
+
+  {{#if isDirect}}
+    <div class="search-container">
+      <input 
+        type="text" 
+        class="search-input" 
+        placeholder="Search Account Number" 
+        value={{searchQuery}} 
+        oninput={{action "updateSearchQuery" value="target.value"}}
+      />
+      <button {{action "performSearch"}} class="new-branch-btn" style="margin-right: 52%;padding:10px;margin-top:-3px">Search</button>
+
+      {{#if searchSuggestions.length}}
+        <ul class="suggestions-list">
+          {{#each searchSuggestions as |suggestion|}}
+            <li {{action "selectSuggestion" suggestion}}>{{suggestion}}</li>
+          {{/each}}
+        </ul>
+      {{/if}}
+    </div>
+  {{/if}}
+  
+  <table class="loans-table">
+    <thead>
+      <tr>
+        <th>Loan ID</th>
+        <th>Loan Type</th>
+        <th>Loan Status</th>
+        <th>Account Number</th>
+        <th>Amount</th>
+        {{#unless (eq role userRole.CUSTOMER)}}
+          <th>Action</th>
+        {{/unless}}
+      </tr>
+    </thead>
+    <tbody>
+      {{#unless (eq loans.length 0)}}
+        {{#each loans as |loan|}}
+          <tr {{action "viewLoan" loan}}>
+            <td>{{loan.loan_id}}</td>
+            <td>{{loan.loan_type}}</td>
+            <td>{{loan.loan_status}}</td>
+            <td>{{loan.acc_number}}</td>
+            <td>Rs. {{loan.loan_amount}}</td>
+            {{#unless (eq role userRole.CUSTOMER)}}
+              <td>
+                {{#unless (eq status.CLOSED loan.loan_status)}}
+                {{#unless (eq status.REJECTED loan.loan_status)}}
+                    <button class="view-btn" {{action "editLoan" loan}}><i class="bi bi-pencil"></i> Edit</button>
+                {{/unless}}
+                {{/unless}}
+              </td>
+            {{/unless}}
+          </tr>
+        {{/each}}
+      {{/unless}}
+    </tbody>
+  </table>
+
+  {{#if (eq loans.length 0)}}
+     <button style="margin-top:60px;cursor:default;margin-right:40%;" class="new-transaction-btn">No Loans Found!</button>
+  {{else}}
+    <div class="pagination-controls">
+      <button {{action "previousPage"}} disabled={{if (eq currentPage 1) "disabled"}}>Previous</button>
+
+      {{#if showFirstPage}}
+        <button {{action "goToPage" 1}} class="page-number {{if (eq currentPage 1) 'active' ''}}">1</button>
+      {{/if}}
+
+      {{#if showLeftEllipsis}}
+        <span class="ellipsis">...</span>
+      {{/if}}
+
+      {{#each visiblePages as |page|}}
+        <button 
+          {{action "goToPage" page}} 
+          class="page-number {{if (eq page currentPage) 'active' ''}}">
+          {{page}}
+        </button>
+      {{/each}}
+
+      {{#if showRightEllipsis}}
+        <span class="ellipsis">...</span>
+      {{/if}}
+
+      {{#if showLastPage}}
+        <button {{action "goToPage" totalPages}} class="page-number {{if (eq currentPage totalPages) 'active' ''}}">
+          {{totalPages}}
+        </button>
+      {{/if}}
+
+      <button {{action "nextPage"}} disabled={{if (eq currentPage totalPages) "disabled"}}>Next</button>
+    </div>
+  {{/if}}
+</div>
+
+

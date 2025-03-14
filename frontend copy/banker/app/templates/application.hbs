@@ -1,0 +1,20 @@
+<div class="container">
+  {{#unless isAuthRoute}}
+
+    {{nav-bar 
+    logout=(action "logout") 
+     branchesRoute =(action "toBranches")
+     accountsRoute=(action "toAccounts")
+     dashboardRoute=(action "todashboard")
+     transactionsRoute=(action "toTransactions")
+     loansRoute=(action "toLoans")
+     bankRoute=(action "toBank")
+     banksRoute=(action "toBanks")
+     branchRoute=(action "toBranch")
+     usersRoute=(action "toUsers")
+     }}
+  {{/unless}}
+  {{outlet}}
+</div>
+
+

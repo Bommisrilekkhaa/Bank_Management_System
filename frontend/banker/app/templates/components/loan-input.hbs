@@ -35,7 +35,7 @@
 
     <div class="form-group">
       <label for="loan_amount">Loan Amount<span style="color:rgb(237, 69, 69);">*</span></label>
-      <input type="number" id="loan_amount" value={{loan_amount}} class="form-control" oninput={{action (mut loan_amount) value="target.value"}}>
+      <input type="number" id="loan_amount" value={{loan_amount}} class="form-control" oninput={{action (mut loan_amount) value="target.value" maxlength="10"}}>
     </div>
 
     <div class="form-group">

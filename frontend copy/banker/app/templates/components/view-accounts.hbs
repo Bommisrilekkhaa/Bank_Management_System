@@ -1,0 +1,119 @@
+<div class="accounts-list">
+  <button {{action "addNewAccount"}} style="margin-top:50px" class="new-account-btn">New Account</button>
+
+  <div class="filters" style="margin-top:-10px">
+    <label for="accountType">Type: </label>
+    <select id="accountType" value={{selectedAccountType}} oninput={{action "AccountType" value="target.value"}}>
+      <option value="">All</option>
+      <option value="savings">Savings</option>
+      <option value="business">Business</option>
+    </select>
+
+    <label for="accountStatus">Status: </label>
+    <select id="accountStatus" value={{selectedAccountStatus}} oninput={{action "AccountStatus" value="target.value"}}>
+      <option value="">All</option>
+      <option value="active">Active</option>
+      <option value="inactive">Inactive</option>
+      <option value="pending">Pending</option>
+    </select>
+    <button class="clear" style="margin-top:7px;padding: 8px 10px 8px 10px;" {{action "FilterReset"}} >Reset</button>
+  </div>
+
+ {{#unless (eq role userRole.CUSTOMER)}}
+  <div class="search-container" style="margin-top:-10px">
+    <input 
+      type="text" 
+      class="search-input" 
+      placeholder="Search Username" 
+      value={{searchQuery}} 
+      oninput={{action "updateSearchQuery" value="target.value"}}
+    />
+    <button {{action "performSearch"}} class="new-branch-btn" style="margin-right: 42%;padding:10px;margin-top:-3px">Search</button>
+
+    {{#if searchSuggestions.length}}
+      <ul class="suggestions-list">
+        {{#each searchSuggestions as |suggestion|}}
+          <li {{action "selectSuggestion" suggestion}}>{{suggestion}}</li>
+        {{/each}}
+      </ul>
+    {{/if}}
+  </div>
+  {{/unless}}
+  <table class="accounts-table">
+    <thead>
+      <tr>
+        <th>Account No</th>
+        <th>Type</th>
+        <th>Status</th>
+        {{#unless (eq role userRole.CUSTOMER)}}
+          <th>Username</th>
+        {{/unless}}
+        {{#unless (eq role userRole.MANAGER)}}
+          <th>Branch Name</th>
+        {{/unless}}
+        {{#unless (eq role userRole.CUSTOMER)}}
+          <th>Actions</th>
+        {{/unless}}
+      </tr>
+    </thead>
+    <tbody>
+      {{#unless (eq accounts.length 0)}}
+        {{#each accounts as |account|}}
+          <tr {{action "viewAccount" account}}>
+            <td>{{account.acc_no}}</td>
+            <td>{{account.acc_type}}</td>
+            <td>{{account.acc_status}}</td>
+            {{#unless (eq role userRole.CUSTOMER)}}
+              <td>{{account.username}}</td>
+            {{/unless}}
+            {{#unless (eq role userRole.MANAGER)}}
+              <td>{{account.branch_name}}</td>
+            {{/unless}}
+            {{#unless (eq role userRole.CUSTOMER)}}
+              <td>
+                <button {{action "editAccount" account}}><i class="bi bi-pencil"></i> Edit</button>
+              </td>
+            {{/unless}}
+          </tr>
+        {{/each}}
+      {{/unless}}
+    </tbody>
+  </table>
+    {{#if (eq accounts.length 0)}}
+         <button style="margin-top:60px;cursor:default;margin-right:40%;" class="new-account-btn">No Accounts Found!</button>
+    {{/if}}
+
+ {{#unless (eq accounts.length 0)}}
+    <div class="pagination-controls">
+    <button {{action "previousPage"}} disabled={{if (eq currentPage 1) "disabled"}}>Previous</button>
+
+    {{#if showFirstPage}}
+      <button {{action "goToPage" 1}} class="page-number {{if (eq currentPage 1) 'active' ''}}">1</button>
+    {{/if}}
+
+    {{#if showLeftEllipsis}}
+      <span class="ellipsis">...</span>
+    {{/if}}
+
+    {{#each visiblePages as |page|}}
+      <button 
+        {{action "goToPage" page}} 
+        class="page-number {{if (eq page currentPage) 'active' ''}}">
+        {{page}}
+      </button>
+    {{/each}}
+
+    {{#if showRightEllipsis}}
+      <span class="ellipsis">...</span>
+    {{/if}}
+
+    {{#if showLastPage}}
+      <button {{action "goToPage" totalPages}} class="page-number {{if (eq currentPage totalPages) 'active' ''}}">
+        {{totalPages}}
+      </button>
+    {{/if}}
+
+    <button {{action "nextPage"}} disabled={{if (eq currentPage totalPages) "disabled"}}>Next</button>
+  </div>
+{{/unless}}
+</div>

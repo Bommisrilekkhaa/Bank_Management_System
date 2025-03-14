@@ -1,0 +1,56 @@
+<div class="account-card-wrapper">
+  <div class="account-card">
+    <h2>{{title}}</h2>
+    
+    {{#each data as |field|}}
+      <div class="account-field">
+        <span class="field-label">{{field.label}}:</span>
+        <span class="field-value">{{field.value}}</span>
+      </div>
+    {{/each}}
+
+    {{#if isAccount}}
+        {{#if (eq accountStatus status.ACTIVE)}}
+        <div class="view-wrap">
+            <button class="view-btn"  {{action "loans"}}>View Loans</button>
+            <button class="view-btn"  {{action "transactions"}}>View Transactions</button>
+        </div>
+        {{/if}}
+    {{/if}}
+
+    {{#if isLoan}}
+        {{#unless (eq loan.loan_status loanStatus.REJECTED)}}
+        {{#unless (eq loan.loan_status loanStatus.PENDING)}}
+        <div class="view-wrap">
+            <button class="view-btn"  {{action "toEmis" loan}}>View Emis</button>
+        </div>
+        {{/unless}}
+        {{/unless}}
+    {{/if}}
+
+    {{#if isBranch}}
+      <div class="view-wrap">
+        <div>
+            <button class="view-btn"  {{action "viewAccounts"}}>View Accounts</button>
+        </div>
+        {{#unless (eq branch.branch_id branch.main_branch_id)}}
+        {{#if (eq role userRole.MANAGER)}}
+        <div >
+            <button class="view-btn" {{action "deleteBranch" branch}} ><i class="bi bi-trash-fill"></i> delete Branch</button>
+        </div>
+        {{/if}}
+        {{/unless}}
+      </div>
+    {{/if}}
+
+    {{#if isBank}}
+      {{#if (eq role userRole.ADMIN)}}
+      
+        <div class="view-wrap">
+          <button class="view-btn" style="margin-top:15px" {{action "updateMainBranch" bank}}><i class="bi bi-pencil"></i> Update Main Branch</button>
+        </div>
+      
+      {{/if}}
+    {{/if}}
+  </div>
+</div>

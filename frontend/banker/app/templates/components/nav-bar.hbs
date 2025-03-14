@@ -13,23 +13,23 @@
       {{#if (eq role userRole.MANAGER)}}
         <li class={{if (eq currentRoute "branch") "active"}} {{action "navigate" "branch"}}><a>Branch</a></li>
       {{/if}}
-      <li class={{if (eq currentRoute "accounts") "active"}} {{action "navigate" "accounts"}}><a>Accounts</a></li>
+      <li id="accounts" class={{if (eq currentRoute "accounts") "active"}} {{action "navigate" "accounts"}}><a>Accounts</a></li>
       <li class={{if (eq currentRoute "transactions") "active"}} {{action "navigate" "transactions"}}><a>Transactions</a></li>
       <li class={{if (eq currentRoute "loans") "active"}} {{action "navigate" "loans"}}><a>Loans</a></li>
     {{/unless}}
     </ul>
   {{#unless (eq role userRole.SUPERADMIN)}}
     {{#unless (eq role userRole.MANAGER)}}
-    {{!-- {{#if isRoute}} --}}
+    {{#if (or (eq currentRoute "accounts") (eq currentRoute "loans") (eq currentRoute "transactions"))}}
       <div class="branch-dropdown">
-        <select id="branch" value={{branch_name}} onchange={{action "setbranch" value="target.value"}} >
-          <option value="">All Branches</option>
-          {{#each branches as |branch|}}
-            <option value={{branch.branch_name}} >{{branch.branch_name}}</option>
-          {{/each}}
-        </select>
+          <select id="branch" value={{branch_name}} onchange={{action "setbranch" value="target.value"}} >
+            <option value="">All Branches</option>
+            {{#each branches as |branch|}}
+              <option value={{branch.branch_name}} >{{branch.branch_name}}</option>
+            {{/each}}
+          </select>
       </div>
-    {{!-- {{/if}} --}}
+    {{/if}}
     {{/unless}}
   {{/unless}}
   <button class="logout" {{action "logout"}}><i class="bi bi-box-arrow-left"></i>&nbsp;&nbsp;Logout</button>

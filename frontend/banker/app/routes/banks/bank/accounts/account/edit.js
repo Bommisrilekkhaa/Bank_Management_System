@@ -23,5 +23,10 @@ export default Ember.Route.extend({
       this.transitionTo('banks.bank.users.user.dashboard', bankId, userId);
       return;
     }
+  },
+  resetController(isExiting) {
+    if (isExiting) {
+      this.get('sharedData').set('branchId','*');
+    }
   }
 });

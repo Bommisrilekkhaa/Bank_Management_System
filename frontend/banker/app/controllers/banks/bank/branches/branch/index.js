@@ -11,11 +11,20 @@ export default Ember.Controller.extend({
         return getSessionData().user_role;  
     
   }),
+  branchDetails: Ember.computed('branch', function () {
+    return [
+      { label: "Branch Name", value: this.get('branch.branch_name') },
+      { label: "Branch Number", value: this.get('branch.branch_number') },
+      { label: "Address", value: this.get('branch.branch_address') },
+      { label: "Bank Name", value: this.get('branch.bank_name') },
+      { label: "Manager Name", value: this.get('branch.manager_name') }
+    ];
+  }),
   loadBranch(){
     let bankId=this.get('sharedData').get('bankId');
     let branchId = this.get('sharedData').get('branchId');
     let url = `http://localhost:8080/banker/api/v1/`;
-    if(bankId!="*")
+    if(bankId!="*" && bankId)
       {
         url=url +`banks/${bankId}`;
       }
@@ -35,13 +44,14 @@ export default Ember.Controller.extend({
   actions: {
     viewAccounts() {
       let bankId=this.get('sharedData').get('bankId');
+      document.getElementById('accounts').click();
       this.transitionToRoute('banks.bank.accounts', bankId);
     },
 
     delete(branch) {
       let bankId=this.get('sharedData').get('bankId');
       let url = `http://localhost:8080/banker/api/v1/`;
-      if(bankId!="*")
+      if(bankId!="*" && bankId)
       {
         url=url +`banks/${bankId}`;
       }

@@ -1,0 +1,123 @@
+.navbar {
+    width: 100vw;
+    height:80px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: rgba(255, 255, 255, 0.015);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    padding: 10px 20px;
+    box-shadow: 0 1px 10px rgba(180, 247, 254, 0.7);
+    position: relative; 
+  }
+  
+  .nav-items {
+    list-style-type: none;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+  
+  .nav-items li {
+    margin: 0 15px;
+  }
+  
+  .nav-items li a {
+    cursor: pointer;
+    position: relative;
+    text-decoration: none;
+    padding: 10px 20px;
+    border-radius: 10px;
+    color: #817979;
+    background-color: transparent;
+    backdrop-filter: blur(15px);
+    -webkit-backdrop-filter: blur(15px);
+    transition: background 0.3s ease, transform 0.2s ease;
+    border-bottom: 3px solid transparent;
+  }
+  
+  .nav-items li a::before {
+    content: '';
+    position: absolute;
+    bottom: -3px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 0;
+    height: 3px;
+    background:  linear-gradient(49deg, black, rgb(198, 96, 12),  #000000);
+    border-radius: 10px;
+    transition: width 0.3s ease;
+  }
+  
+  .nav-items li.active a {
+    color: rgb(198, 96, 12);
+  }
+  
+  .nav-items li.active a::before {
+    width: 100%; 
+  }
+  
+  .nav-items li a:hover::before {
+    width: 100%;
+  }
+  
+  .nav-items li a:hover {
+    transform: scale(1.05);
+    color: rgb(198, 96, 12);
+    text-shadow: 2px 2px 5px rgba(198, 96, 12, 0.7);
+    -webkit-background-clip: text;
+    background-clip: text;
+  }
+  
+  .branch-dropdown {
+    margin-right: 20px;
+    position: absolute; 
+    left: 20px; 
+  }
+  
+  .branch-dropdown select {
+    cursor: pointer;
+    padding: 10px 20px;
+    border-radius: 10px;
+    font-size: 1rem;
+    background: rgba(255, 255, 255, 0);
+    backdrop-filter: blur(15px);
+    -webkit-backdrop-filter: blur(15px);
+    color: #817979;
+    outline: none;
+    border: 2px solid #817979;
+    border-image-slice: 1;
+    transition: background 0.3s ease;
+  }
+  
+  .branch-dropdown select:hover {
+    box-shadow: 2px 2px 10px rgb(198, 96, 12);
+    color: rgb(198, 96, 12);
+    border: 2px solid rgb(198, 96, 12);
+  }
+  
+  /* Logout Button at Right */
+  .logout {
+    cursor: pointer;
+    padding: 10px 20px;
+    border-radius: 10px;
+    font-size: 1rem;
+    background: rgba(255, 255, 255, 0);
+    backdrop-filter: blur(15px);
+    -webkit-backdrop-filter: blur(15px);
+    color: #817979;
+    outline: none;
+    border: 2px solid #817979;
+    border-image-slice: 1;
+    transition: background 0.3s ease;
+    position: absolute; 
+    right: 20px; 
+  }
+  
+  .logout:hover {
+    box-shadow: 2px 2px 10px rgb(198, 96, 12);
+    color: rgb(198, 96, 12);
+    border: 2px solid rgb(198, 96, 12);
+  }
+  

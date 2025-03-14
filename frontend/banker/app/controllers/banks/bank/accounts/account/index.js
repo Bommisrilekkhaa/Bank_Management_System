@@ -8,7 +8,7 @@ export default Ember.Controller.extend({
     let url = `http://localhost:8080/banker/api/v1/`;
   let bankId = this.get('sharedData').get('bankId');
     let branchId = this.get('sharedData').get('branchId');
-    if(bankId!="*")
+    if(bankId!="*" && bankId)
     {
       url=url +`banks/${bankId}`;
     }
@@ -29,6 +29,18 @@ export default Ember.Controller.extend({
       console.error("Failed to load account:", error);
     });
   },
+
+  accountData: Ember.computed('acc', function () {
+    let acc = this.get('acc');
+    return [
+      { label: "Account Number", value: acc.acc_no },
+      { label: "Account Type", value: acc.acc_type },
+      { label: "Account Balance", value: `Rs. ${acc.acc_balance}` },
+      { label: "Branch Name", value: acc.branch_name },
+      { label: "Status", value: acc.acc_status }
+    ];
+  }),
+
   actions:{
     toLoans()
     {

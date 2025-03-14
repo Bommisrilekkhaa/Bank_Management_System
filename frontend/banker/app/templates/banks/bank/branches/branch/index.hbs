@@ -1,39 +1,10 @@
-<div class="branch-card-wrapper">
-  <div class="branch-card">
-    <h2>Branch Details</h2>
-   
-    <div class="branch-field">
-      <span class="field-label">Branch Name:</span>
-      <span class="field-value">{{branch.branch_name}}</span>
-    </div>
-    <div class="branch-field">
-      <span class="field-label">Branch Number:</span>
-      <span class="field-value">{{branch.branch_number}}</span>
-    </div>
-    <div class="branch-field">
-      <span class="field-label">Address:</span>
-      <span class="field-value">{{branch.branch_address}}</span>
-    </div>
-    <div class="branch-field">
-      <span class="field-label">Bank Name:</span>
-      <span class="field-value">{{branch.bank_name}}</span>
-    </div>
-    <div class="branch-field">
-      <span class="field-label">Manager Name:</span>
-      <span class="field-value">{{branch.manager_name}}</span>
-    </div>
-    <div class="view-wrap">
-        <div >
-            <button class="view-btn"  {{action "viewAccounts"}}>View Accounts</button>
-        </div>
-        {{#unless (eq branch.branch_id branch.main_branch_id)}}
-        {{#if (eq role userRole.MANAGER)}}
-        <div >
-            <button class="view-btn" {{action "delete" branch}} ><i class="bi bi-trash-fill"></i> delete Branch</button>
-        </div>
-        {{/if}}
-        {{/unless}}
-    </div>
-  </div>
-</div>
- {{notify-box message=notification.message type=notification.type}}
+{{info-card
+title="Branch Details"
+data=this.branchDetails
+isBranch=true
+branch=this.branch
+role=this.role
+delete=(action "delete")
+viewAccounts=(action "viewAccounts")
+}}
+{{notify-box message=notification.message type=notification.type}}

@@ -23,7 +23,7 @@ export default Ember.Controller.extend({
     let url = `http://localhost:8080/banker/api/v1/`;
     let branchId = this.get('sharedData').get('branchId');
     let bankId = this.get('sharedData').get('bankId');
-    if(bankId!="*")
+    if(bankId!="*" && bankId)
     {
       url=url +`banks/${bankId}`;
     }
@@ -60,6 +60,7 @@ export default Ember.Controller.extend({
 
     viewaccount(account)
     {
+      document.getElementById('branch').value = account.branch_name;
       let bankId = this.get('sharedData').get('bankId');
       this.get('sharedData').set('branchId',account.branch_id);
       this.transitionToRoute('banks.bank.accounts.account',bankId,account.acc_no);
@@ -72,6 +73,7 @@ export default Ember.Controller.extend({
 
     editAccount(isEdit,account) {
 
+    document.getElementById('branch').value = account.branch_name;
     let bankId = this.get('sharedData').get('bankId');
     this.get('sharedData').set('branchId',account.branch_id);
     console.log(account.branch_id)

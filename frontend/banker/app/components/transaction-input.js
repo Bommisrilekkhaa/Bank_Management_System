@@ -31,7 +31,7 @@ export default Ember.Component.extend({
     let url = `http://localhost:8080/banker/api/v1/`;
     let branchId = this.get('sharedData').get("branchId");
     let bankId = this.get('sharedData').get('bankId');
-    if(bankId!="*")
+    if(bankId!="*" && bankId)
     {
       url=url +`banks/${bankId}`;
     }
@@ -56,9 +56,17 @@ export default Ember.Component.extend({
 
   actions: {
     submitForm() {
-      
+      if (!this.get('transaction_type')) {
+        this.set("errorMessage", 'Transaction type is required.');
+        return;
+      }
+  
+      if (this.get('isDirect') && !this.get('accNo')) {
+       this.set("errorMessage", 'Account number is required.');
+       return;
+      }
       if (!this.get('transaction_amount') || this.get('transaction_amount') <= 0) {
-        this.set("errorMessage", 'Transaction amount must be a positive number.');
+        this.set("errorMessage", 'Transaction amount must be greater than zero.');
         return;
       }
       let date = new Date();
@@ -84,7 +92,7 @@ export default Ember.Component.extend({
       let bankId = this.get('sharedData').get('bankId');
       let branchId =this.get('sharedData').get('branchId');
       let accno = transactionData.acc_number;
-      if(bankId!="*")
+      if(bankId!="*" && bankId)
       {
         url=url +`banks/${bankId}`;
       }

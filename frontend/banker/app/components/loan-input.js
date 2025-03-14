@@ -108,7 +108,7 @@ export default Ember.Component.extend({
       }
 
       if (!this.get('loan_duration') || this.get('loan_duration') <= 0) {
-        this.set("errorMessage", 'Loan duration must be a positive number.');
+        this.set("errorMessage", 'Loan duration must be greater than zero.');
         return;
       }
 

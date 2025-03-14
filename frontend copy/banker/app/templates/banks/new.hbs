@@ -1,0 +1,42 @@
+<body>
+<div class="bank-form">
+  <h2>Create New Bank</h2>
+  
+  <form {{action "submitForm" on="submit"}}>
+   
+
+    <div class="form-group">
+      <label for="bank_name">Bank Name</label>
+      <input type="text" id="bank_name" value={{bank_name}} class="form-control" oninput={{action (mut bank_name) value="target.value"}}>
+    </div>
+
+    <div class="form-group">
+      <label for="bank_code">Bank Code</label>
+      <input type="text" id="bank_code" value={{bank_code}} class="form-control" oninput={{action (mut bank_code) value="target.value"}}>
+    </div>
+
+   
+    <div class="form-group">
+    <label for="admin_name">Admin Name</label>
+    <select id="admin_name" class="form-control" onchange={{action (mut admin_id) value="target.value"}}>
+        <option value="">Select Admin</option>
+        {{#each admins as |admin|}}
+        <option value={{admin.admin_id}} >{{admin.admin_name}}</option>
+        {{/each}}
+    </select>
+    </div>
+ 
+
+    <button type="submit" class="btn-primary">Create Bank</button>
+   
+    {{#link-to "banks"}}
+    <button {{action "cancel"}} class="btn-secondary">Cancel</button>
+    {{/link-to}}
+
+    {{#if errorMessage}}
+      <div class="error-message">* {{errorMessage}}</div>
+    {{/if}}
+  </form>
+</div>
+{{notify-box message=notification.message type=notification.type}}
+</body>

@@ -15,7 +15,7 @@ export default Ember.Controller.extend({
   loadAdmins() {
     let bankId=this.get('sharedData').get('bankId');
     let url = `http://localhost:8080/banker/api/v1`;
-    if(bankId!="*")
+    if(bankId!="*" && bankId)
     {
       url=url +`/banks/${bankId}`;
     }

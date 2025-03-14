@@ -11,6 +11,7 @@
             value={{name}}
             class="form-control"
             placeholder="Enter your full name"
+            maxlength="50"
             oninput={{action (mut name) value="target.value"}}
             onblur={{action "validateName"}}
           />
@@ -42,6 +43,8 @@
             value={{pno}}
             class="form-control"
             placeholder="Enter your phone number"
+            min="1000000000"
+            max="9999999999"
             oninput={{action (mut pno) value="target.value"}}
             onblur={{action "validatePno"}}
           />
@@ -57,6 +60,7 @@
             value={{addr}}
             class="form-control"
             placeholder="Enter your address"
+            maxlength="100"
             oninput={{action (mut addr) value="target.value"}}
             onblur={{action "validateAddr"}}
           ></textarea>
@@ -74,6 +78,7 @@
           value={{username}}
           class="form-control"
           placeholder="Enter your username"
+          maxlength="30"
           oninput={{action (mut username) value="target.value"}}
           onblur={{action "validateUsername"}}
         />
@@ -84,15 +89,21 @@
 
       <div class="form-group">
         <label for="password">Password<span style="color:rgb(237, 69, 69);">*</span></label>
-        <input
-          id="password"
-          type="password"
-          value={{password}}
-          class="form-control"
-          placeholder="Enter your password"
-          oninput={{action (mut password) value="target.value"}}
-          onblur={{action (if isSignup "validatePassword" "validatePass")}}
-        />
+        <div class="password-container">
+          <input
+            id="password"
+            type={{if isPasswordVisible "text" "password"}}
+            value={{password}}
+            class="form-control"
+            placeholder="Enter your password"
+            maxlength="20"
+            oninput={{action (mut password) value="target.value"}}
+            onblur={{action (if isSignup "validatePassword" "validatePass")}}
+          />
+          <button type="button" class="toggle-password" {{action "togglePassword"}}>
+            <i class="{{if isPasswordVisible 'fa fa-eye-slash' 'fa fa-eye'}}"></i>
+          </button>
+        </div>
         {{#if passwordError}}
           <div class="error-message">{{passwordError}}</div>
         {{/if}}
@@ -107,6 +118,7 @@
             value={{confirmPassword}}
             class="form-control"
             placeholder="Confirm your password"
+            maxlength="20"
             oninput={{action (mut confirmPassword) value="target.value"}}
             onblur={{action "validateConfirmPassword"}}
           />

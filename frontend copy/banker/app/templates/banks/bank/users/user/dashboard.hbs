@@ -1,0 +1,26 @@
+{{#if (eq sessionData.user_role userRole.ADMIN)}}
+<div class="card-container">
+  {{#each branches as |branch|}}
+   {{admin-dashboard
+      branchName=branch.branchName
+      accountCount=branch.accountCount
+      loansAvailed=branch.loansAvailed
+      totalDeposits=branch.totalDeposits
+   }}
+  {{/each}}
+</div>
+{{/if}}
+
+{{#if (eq sessionData.user_role userRole.MANAGER)}}
+    {{manager-dashboard
+    branch=branch}}
+
+{{/if}}
+{{#if (eq sessionData.user_role userRole.CUSTOMER)}}
+    {{customer-dashboard
+    accountList = this.accountList
+    loanList = this.loanList
+    transactionList =  this.transactionList}}
+
+{{/if}}
+

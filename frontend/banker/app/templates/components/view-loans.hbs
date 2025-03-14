@@ -82,36 +82,17 @@
   {{#if (eq loans.length 0)}}
      <button style="margin-top:60px;cursor:default;margin-right:40%;" class="new-transaction-btn">No Loans Found!</button>
   {{else}}
-    <div class="pagination-controls">
-      <button {{action "previousPage"}} disabled={{if (eq currentPage 1) "disabled"}}>Previous</button>
-
-      {{#if showFirstPage}}
-        <button {{action "goToPage" 1}} class="page-number {{if (eq currentPage 1) 'active' ''}}">1</button>
-      {{/if}}
-
-      {{#if showLeftEllipsis}}
-        <span class="ellipsis">...</span>
-      {{/if}}
-
-      {{#each visiblePages as |page|}}
-        <button 
-          {{action "goToPage" page}} 
-          class="page-number {{if (eq page currentPage) 'active' ''}}">
-          {{page}}
-        </button>
-      {{/each}}
-
-      {{#if showRightEllipsis}}
-        <span class="ellipsis">...</span>
-      {{/if}}
-
-      {{#if showLastPage}}
-        <button {{action "goToPage" totalPages}} class="page-number {{if (eq currentPage totalPages) 'active' ''}}">
-          {{totalPages}}
-        </button>
-      {{/if}}
-
-      <button {{action "nextPage"}} disabled={{if (eq currentPage totalPages) "disabled"}}>Next</button>
-    </div>
+    {{pagination-controls
+      currentPage=currentPage
+      totalPages=totalPages
+      visiblePages=visiblePages
+      showFirstPage=showFirstPage
+      showLastPage=showLastPage
+      showLeftEllipsis=showLeftEllipsis
+      showRightEllipsis=showRightEllipsis
+      goToPage=(action "goToPage")
+      nextPage=(action "nextPage")
+      previousPage=(action "previousPage")
+    }}
   {{/if}}
 </div>

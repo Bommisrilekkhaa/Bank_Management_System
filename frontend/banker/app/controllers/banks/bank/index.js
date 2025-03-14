@@ -6,21 +6,30 @@ fetchService: Ember.inject.service('fetch'),
 branch:[],
 banks:[], 
 userRole:role,      
-role:Ember.computed('banks',()=>{
+role:Ember.computed('bank',()=>{
   
       return getSessionData().user_role;  
   
 }),
+bankDetails: Ember.computed('branch', function () {
+  return [
+    { label: "Bank Name", value: this.get('bank.bank_name') },
+    { label: "Bank Code", value: this.get('bank.bank_code') },
+    { label: "Bank Admin", value: this.get('bank.admin_name') },
+    { label: "Main Branch Name", value: this.get('branch.branch_name') || "Not Assigned" },
+    { label: "Main Branch Address", value: this.get('branch.branch_address') || "Not Assigned" }
+  ];
+}),
 loadBanks(bankId){
   let url = `http://localhost:8080/banker/api/v1/`;
-  if(bankId!="*")
+  if(bankId!="*" && bankId)
   {
     url=url +`banks/${bankId}`;
   }
     this.get('fetchService').fetch(url,methods.GET).then((response) => {
         // console.log(response);
-        this.set('banks', response.data);
-        let branchId = this.get('banks')[0].main_branch_id;
+        this.set('bank', response.data[0]);
+        let branchId = this.get('bank').main_branch_id;
         if(branchId!="*")
           {
             url=url +`/branches/${branchId}`;

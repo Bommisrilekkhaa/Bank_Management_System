@@ -1,0 +1,146 @@
+@import "./auth.scss";
+@import "./accounts.scss";
+@import "./loans.scss";
+@import "./navbar.scss";
+@import "./transactions.scss";
+@import "./banks.scss";
+@import "./branches.scss";
+@import "./users.scss";
+@import "./notify.scss";
+@import url('https://fonts.googleapis.com/css2?family=Neonderthaw&family=Splash&display=swap');
+@import url('https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.10.5/font/bootstrap-icons.min.css');
+* {
+    margin: 0;
+    box-sizing: border-box;
+  }
+  
+  body {
+    font-family: Arial, sans-serif;
+    background: linear-gradient(to bottom, #0d1b2a, black);
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+    // height: 100vh;
+    width: 100vw; 
+    display: flex !important;
+    flex-direction: column;
+    align-items: center !important;
+    justify-content: flex-start !important;
+  }
+
+.container{
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+}
+html,body{
+  // height: 100%;
+    margin: 0;
+}
+.appname{
+  font-family: "Neonderthaw", cursive;
+  font-weight: 400;
+  font-style: normal;
+  font-size:15em;
+  z-index: 100;
+  margin-top: 120px;
+  color: #508C9B;
+  text-shadow: ivory;
+
+  i{
+    margin-left: 340px;
+  }
+}
+
+.form-control:disabled {
+  background-color: #a3bec2 !important; 
+  color: #6c757d; 
+  border-color: #ced4da; 
+}
+
+
+.pagination-controls {
+  margin-top: 2%;
+  display: flex;
+  justify-content:center;
+  gap: 5px;
+}
+
+.pagination-controls button {
+  background-color: #508C9B;
+  color: white;
+  border: none;
+  padding: 5px 10px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  border-radius: 3px;
+}
+
+.pagination-controls button:disabled {
+  background-color: #524d4d;
+  cursor: not-allowed;
+}
+
+.pagination-controls .page-number.active {
+  background-color: #134B70;
+  font-weight: bold;
+}
+
+.pagination-controls button:hover:not(:disabled) {
+  background-color: #30b8da;
+}
+
+.ellipsis{
+  color:white;
+  font-weight:bold;
+}
+
+.search-container {
+  position: relative;
+  margin-bottom: 20px;
+  width: 80%;
+}
+
+.search-input {
+  width: 300px;
+  padding: 8px;
+  font-size: 16px;
+  background-color: #a2cbd5a5;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+}
+.search-input::placeholder
+{
+  color: black;
+  font-size:0.9em;
+
+}
+.search-button {
+  padding: 8px 12px;
+  font-size: 16px;
+  margin-left: 10px;
+}
+
+.suggestions-list {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  width: 300px;
+  background: white;
+  border: 1px solid #ccc;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  max-height: 150px;
+  overflow-y: auto;
+  z-index: 1000;
+}
+
+.suggestions-list li {
+  padding: 8px;
+  cursor: pointer;
+}
+
+.suggestions-list li:hover {
+  background: #f0f0f0;
+}
+

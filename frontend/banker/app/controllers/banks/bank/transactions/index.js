@@ -11,7 +11,7 @@ export default Ember.Controller.extend({
     this.get('branchSelection').on('branchChanged', this, this.handleBranchChange);
   },
 
-  handleBranchChange(newBranchId,currentRouteName) {
+  handleBranchChange(currentRouteName) {
     if(currentRouteName=='banks.bank.transactions.index')
     {
       this.loadTransactions(1);
@@ -23,7 +23,7 @@ export default Ember.Controller.extend({
     let bankId = this.get('sharedData').get('bankId');
     let branchId = this.get('sharedData').get("branchId");
     let accno = this.get('sharedData').get('accNo');
-    if(bankId!="*")
+    if(bankId!="*" && bankId)
     {
       url=url +`banks/${bankId}`;
     }

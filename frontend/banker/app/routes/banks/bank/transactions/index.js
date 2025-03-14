@@ -22,16 +22,15 @@ export default Ember.Route.extend({
     this.get('sharedData').set('accNo', '*');
     this.get('sharedData').set('loanId', '*');
     this.get('sharedData').set('transactionId', '*');
-    if (sessionData.user_role != role.MANAGER) {
-      this.get('sharedData').set('branchId', '*');
-    }
+    // if (sessionData.user_role != role.MANAGER) {
+    //   this.get('sharedData').set('branchId', '*');
+    // }
   },
 
 
 
   setupController(controller) {
 
-    
     controller.loadTransactions(1);
   }
 

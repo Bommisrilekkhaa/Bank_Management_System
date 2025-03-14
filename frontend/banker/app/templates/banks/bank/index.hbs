@@ -1,36 +1,8 @@
-<div class="bank-card-wrapper">
-  <div class="bank-card">
-    <h2>Bank Details</h2>
-    {{#each banks as |bank|}}
-     
-    <div class="bank-field">
-      <span class="field-label">Bank Name:</span>
-      <span class="field-value">{{bank.bank_name}}</span>
-    </div>
-    <div class="bank-field">
-      <span class="field-label">Bank Code:</span>
-      <span class="field-value">{{bank.bank_code}}</span>
-    </div>
-     <div class="bank-field">
-      <span class="field-label">Bank Admin:</span>
-      <span class="field-value">{{bank.admin_name}}</span>
-    </div>
-   
-     <div class="bank-field">
-      <span class="field-label">Main Branch Name:</span>
-      <span class="field-value">{{if branch.branch_name branch.branch_name "Not Assigned"}}</span>
-    </div>
-     <div class="bank-field">
-      <span class="field-label">Main Branch Address:</span>
-      <span class="field-value">{{if branch.branch_address branch.branch_address "Not Assigned"}}</span>
-    </div>
-    {{#if (eq role userRole.ADMIN)}}
-    
-      <div class="view-wrap">
-        <button class="view-btn" style="margin-top:15px" {{action "updateMainBranch" bank}}><i class="bi bi-pencil"></i> Update Main Branch</button>
-      </div>
-    
-    {{/if}}
-    {{/each}}
-  </div>
-</div>
+{{info-card
+title="Bank Details"
+data=this.bankDetails
+isBank=true
+bank=this.bank
+role=this.role
+updateMainBranch=(action "updateMainBranch")
+}}

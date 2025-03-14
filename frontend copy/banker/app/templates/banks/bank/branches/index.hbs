@@ -1,0 +1,88 @@
+
+<div class="branches-list">
+  <button {{action "addNewBranch"}} class="new-account-btn" style="margin-top:20px">New Branch</button>
+  <div class="search-container" style="margin-top:20px">
+    <input 
+      type="text" 
+      class="search-input" 
+      placeholder="Search Branch name / Manager name" 
+      value={{searchQuery}} 
+      oninput={{action "updateSearchQuery" value="target.value"}}
+    />
+    <button {{action "performSearch"}} class="new-branch-btn" style="margin-right: 42%;padding:10px;margin-top:-3px">Search</button>
+
+    {{#if searchSuggestions.length}}
+      <ul class="suggestions-list">
+        {{#each searchSuggestions as |suggestion|}}
+          <li {{action "selectSuggestion" suggestion}}>{{suggestion}}</li>
+        {{/each}}
+      </ul>
+    {{/if}}
+  </div> 
+ <table class="branches-table">
+    <thead>
+      <tr>
+        <th>Branch Name</th>
+        <th>Branch Number</th>
+        <th>Manager Name</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+    {{#unless (eq branches.length 0)}}
+      {{#each branches as |branch|}}
+        <tr >
+          <td {{action "viewBranch" branch}}>{{branch.branch_name}}</td>
+          <td {{action "viewBranch" branch}}>{{branch.branch_number}}</td>
+          <td {{action "viewBranch" branch}}>{{branch.manager_name}}</td>
+          <td>
+            <button {{action "editBranch" branch}}><i class="bi bi-pencil"></i> Edit</button>
+            {{#unless (eq branch.branch_id branch.main_branch_id)}}
+            <button {{action "deleteBranch" branch}}><i class="bi bi-trash-fill"></i> Delete</button>
+            {{/unless}}
+          </td>
+        </tr>
+      {{/each}}
+    {{/unless}}
+    </tbody>
+  </table>
+
+  {{#if (eq branches.length 0)}}
+    <button style="margin-top:60px;cursor:default;margin-right:40%;" class="new-branch-btn">No Branches Found!</button>
+  {{/if}}
+
+  {{#unless (eq branches.length 0)}}
+    <div class="pagination-controls">
+      <button {{action "previousPage"}} disabled={{if (eq currentPage 1) "disabled"}}>Previous</button>
+
+      {{#if showFirstPage}}
+        <button {{action "goToPage" 1}} class="page-number {{if (eq currentPage 1) 'active' ''}}">1</button>
+      {{/if}}
+
+      {{#if showLeftEllipsis}}
+        <span style="color:white;font-weight:bold;">...</span>
+      {{/if}}
+
+      {{#each visiblePages as |page|}}
+        <button 
+          {{action "goToPage" page}} 
+          class="page-number {{if (eq page currentPage) 'active' ''}}">
+          {{page}}
+        </button>
+      {{/each}}
+
+      {{#if showRightEllipsis}}
+        <span style="color:white;font-weight:bold;">...</span>
+      {{/if}}
+
+      {{#if showLastPage}}
+        <button {{action "goToPage" totalPages}} class="page-number {{if (eq currentPage totalPages) 'active' ''}}">
+          {{totalPages}}
+        </button>
+      {{/if}}
+
+      <button {{action "nextPage"}} disabled={{if (eq currentPage totalPages) "disabled"}}>Next</button>
+    </div>
+  {{/unless}}
+</div>
+ {{notify-box message=notification.message type=notification.type}}

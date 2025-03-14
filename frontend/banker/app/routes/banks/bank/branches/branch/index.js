@@ -29,5 +29,14 @@ export default Ember.Route.extend({
     setupController(controller) {
       
       controller.loadBranch(this.get('sharedData').get('branchId'));
+    },
+    resetController(isExiting) {
+      let sessionData = getSessionData();
+      if (isExiting) {
+        if(sessionData.user_role != role.MANAGER)
+          {
+            this.get('sharedData').set('branchId','*');
+          }
+      }
     }
 });

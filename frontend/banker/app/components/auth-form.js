@@ -25,6 +25,11 @@ export default Ember.Component.extend({
   confirmPasswordError: '',
   roleError: '',
   bankNameError: '',
+  isPasswordVisible: false,
+
+  passwordFieldType: Ember.computed('isPasswordVisible', function () {
+    return this.get('isPasswordVisible') ? 'text' : 'password';
+  }),
   init() {
     this._super(...arguments);
     this.loadBanks();
@@ -56,25 +61,24 @@ export default Ember.Component.extend({
   },
 
   actions: {
+    togglePassword() {
+      this.toggleProperty('isPasswordVisible');
+    },
     submitForm() {
-      const username = this.get('username');
+
+      if( this.get('nameError')||this.get('dobError')||this.get('pnoError')||this.get('addrError')||this.get('usernameError')||this.get('passwordError')||this.get('confirmPasswordError')||
+       this.get('roleError')||this.get('bankNameError')){
+        return;
+        }
+
+      if (!this.get('username') || !this.get('password') || !this.get('bank_name')) {
+          this.set('errorMessage', 'All fields are required.');
+          return;
+        }
+
       const password = this.get('password');
       const selectedRole = this.get('selectedRole');
 
-      if (!username || !password) {
-        this.set('errorMessage', 'Username and password are required.');
-        return;
-      }
-
-      if (!this.get('isSuper') && !this.get('isSignup') && !this.get('bank_name')) {
-        this.set('errorMessage', 'Please select a bank');
-        return;
-      }
-
-      if (password.length < 8) {
-        this.set('errorMessage', 'Password must be at least 8 characters.');
-        return;
-      }
 
       if (this.get('isSignup')) {
         const confirmPassword = this.get('confirmPassword');
@@ -137,9 +141,17 @@ export default Ember.Component.extend({
     },
 
     validateName() {
-      if (!this.get('name')) {
+      let name = this.get('name') || '';
+
+      let isValid = /^[a-zA-Z0-9]+( [a-zA-Z0-9]+)*$/.test(name);
+      
+      if (!name.trim()) {
         this.set('nameError', 'Name is required.');
-      } else {
+      } 
+      else if (!isValid) {
+        this.set('nameError', 'Name can only contain letters and numbers.');
+      }
+      else {
         this.set('nameError', '');
       }
     },
@@ -154,27 +166,44 @@ export default Ember.Component.extend({
 
     validatePno() {
       const pno = this.get('pno');
+      let phoneStr = pno.toString();
+
       if (!pno || pno.length !== 10 || isNaN(pno)) {
-        this.set('pnoError', 'Please enter a valid 10-digit phone number.');
-      } else {
-        this.set('pnoError', '');
-      }
+          this.set('pnoError', 'Please enter a valid 10-digit phone number.');
+        }  else if (!/^[1-9][0-9]{9}$/.test(phoneStr)) {
+          this.set('pnoError', 'Phone number must be exactly 10 digits and cannot start with 0.');
+        }else {
+          this.set('pnoError', '');
+        }
     },
 
     validateAddr() {
-      if (!this.get('addr')) {
+      let addr = this.get('addr') || '';
+
+      let isValid = /^[a-zA-Z0-9.,-]+( [a-zA-Z0-9.,-]+)*$/.test(addr);
+
+      if (!addr.trim()) {
         this.set('addrError', 'Address is required.');
+      } else if (!isValid) {
+        this.set('addrError', 'Address can only contain letters, numbers, ".", ",", "-", and single spaces.');
       } else {
         this.set('addrError', '');
       }
     },
 
     validateUsername() {
-      if (!this.get('username')) {
-        this.set('usernameError', 'Username is required.');
-      } else {
-        this.set('usernameError', '');
-      }
+      let username = this.get('username') || '';
+      
+        let isValid = /^[a-zA-Z][a-zA-Z0-9._-]*$/.test(username) && !/[\._-]{2,}/.test(username);
+      
+        if (!username.trim()) {
+          this.set('usernameError', 'Username is required.');
+        } else if (!isValid) {
+          this.set('usernameError', 'Username must start with a letter and contain only letters, numbers, ".", "_", or "-". No consecutive special characters allowed.');
+        } else {
+          this.set('usernameError', '');
+        }
+      
     },
 
     validatePassword() {

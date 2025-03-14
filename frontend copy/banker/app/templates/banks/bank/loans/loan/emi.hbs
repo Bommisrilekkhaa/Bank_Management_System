@@ -1,0 +1,26 @@
+<div class="emi-list">
+  <button {{action "addNewEmi"}} class="new-emi-btn">Make Payment</button>
+  
+  <table class="emi-table">
+    <thead>
+      <tr>
+        <th>EMI Number</th>
+        <th>Transaction ID</th>
+        <th>To Be Paid Date</th>
+        <th>Actual Paid Date</th>
+      </tr>
+    </thead>
+    <tbody>
+      {{#each generatedEmis as |emi|}}
+        <tr>
+          <td>{{emi.emiNumber}}</td>
+          <td>{{emi.transactionId}}
+           <div class="status-box {{if (eq emi.transactionId '-') 'to-be-paid' 'paid'}}">{{if (eq emi.transactionId '-') 'To Be Paid' 'Paid'}}</div>
+         </td>
+          <td>{{emi.toBePaidDate}}</td>
+          <td>{{emi.actualPaidDate}}</td>
+        </tr>
+      {{/each}}
+    </tbody>
+  </table>
+</div>

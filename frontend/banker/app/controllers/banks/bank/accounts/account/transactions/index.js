@@ -10,7 +10,7 @@ export default Ember.Controller.extend({
     let bankId = this.get('sharedData').get('bankId');
     let branchId = this.get('sharedData').get("branchId");
     let accno = this.get('sharedData').get('accNo');
-    if(bankId!="*")
+    if(bankId!="*" && bankId)
     {
       url=url +`banks/${bankId}`;
     }

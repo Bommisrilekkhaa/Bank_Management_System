@@ -5,12 +5,25 @@ export default Ember.Controller.extend({
     fetchService: Ember.inject.service('fetch'),
   sharedData:Ember.inject.service('shared-data'),
     loan:[],
+    loanData: Ember.computed('loan', function () {
+      let loan = this.get('loan');
+      return [
+        { label: "Loan Id", value: loan.loan_id },
+        { label: "Loan Type", value: loan.loan_type },
+        { label: "Loan Amount", value: `Rs. ${loan.loan_amount}` },
+        { label: "Interest", value: `${loan.loan_interest}%` },
+        { label: "Duration", value: `${loan.loan_duration} Months` },
+        { label: "Status", value: loan.loan_status },
+        { label: "Availed Date", value: loan.loan_availed_date },
+        { label: "Account Number", value: loan.acc_number }
+      ];
+    }),
     loadLoan(loanId) {
       let bankId =this.get('sharedData').get('bankId');
       let url = `http://localhost:8080/banker/api/v1/`;
       let branchId = this.get('sharedData').get("branchId");
       let accno = this.get('sharedData').get('accNo');
-      if(bankId!="*")
+      if(bankId!="*" && bankId)
       {
         url=url +`banks/${bankId}`;
       }
@@ -34,7 +47,7 @@ export default Ember.Controller.extend({
           console.error("Failed to load loan:", error);
         });
       },
-
+      
       actions:{
         toEmis(loan,emiAmount)
         {
